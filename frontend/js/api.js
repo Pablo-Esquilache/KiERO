@@ -1,10 +1,6 @@
 // api.js - Servicio Centralizado para Llamadas a la API
 
-const isLocalhost =
-  location.hostname === "localhost" || location.hostname === "127.0.0.1";
-export const API_BASE_URL = isLocalhost
-  ? "http://localhost:4000/api"
-  : "https://app-ventas-gvdk.onrender.com/api";
+export const API_BASE_URL = "/api";
 
 /**
  * Función base para realizar peticiones fetch
