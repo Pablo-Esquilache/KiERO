@@ -3,7 +3,7 @@
   publish = "frontend"
 
 [functions]
-  directory = "backend"
+  directory = "backend/functions"
   node_bundler = "esbuild"
 
 [[redirects]]

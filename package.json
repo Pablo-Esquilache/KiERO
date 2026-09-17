@@ -1,51 +1,15 @@
 {
-  "name": "app-ventas",
+  "name": "app-ventas-web",
   "version": "1.0.0",
-  "description": "Sistema de ventas local con Electron",
+  "description": "Sistema de ventas web",
   "type": "module",
-  "main": "main.js",
   "author": "Pablo Esquilache",
   "license": "ISC",
-  "scripts": {
-    "start": "electron .",
-    "build": "electron-builder"
-  },
-  "devDependencies": {
+  "dependencies": {
     "chart.js": "^4.5.1",
     "chartjs-plugin-datalabels": "^2.2.0",
-    "electron": "^40.4.1",
-    "electron-builder": "^26.7.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.0",
     "xlsx": "^0.18.5"
-  },
-  "build": {
-    "appId": "com.appventas.app",
-    "productName": "AppVentas",
-    "win": {
-      "target": "nsis"
-    },
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "**/*",
-      "!backend/**/*"
-    ],
-    "extraResources": [
-      {
-        "from": "backend",
-        "to": "backend",
-        "filter": [
-          "**/*",
-          "!generar_pass.js"
-        ]
-      },
-      {
-        "from": "backend/node_modules",
-        "to": "backend/node_modules"
-      }
-    ],
-    "asar": true
   }
 }
