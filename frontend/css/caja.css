@@ -1,0 +1,112 @@
+/* =========================================================
+   TARJETA PRINCIPAL CAJA
+========================================================= */
+
+.caja-card {
+  background: #ffffff;
+  padding: 2rem;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+/* =========================================================
+   INFORMACIÓN SUPERIOR
+========================================================= */
+
+.caja-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 25px;
+  font-size: 15px;
+}
+
+.caja-info p {
+  margin: 0;
+}
+
+#estadoCaja {
+  font-weight: bold;
+}
+
+/* =========================================================
+   BLOQUE APERTURA DE CAJA
+========================================================= */
+
+.caja-apertura {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+/* =========================================================
+   TABLA DE MOVIMIENTOS
+========================================================= */
+
+.tabla-movimientos-container {
+  max-height: 350px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  margin-bottom: 20px;
+}
+
+.tabla-movimientos {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabla-movimientos th,
+.tabla-movimientos td {
+  padding: 10px;
+  text-align: left;
+  font-size: 14px;
+}
+
+.tabla-movimientos th {
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  border-bottom: 2px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+}
+
+.tabla-movimientos tr {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.tabla-movimientos tr:hover {
+  background: #f1f5f9;
+}
+
+/* =========================================================
+   RESUMEN INFERIOR
+========================================================= */
+
+.caja-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  font-size: 15px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.resultado {
+  font-weight: bold;
+}
+
+.resultado span {
+  color: #e07a5f;
+  font-weight: bold;
+}
+
+/* =========================================================
+   BOTÓN CIERRE DE CAJA
+========================================================= */
+
+#btnCerrarCaja {
+  width: 100%;
+}

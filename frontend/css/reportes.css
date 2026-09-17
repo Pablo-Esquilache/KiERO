@@ -1,0 +1,60 @@
+/* =========================================================
+   DISABLED BOTONES
+========================================================= */
+
+.app-btn-secondary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: #cbd5e1;
+  color: #64748b;
+}
+
+/* =========================================================
+   SELECT DESCARGAR TABLA
+========================================================= */
+
+#selectTablaDescargar {
+  min-width: 160px;
+}
+
+/* =========================================================
+   TARJETAS DE REPORTES
+========================================================= */
+
+.r-card {
+  background: #ffffff;
+  padding: 22px;
+  border-radius: 10px;
+  margin-bottom: 26px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.r-descripcion {
+  color: #475569;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+/* =========================================================
+   CANVAS GRÁFICOS
+========================================================= */
+
+canvas {
+  margin-top: 10px;
+  max-width: 100%;
+}
+/* FILTROS REINSERTADOS */
+.r-filtros {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.r-filtros .app-form-group {
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <!-- ============================
+         METADATOS BÁSICOS
+    ============================ -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Título -->
+    <title>Caja</title>
+
+    <!-- ============================
+         ESTILOS
+    ============================ -->
+    <link rel="stylesheet" href="../css/normalize.css" />
+    <link rel="stylesheet" href="../css/globals.css" />
+    <link rel="stylesheet" href="../css/caja.css" />
+
+    <!-- Icono de la aplicación -->
+    <link rel="icon" href="../icons/icon-192.png" type="image/png" />
+  </head>
+
+  <body>
+    <!-- ============================
+         NAVBAR PRINCIPAL
+    ============================ -->
+    <nav class="app-navbar">
+      <div class="app-navbar-logo">MI APP</div>
+
+      <ul class="app-navbar-menu">
+        <li><a href="caja.html" class="app-active">Caja</a></li>
+        <li><a href="ventas.html">Ventas</a></li>
+        <li><a href="productos.html">Productos</a></li>
+        <li><a href="clientes.html">Clientes</a></li>
+        <li><a href="gastos.html">Gastos</a></li>
+        <li id="tab-reportes"><a href="reportes.html">Reportes</a></li>
+        <li id="tab-turnero"><a href="turnos.html">Turnos</a></li>
+
+        <li id="tab-ajustes" class="app-admin-only"><a href="ajustes.html">Ajustes</a></li>
+
+        <li>
+          <span class="user-role-badge"></span>
+          <button id="logout-btn">Cerrar Sesión</button>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- ============================
+         CONTENIDO PRINCIPAL
+    ============================ -->
+    <main class="app-container">
+      <!-- Título de la pantalla -->
+      <div class="app-controls" style="margin-bottom: 20px;">
+        <h1 class="app-title" style="margin-bottom: 0;">Caja del Día</h1>
+        <button id="btnHistorialCajas" class="app-btn-secondary">Ver Historial de Cajas</button>
+      </div>
+
+      <!-- Tarjeta principal de caja -->
+      <div class="caja-card">
+
+        <!-- Información general de la caja -->
+        <div class="caja-info">
+          <p><strong>Fecha:</strong> <span id="fechaHoy"></span></p>
+          <p><strong>Estado:</strong> <span id="estadoCaja"></span></p>
+        </div>
+
+        <!-- ============================
+             BLOQUE APERTURA DE CAJA
+        ============================ -->
+        <div id="bloqueApertura" class="caja-apertura">
+          <input
+            type="number"
+            id="saldoInicial"
+            class="app-input"
+            placeholder="Saldo inicial"
+          />
+
+          <button id="btnAbrirCaja" class="app-btn-primary">
+            Abrir Caja
+          </button>
+        </div>
+
+        <!-- ============================
+             BLOQUE RESUMEN DE CAJA
+        ============================ -->
+        <div id="bloqueResumen" class="caja-resumen" style="display: none">
+
+          <!-- Tabla de movimientos -->
+          <div class="tabla-movimientos-container">
+            <table class="tabla-movimientos">
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th>Descripción</th>
+                  <th>Ingreso</th>
+                  <th>Egreso</th>
+                  <th>Saldo</th>
+                </tr>
+              </thead>
+
+              <tbody id="tablaMovimientosBody"></tbody>
+            </table>
+          </div>
+
+          <!-- ============================
+               RESUMEN DE TOTALES
+          ============================ -->
+          <div class="caja-footer">
+            <div>Efectivo: $<span id="totalEfectivo">0.00</span></div>
+            <div>Digital: $<span id="totalDigital">0.00</span></div>
+
+            <div>
+              Cuenta Corriente:
+              $<span id="totalCuentaCorriente">0.00</span>
+            </div>
+
+            <div>Egresos: $<span id="totalEgresos">0.00</span></div>
+
+            <div class="resultado">
+              Resultado: $<span id="resultadoFinal">0.00</span>
+            </div>
+          </div>
+
+          <!-- Botón cerrar caja -->
+          <button id="btnCerrarCaja" class="app-btn-primary">
+            Cerrar Caja
+          </button>
+
+        </div>
+      </div>
+    </main>
+
+    <!-- ============================
+         MODAL HISTORIAL DE CAJAS
+    ============================ -->
+    <div id="modalHistorialCajas" class="app-modal">
+      <div class="app-modal-content">
+        <div class="app-modal-header">
+          <h2 class="app-subtitle">Historial de Cajas</h2>
+          <button type="button" class="app-close" id="cerrarModalHistorial">
+            Cerrar
+          </button>
+        </div>
+
+        <div class="app-controls" style="margin-bottom: 15px; justify-content: flex-end;">
+          <button id="btnDescargarExcelHistorial" class="app-btn-primary" style="background-color: #217346; color: white; border-color: #1e6b40;">
+            📥 Descargar Excel
+          </button>
+        </div>
+
+        <div class="app-tabla-container">
+          <table class="app-tabla" id="tablaHistorialCajas" style="font-size: 0.9em;">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Estado</th>
+                <th>Sal. Inicial</th>
+                <th>Ventas</th>
+                <th>Cuenta Corri.</th>
+                <th>Gastos</th>
+                <th>Devol.</th>
+                <th>Resultado Final</th>
+              </tr>
+            </thead>
+            <tbody id="historialCajasBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================
+         SCRIPTS
+    ============================ -->
+    <script src="../js/libs/xlsx.full.min.js"></script>
+    <script src="../js/auth-ui.js"></script>
+    <script type="module" src="../js/caja.js"></script>
+    <script type="module" src="../js/system.js"></script>
+    <script type="module" src="../js/logout.js"></script>
+  </body>
+</html>
