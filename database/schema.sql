@@ -3,11 +3,11 @@
 -- ==============================================================
 
 -- 1. Crear el usuario (PGUSER=app_ventas y PGPASSWORD=123456)
-CREATE USER app_ventas WITH PASSWORD '123456';
+
 
 -- 2. Asignar los permisos máximos a ese usuario sobre la base de datos (PGDATABASE=postgres)
-ALTER DATABASE postgres OWNER TO app_ventas;
-GRANT ALL PRIVILEGES ON DATABASE postgres TO app_ventas;
+
+
 
 -- ==============================================================
 -- INICIO DEL VOLCADO (DUMP) ORIGINAL DE TABLAS
@@ -58,7 +58,7 @@ CREATE TABLE public.cajas (
 );
 
 
-ALTER TABLE public.cajas OWNER TO app_ventas;
+
 
 --
 -- Name: cajas_id_seq; Type: SEQUENCE; Schema: public; Owner: app_ventas
@@ -73,7 +73,7 @@ CREATE SEQUENCE public.cajas_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.cajas_id_seq OWNER TO app_ventas;
+
 
 --
 -- Name: cajas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: app_ventas
@@ -100,7 +100,7 @@ CREATE TABLE public.clientes (
 );
 
 
-ALTER TABLE public.clientes OWNER TO app_ventas;
+
 
 --
 -- Name: clientes_id_seq; Type: SEQUENCE; Schema: public; Owner: app_ventas
@@ -115,7 +115,7 @@ CREATE SEQUENCE public.clientes_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.clientes_id_seq OWNER TO app_ventas;
+
 
 --
 -- Name: clientes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: app_ventas
@@ -135,7 +135,7 @@ CREATE TABLE public.comercios (
 );
 
 
-ALTER TABLE public.comercios OWNER TO app_ventas;
+
 
 --
 -- Name: comercios_id_seq; Type: SEQUENCE; Schema: public; Owner: app_ventas
@@ -150,7 +150,7 @@ CREATE SEQUENCE public.comercios_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.comercios_id_seq OWNER TO app_ventas;
+
 
 --
 -- Name: comercios_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: app_ventas
@@ -176,7 +176,7 @@ CREATE TABLE public.cuenta_corriente_movimientos (
 );
 
 
-ALTER TABLE public.cuenta_corriente_movimientos OWNER TO app_ventas;
+
 
 --
 -- Name: cuenta_corriente_movimientos_id_seq; Type: SEQUENCE; Schema: public; Owner: app_ventas
@@ -191,7 +191,7 @@ CREATE SEQUENCE public.cuenta_corriente_movimientos_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.cuenta_corriente_movimientos_id_seq OWNER TO app_ventas;
+
 
 --
 -- Name: cuenta_corriente_movimientos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: app_ventas
@@ -214,7 +214,7 @@ CREATE TABLE public.devoluciones (
 );
 
 
-ALTER TABLE public.devoluciones OWNER TO app_ventas;
+
 
 --
 -- Name: devoluciones_detalle; Type: TABLE; Schema: public; Owner: app_ventas
@@ -230,7 +230,7 @@ CREATE TABLE public.devoluciones_detalle (
 );
 
 
-ALTER TABLE public.devoluciones_detalle OWNER TO app_ventas;
+
 
 --
 -- Name: devoluciones_detalle_id_seq; Type: SEQUENCE; Schema: public; Owner: app_ventas
@@ -245,7 +245,7 @@ CREATE SEQUENCE public.devoluciones_detalle_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.devoluciones_detalle_id_seq OWNER TO app_ventas;
+
 
 --
 -- Name: devoluciones_detalle_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: app_ventas
@@ -267,7 +267,7 @@ CREATE SEQUENCE public.devoluciones_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.devoluciones_id_seq OWNER TO app_ventas;
+
 
 --
 -- Name: devoluciones_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: app_ventas
@@ -292,7 +292,7 @@ CREATE TABLE public.gastos (
 );
 
 
-ALTER TABLE public.gastos OWNER TO app_ventas;
+
 
 --
 -- Name: gastos_id_seq; Type: SEQUENCE; Schema: public; Owner: app_ventas
@@ -307,7 +307,7 @@ CREATE SEQUENCE public.gastos_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.gastos_id_seq OWNER TO app_ventas;
+
 
 --
 -- Name: gastos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: app_ventas
@@ -334,7 +334,7 @@ CREATE TABLE public.productos (
 );
 
 
-ALTER TABLE public.productos OWNER TO app_ventas;
+
 
 --
 -- Name: productos_id_seq; Type: SEQUENCE; Schema: public; Owner: app_ventas
@@ -349,7 +349,7 @@ CREATE SEQUENCE public.productos_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.productos_id_seq OWNER TO app_ventas;
+
 
 --
 -- Name: productos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: app_ventas
@@ -374,7 +374,7 @@ CREATE TABLE public.usuarios (
 );
 
 
-ALTER TABLE public.usuarios OWNER TO app_ventas;
+
 
 --
 -- Name: usuarios_id_seq; Type: SEQUENCE; Schema: public; Owner: app_ventas
@@ -389,7 +389,7 @@ CREATE SEQUENCE public.usuarios_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.usuarios_id_seq OWNER TO app_ventas;
+
 
 --
 -- Name: usuarios_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: app_ventas
@@ -416,7 +416,7 @@ CREATE TABLE public.ventas (
 );
 
 
-ALTER TABLE public.ventas OWNER TO app_ventas;
+
 
 --
 -- Name: ventas_detalle; Type: TABLE; Schema: public; Owner: app_ventas
@@ -433,7 +433,7 @@ CREATE TABLE public.ventas_detalle (
 );
 
 
-ALTER TABLE public.ventas_detalle OWNER TO app_ventas;
+
 
 --
 -- Name: ventas_detalle_id_seq; Type: SEQUENCE; Schema: public; Owner: app_ventas
@@ -448,7 +448,7 @@ CREATE SEQUENCE public.ventas_detalle_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.ventas_detalle_id_seq OWNER TO app_ventas;
+
 
 --
 -- Name: ventas_detalle_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: app_ventas
@@ -470,7 +470,7 @@ CREATE SEQUENCE public.ventas_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.ventas_id_seq OWNER TO app_ventas;
+
 
 --
 -- Name: ventas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: app_ventas
@@ -491,7 +491,7 @@ CREATE TABLE public.configuracion_sync (
     api_url character varying(255) DEFAULT 'http://127.0.0.1:3000/api/sync'::character varying
 );
 
-ALTER TABLE public.configuracion_sync OWNER TO app_ventas;
+
 
 --
 -- Name: metodos_pago; Type: TABLE; Schema: public; Owner: app_ventas
@@ -504,7 +504,7 @@ CREATE TABLE public.metodos_pago (
     activo boolean DEFAULT true
 );
 
-ALTER TABLE public.metodos_pago OWNER TO app_ventas;
+
 
 --
 -- Name: metodos_pago_id_seq; Type: SEQUENCE; Schema: public; Owner: app_ventas
@@ -518,7 +518,7 @@ CREATE SEQUENCE public.metodos_pago_id_seq
     NO MAXVALUE
     CACHE 1;
 
-ALTER SEQUENCE public.metodos_pago_id_seq OWNER TO app_ventas;
+
 ALTER SEQUENCE public.metodos_pago_id_seq OWNED BY public.metodos_pago.id;
 ALTER TABLE ONLY public.metodos_pago ALTER COLUMN id SET DEFAULT nextval('public.metodos_pago_id_seq'::regclass);
 
@@ -533,7 +533,7 @@ CREATE TABLE public.descuentos_config (
     activo boolean DEFAULT true
 );
 
-ALTER TABLE public.descuentos_config OWNER TO app_ventas;
+
 
 --
 -- Name: gastos_categorias; Type: TABLE; Schema: public; Owner: app_ventas
@@ -546,7 +546,7 @@ CREATE TABLE public.gastos_categorias (
     activo boolean DEFAULT true
 );
 
-ALTER TABLE public.gastos_categorias OWNER TO app_ventas;
+
 
 --
 -- Name: gastos_categorias_id_seq; Type: SEQUENCE; Schema: public; Owner: app_ventas
@@ -560,7 +560,7 @@ CREATE SEQUENCE public.gastos_categorias_id_seq
     NO MAXVALUE
     CACHE 1;
 
-ALTER SEQUENCE public.gastos_categorias_id_seq OWNER TO app_ventas;
+
 ALTER SEQUENCE public.gastos_categorias_id_seq OWNED BY public.gastos_categorias.id;
 ALTER TABLE ONLY public.gastos_categorias ALTER COLUMN id SET DEFAULT nextval('public.gastos_categorias_id_seq'::regclass);
 
@@ -576,7 +576,7 @@ CREATE SEQUENCE public.descuentos_config_id_seq
     NO MAXVALUE
     CACHE 1;
 
-ALTER SEQUENCE public.descuentos_config_id_seq OWNER TO app_ventas;
+
 ALTER SEQUENCE public.descuentos_config_id_seq OWNED BY public.descuentos_config.id;
 ALTER TABLE ONLY public.descuentos_config ALTER COLUMN id SET DEFAULT nextval('public.descuentos_config_id_seq'::regclass);
 
@@ -595,7 +595,7 @@ CREATE SEQUENCE public.configuracion_sync_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.configuracion_sync_id_seq OWNER TO app_ventas;
+
 
 --
 -- Name: configuracion_sync_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: app_ventas
@@ -919,7 +919,7 @@ ALTER TABLE ONLY public.ventas
 -- Name: SCHEMA public; Type: ACL; Schema: -; Owner: pg_database_owner
 --
 
-GRANT ALL ON SCHEMA public TO app_ventas;
+
 
 
 --
@@ -944,7 +944,7 @@ CREATE TABLE IF NOT EXISTS public.turnos_config (
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-ALTER TABLE public.turnos_config OWNER TO app_ventas;
+
 
 -- 2. Tabla Principal de Turnos
 CREATE TABLE IF NOT EXISTS public.turnos (
@@ -959,6 +959,6 @@ CREATE TABLE IF NOT EXISTS public.turnos (
     CONSTRAINT turnos_estado_check CHECK (((estado)::text = ANY ((ARRAY['reservado'::character varying, 'completado'::character varying, 'cancelado'::character varying, 'ausente'::character varying])::text[])))
 );
 
-ALTER TABLE public.turnos OWNER TO app_ventas;
+
 
 \unrestrict M3XkGqA3tgMUHCRZzFjhhWJGFTEgcKui9eARvHfwzMuduj7jBr2vVvV5RjKEZYk
