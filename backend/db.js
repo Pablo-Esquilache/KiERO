@@ -11,6 +11,9 @@ const pool = new Pool({
   user: process.env.PGUSER || "app_ventas",
   password: process.env.PGPASSWORD || "123456",
   port: process.env.PGPORT || 5432,
+  ssl: process.env.PGHOST && process.env.PGHOST !== "localhost" && process.env.PGHOST !== "127.0.0.1" 
+    ? { rejectUnauthorized: false } 
+    : false,
 });
 
 
