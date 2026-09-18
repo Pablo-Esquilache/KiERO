@@ -63,7 +63,7 @@ export const login = async (req, res) => {
     });
   } catch (err) {
     console.error("Error en login:", err);
-    res.status(500).json({ error: "Error interno" });
+    res.status(500).json({ error: "Error interno real: " + err.message });
   }
 };
 
