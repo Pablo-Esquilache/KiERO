@@ -125,74 +125,64 @@ async function obtenerCaja() {
 // =================================================
 
 async function calcularResumen() {
-  const movimientos = await CajasAPI.getMovimientos(comercioId);
+  const response = await CajasAPI.getMovimientos(comercioId);
+  const movimientos = response.movimientos || [];
+  const t = response.totales || { efectivo: 0, digital: 0, cuenta_corriente: 0, egresos: 0, devoluciones: 0 };
 
   const tbody = document.getElementById("tablaMovimientosBody");
   tbody.innerHTML = "";
 
   let saldo = Number(cajaActual?.saldo_inicial) || 0;
 
-  let totalEfectivo = 0;
-  let totalDigital = 0;
-  let totalCuentaCorriente = 0;
-  let totalEgresos = 0;
-  let totalDevoluciones = 0;
-
+  // Calculamos el saldo iterativo para la tabla, pero usamos los totales del backend para las tarjetas
   movimientos.forEach((m) => {
+    // Calculamos el acumulado fila por fila, desde el más antiguo al más nuevo. 
+    // Ojo: el array viene ordenado de nuevo a viejo, así que invertimos temporalmente para la suma visual
+  });
 
+  // Para mostrar saldo evolutivo correcto, iteramos al revés (del más antiguo al más nuevo)
+  const movsInvertidos = [...movimientos].reverse();
+  movsInvertidos.forEach((m) => {
     if (m.tipo === "VENTA" && m.metodo_pago === "Cuenta Corriente") {
-      // No sumamos al saldo físico
+      // No suma al físico
     } else if (m.tipo === "DEVOLUCION" && m.metodo_pago === "Cuenta Corriente") {
-      // No restamos del saldo físico
+      // No resta al físico
     } else {
-      saldo += m.ingreso - m.egreso;
+      saldo += (m.ingreso - m.egreso);
     }
+    m.saldoVisual = saldo; // guardamos el saldo en ese momento
+  });
 
-    if (m.tipo === "VENTA") {
-
-      if (m.metodo_pago === "Efectivo") {
-        totalEfectivo += m.ingreso;
-
-      } else if (
-        m.metodo_pago === "Debito" ||
-        m.metodo_pago === "QR" ||
-        m.metodo_pago === "Transferencia"
-      ) {
-        totalDigital += m.ingreso;
-
-      } else if (m.metodo_pago === "Cuenta Corriente") {
-        totalCuentaCorriente += m.ingreso;
-      }
-    }
-
-    if (m.tipo === "DEVOLUCION") {
-      totalDevoluciones += m.egreso;
-    } else if (m.tipo === "GASTO") {
-      totalEgresos += m.egreso;
-    }
-
+  // Ahora dibujamos de nuevo a viejo
+  movimientos.forEach((m) => {
     const tr = document.createElement("tr");
-
     tr.innerHTML = `
       <td>${m.tipo}</td>
       <td>${m.descripcion}</td>
       <td>${m.ingreso > 0 ? "$" + m.ingreso.toFixed(2) : "-"}</td>
       <td>${m.egreso > 0 ? "$" + m.egreso.toFixed(2) : "-"}</td>
-      <td>$${saldo.toFixed(2)}</td>
+      <td>$${m.saldoVisual.toFixed(2)}</td>
     `;
-
     tbody.appendChild(tr);
   });
 
-  document.getElementById("totalEfectivo").textContent = totalEfectivo.toFixed(2);
-  document.getElementById("totalDigital").textContent = totalDigital.toFixed(2);
-  document.getElementById("totalCuentaCorriente").textContent = totalCuentaCorriente.toFixed(2);
-  document.getElementById("totalEgresos").textContent = (totalEgresos + totalDevoluciones).toFixed(2);
-  // Guardamos los valores particionados en el DOM invisible o como variable global temporal si hiciera falta.
-  // Pero lo ideal es que al cerrar la caja, usemos re-calcular o sumemos todo.
-  window.tempDevoluciones = totalDevoluciones;
-  window.tempGastos = totalEgresos;
-  document.getElementById("resultadoFinal").textContent = saldo.toFixed(2);
+  // Usamos los totales del backend para las tarjetas
+  const totalEgresosSumados = t.egresos + t.devoluciones;
+  
+  // Resultado Físico Final (Saldo Inicial + Efectivo + Digitales - Egresos/Devoluciones (no Cta.Cte))
+  // Ojo, si hubo devoluciones en Cta Cte, el backend las suma todas. 
+  // Pero el resultado final físico siempre es igual al saldo acumulado final.
+  const resultadoFisico = saldo;
+
+  document.getElementById("totalEfectivo").textContent = t.efectivo.toFixed(2);
+  document.getElementById("totalDigital").textContent = t.digital.toFixed(2);
+  document.getElementById("totalCuentaCorriente").textContent = t.cuenta_corriente.toFixed(2);
+  document.getElementById("totalEgresos").textContent = totalEgresosSumados.toFixed(2);
+  
+  window.tempDevoluciones = t.devoluciones;
+  window.tempGastos = t.egresos;
+  
+  document.getElementById("resultadoFinal").textContent = resultadoFisico.toFixed(2);
 }
 
 

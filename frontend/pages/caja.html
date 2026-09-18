@@ -86,7 +86,40 @@
         ============================ -->
         <div id="bloqueResumen" class="caja-resumen" style="display: none">
 
-          <!-- Tabla de movimientos -->
+          <!-- ============================
+               DASHBOARD DE TOTALES (CARDS)
+          ============================ -->
+          <div class="dashboard-cards">
+            <div class="card-caja card-efectivo">
+              <h4>Efectivo</h4>
+              <p>$<span id="totalEfectivo">0.00</span></p>
+            </div>
+            
+            <div class="card-caja card-digital">
+              <h4>Digitales</h4>
+              <p>$<span id="totalDigital">0.00</span></p>
+            </div>
+
+            <div class="card-caja card-cc">
+              <h4>Cta. Corriente</h4>
+              <p>$<span id="totalCuentaCorriente">0.00</span></p>
+            </div>
+
+            <div class="card-caja card-egresos">
+              <h4>Egresos</h4>
+              <p>$<span id="totalEgresos">0.00</span></p>
+            </div>
+
+            <div class="card-caja card-resultado">
+              <h4>Resultado Físico</h4>
+              <p>$<span id="resultadoFinal">0.00</span></p>
+            </div>
+          </div>
+
+          <!-- ============================
+               TABLA DE MOVIMIENTOS
+          ============================ -->
+          <h3 class="app-subtitle" style="margin-top: 30px; margin-bottom: 10px;">Movimientos del Turno</h3>
           <div class="tabla-movimientos-container">
             <table class="tabla-movimientos">
               <thead>
@@ -98,34 +131,16 @@
                   <th>Saldo</th>
                 </tr>
               </thead>
-
               <tbody id="tablaMovimientosBody"></tbody>
             </table>
           </div>
 
-          <!-- ============================
-               RESUMEN DE TOTALES
-          ============================ -->
-          <div class="caja-footer">
-            <div>Efectivo: $<span id="totalEfectivo">0.00</span></div>
-            <div>Digital: $<span id="totalDigital">0.00</span></div>
-
-            <div>
-              Cuenta Corriente:
-              $<span id="totalCuentaCorriente">0.00</span>
-            </div>
-
-            <div>Egresos: $<span id="totalEgresos">0.00</span></div>
-
-            <div class="resultado">
-              Resultado: $<span id="resultadoFinal">0.00</span>
-            </div>
+          <div style="margin-top: 25px; text-align: right;">
+            <!-- Botón cerrar caja -->
+            <button id="btnCerrarCaja" class="app-btn-primary" style="padding: 15px 30px; font-size: 1.1em; background-color: #e07a5f;">
+              Cerrar Caja
+            </button>
           </div>
-
-          <!-- Botón cerrar caja -->
-          <button id="btnCerrarCaja" class="app-btn-primary">
-            Cerrar Caja
-          </button>
 
         </div>
       </div>

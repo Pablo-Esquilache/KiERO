@@ -147,7 +147,34 @@ export const getMovimientosDia = async (req, res) => {
 
     movimientos.sort((a, b) => new Date(b.hora) - new Date(a.hora));
 
-    res.json(movimientos);
+    let totalEfectivo = 0;
+    let totalDigital = 0;
+    let totalCuentaCorriente = 0;
+    let totalEgresos = 0;
+    let totalDevoluciones = 0;
+
+    movimientos.forEach(m => {
+      if (m.tipo === "VENTA") {
+        if (m.metodo_pago === "Efectivo") totalEfectivo += m.ingreso;
+        else if (m.metodo_pago === "Cuenta Corriente") totalCuentaCorriente += m.ingreso;
+        else totalDigital += m.ingreso;
+      } else if (m.tipo === "DEVOLUCION") {
+        totalDevoluciones += m.egreso;
+      } else if (m.tipo === "GASTO") {
+        totalEgresos += m.egreso;
+      }
+    });
+
+    res.json({
+      movimientos,
+      totales: {
+        efectivo: totalEfectivo,
+        digital: totalDigital,
+        cuenta_corriente: totalCuentaCorriente,
+        egresos: totalEgresos,
+        devoluciones: totalDevoluciones
+      }
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error obteniendo movimientos" });
