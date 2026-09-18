@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 const args = process.argv.slice(2);
 const usuario = args[0];
