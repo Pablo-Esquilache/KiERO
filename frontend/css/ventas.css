@@ -607,3 +607,51 @@ body.role-admin #tab-reportes {
   border-top: 1px solid #e2e8f0;
   margin: 20px 0;
 }
+/* ==============================
+   POS SPLIT SCREEN
+============================== */
+.pos-container {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.pos-container .app-form-row {
+  display: flex;
+  flex-direction: column;
+}
+
+.pos-container .app-carrito-container {
+  min-height: 400px;
+  max-height: 500px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+}
+
+.pos-container .app-resumen {
+  background: #f8fafc;
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 20px;
+  border: 1px solid #e2e8f0;
+}
+
+.pos-container .app-btn-guardar {
+  font-size: 1.5rem;
+  padding: 20px;
+  margin-top: 20px;
+  background-color: #10b981;
+}
+
+.pos-container .app-form-venta {
+  display: contents; /* Allows children to participate in the grid directly */
+}
+
+@media(max-width: 900px) {
+  .pos-container {
+    grid-template-columns: 1fr;
+  }
+}

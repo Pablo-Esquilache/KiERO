@@ -50,69 +50,11 @@
     <!-- CONTENIDO PRINCIPAL -->
     <!-- ========================= -->
     <main class="app-container">
-      <h1 class="app-title">Gestión de Ventas</h1>
+      <div class="app-controls" style="margin-bottom: 20px;"><h1 class="app-title" style="margin-bottom:0;">Punto de Venta</h1><button id="btnToggleVista" class="app-btn-secondary">Ver Historial del Día</button></div>
 
       <!-- ========================= -->
-      <!-- FILTROS PRINCIPALES -->
-      <!-- ========================= -->
-      <div class="app-controls">
-        <div>
-          <input
-            type="text"
-            id="buscarVenta"
-            class="app-input"
-            placeholder="Buscar..."
-          />
-          <button id="btnLimpiarFiltros" class="app-btn-secondary">
-            Limpiar filtros
-          </button>
-        </div>
-        <div>
-          <button id="btnDevolucion" class="btn-secundario">Devolución</button>
-          <button id="btnVerDevoluciones" class="app-btn-secondary">
-            Ver devoluciones
-          </button>
-        </div>
-        <div>
-          <button id="btnVerVentas" class="app-btn-secondary">Ver todas</button>
-          <button id="btnNuevaVenta" class="app-btn-primary">
-            Registrar venta
-          </button>
-        </div>
-      </div>
-
-      <!-- ========================= -->
-      <!-- TABLA PRINCIPAL -->
-      <!-- ========================= -->
-      <div class="app-tabla-container">
-        <table class="app-tabla">
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Cliente</th>
-              <th>Total Bruto</th>
-              <th>Desc.</th>
-              <th>Total</th>
-              <th>Método</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="tablaVentasBody"></tbody>
-        </table>
-      </div>
-    </main>
-
-    <!-- ====================================================== -->
-    <!-- MODAL: NUEVA VENTA -->
-    <!-- ====================================================== -->
-    <div id="modalVenta" class="app-modal">
-      <div class="app-modal-content">
-        <div class="app-modal-header">
-          <h2 class="app-subtitle">Registrar venta</h2>
-          <button type="button" class="app-close">Cerrar</button>
-        </div>
-
-        <form class="app-form-venta">
+      <div id="pos-container" class="pos-container">
+<form class="app-form-venta">
           <!-- DATOS GENERALES -->
           <div class="app-form-row">
             <div class="app-form-group">
@@ -129,7 +71,7 @@
             <div class="app-form-group">
               <label>Cliente</label>
               <div style="display: flex; gap: 8px; width: 100%;">
-                <select id="clienteVenta" class="app-input" style="flex: 1;" required></select>
+                <input type="hidden" id="clienteVenta" required><input type="text" id="clienteVentaNombre" class="app-input" style="flex: 1; cursor:pointer;" placeholder="Seleccionar cliente (Click aquí)" readonly><button type="button" id="btnBuscarCliente" class="app-btn-secondary" style="padding: 0 12px; font-weight: bold; font-size: 1.2rem; flex: 0 0 auto;" title="Buscar Cliente">🔍</button>
                 <button type="button" id="btnCrearClienteRapido" class="app-btn-secondary" style="padding: 0 12px; font-weight: bold; font-size: 1.2rem; flex: 0 0 auto;" title="Crear nuevo cliente">+</button>
               </div>
             </div>
@@ -212,12 +154,75 @@
           </button>
         </form>
       </div>
+
+      <div id="history-container" style="display:none;">
+      <!-- FILTROS PRINCIPALES -->
+      <!-- ========================= -->
+      <div class="app-controls">
+        <div>
+          <input
+            type="text"
+            id="buscarVenta"
+            class="app-input"
+            placeholder="Buscar..."
+          />
+          <button id="btnLimpiarFiltros" class="app-btn-secondary">
+            Limpiar filtros
+          </button>
+        </div>
+        <div>
+          <button id="btnDevolucion" class="btn-secundario">Devolución</button>
+          <button id="btnVerDevoluciones" class="app-btn-secondary">
+            Ver devoluciones
+          </button>
+        </div>
+        <div>
+          <button id="btnVerVentas" class="app-btn-secondary">Ver todas</button>
+          <button id="btnNuevaVenta" class="app-btn-primary">
+            Registrar venta
+          </button>
+        </div>
+      </div>
+
+      <!-- ========================= -->
+      <!-- TABLA PRINCIPAL -->
+      <!-- ========================= -->
+      <div class="app-tabla-container">
+        <table class="app-tabla">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Cliente</th>
+              <th>Total Bruto</th>
+              <th>Desc.</th>
+              <th>Total</th>
+              <th>Método</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaVentasBody"></tbody>
+        </table>
+      </div>
+    </main>
+
+    <!-- ====================================================== -->
+    <!-- MODAL: NUEVA VENTA -->
+    <!-- ====================================================== -->
+    <div id="modalVenta" style="display:none;">
+      <div class="app-modal-content">
+        <div class="app-modal-header">
+          <h2 class="app-subtitle">Registrar venta</h2>
+          <button type="button" class="app-close">Cerrar</button>
+        </div>
+
+        <!-- FORM MOVED -->
+      </div>
     </div>
 
     <!-- ====================================================== -->
     <!-- MODAL: VER TODAS LAS VENTAS -->
     <!-- ====================================================== -->
-    <div id="modalVerVentas" class="app-modal">
+    <div id="modalVerVentas" style="display:none;">
       <div class="app-modal-content">
         <div class="app-modal-header">
           <h2 class="app-subtitle">Todas las ventas</h2>
@@ -601,6 +606,27 @@
     </div>
 
     <!-- ========================= -->
+    
+    <!-- MODAL BUSCAR CLIENTE -->
+    <div id="modalBuscarCliente" class="app-modal" style="z-index: 10000;">
+      <div class="app-modal-content">
+        <div class="app-modal-header">
+          <h2 class="app-subtitle">Buscar Cliente</h2>
+          <button type="button" class="app-close" id="cerrarModalBuscarCliente">Cerrar</button>
+        </div>
+        <div class="app-controls">
+          <input type="text" id="inputBuscarClienteModal" class="app-input" placeholder="Buscar por nombre..." />
+          <button type="button" id="btnNuevoClienteDesdeBuscador" class="app-btn-primary">Nuevo Cliente</button>
+        </div>
+        <div class="app-tabla-container">
+          <table class="app-tabla">
+            <thead><tr><th>Nombre</th><th>Teléfono</th></tr></thead>
+            <tbody id="tablaClientesBuscadorBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- SCRIPTS -->
     <!-- ========================= -->
     <script src="../js/auth-ui.js"></script>

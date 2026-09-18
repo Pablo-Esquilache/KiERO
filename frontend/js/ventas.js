@@ -167,9 +167,9 @@ function limpiarFormulario() {
 async function cargarClientes() {
   const clientes = await ClientesAPI.getAll(comercioId);
 
-  clienteVenta.innerHTML = `<option value="">Seleccionar cliente</option>`;
+  // clienteVenta select disabled by refactor
   clientes.forEach((c) => {
-    clienteVenta.innerHTML += `<option value="${c.id}">${c.nombre}</option>`;
+    // option append disabled by refactor
   });
 }
 
@@ -451,10 +451,10 @@ function renderVentasPrincipal(lista) {
       <td>$${Number(v.total).toFixed(2)}</td>
       <td>${v.metodo_pago || "—"}</td>
       <td>
-  <button class="btn-ver-ticket" data-id="${v.id}">Ver</button>
-  <button class="btn-editar" data-id="${v.id}">Editar</button>
-  <button class="btn-eliminar" data-id="${v.id}">🗑</button>
-</td>
+        <button class="btn-ver-ticket" data-id="${v.id}">Ver Ticket</button>
+        <!-- <button class="btn-editar" data-id="${v.id}">Editar</button> -->
+        <!-- <button class="btn-eliminar" data-id="${v.id}">Eliminar</button> -->
+      </td>
     `;
     tablaVentasBody.appendChild(fila);
   });
@@ -1199,3 +1199,105 @@ if (formClienteRapido) {
     }
   });
 }
+
+// ==============================
+// POS REFACTOR LOGIC
+// ==============================
+document.addEventListener("DOMContentLoaded", async () => {
+  const btnToggleVista = document.getElementById("btnToggleVista");
+  const posContainer = document.getElementById("pos-container");
+  const historyContainer = document.getElementById("history-container");
+  const title = document.querySelector(".app-title");
+  
+  if(btnToggleVista) {
+    btnToggleVista.addEventListener("click", () => {
+      if(posContainer.style.display === "none") {
+        posContainer.style.display = "grid";
+        historyContainer.style.display = "none";
+        btnToggleVista.textContent = "Ver Historial del Día";
+        title.textContent = "Punto de Venta";
+      } else {
+        posContainer.style.display = "none";
+        historyContainer.style.display = "block";
+        btnToggleVista.textContent = "Volver a Punto de Venta";
+        title.textContent = "Historial de Ventas";
+      }
+    });
+  }
+
+  // Pre-load POS
+  const hoy = new Date().toLocaleDateString("sv-SE");
+  const fechaVenta = document.getElementById("fechaVenta");
+  if(fechaVenta) {
+    fechaVenta.value = hoy;
+    fechaVenta.readOnly = true;
+  }
+  
+  // Expose Clientes to Modal
+  const btnBuscarCliente = document.getElementById("btnBuscarCliente");
+  const clienteVentaNombre = document.getElementById("clienteVentaNombre");
+  const modalBuscarCliente = document.getElementById("modalBuscarCliente");
+  const cerrarModalBuscarCliente = document.getElementById("cerrarModalBuscarCliente");
+  const tablaClientesBuscadorBody = document.getElementById("tablaClientesBuscadorBody");
+  const inputBuscarClienteModal = document.getElementById("inputBuscarClienteModal");
+  
+  let allClientes = [];
+
+  const openClientModal = async () => {
+    allClientes = await window.ClientesAPI.getAll(comercioId);
+    renderClientesBuscador(allClientes);
+    modalBuscarCliente.style.display = "flex";
+    inputBuscarClienteModal.focus();
+  };
+
+  if(btnBuscarCliente) btnBuscarCliente.addEventListener("click", openClientModal);
+  if(clienteVentaNombre) clienteVentaNombre.addEventListener("click", openClientModal);
+  
+  if(cerrarModalBuscarCliente) {
+    cerrarModalBuscarCliente.addEventListener("click", () => modalBuscarCliente.style.display = "none");
+  }
+
+  if(inputBuscarClienteModal) {
+    inputBuscarClienteModal.addEventListener("input", (e) => {
+      const q = e.target.value.toLowerCase();
+      const filtrados = allClientes.filter(c => c.nombre.toLowerCase().includes(q));
+      renderClientesBuscador(filtrados);
+    });
+  }
+  
+  function renderClientesBuscador(clientes) {
+    if(!tablaClientesBuscadorBody) return;
+    tablaClientesBuscadorBody.innerHTML = "";
+    clientes.forEach(c => {
+      const tr = document.createElement("tr");
+      tr.style.cursor = "pointer";
+      tr.innerHTML = `<td>${c.nombre}</td><td>${c.telefono || '-'}</td>`;
+      tr.addEventListener("click", () => {
+        document.getElementById("clienteVenta").value = c.id;
+        document.getElementById("clienteVentaNombre").value = c.nombre;
+        modalBuscarCliente.style.display = "none";
+      });
+      tablaClientesBuscadorBody.appendChild(tr);
+    });
+  }
+  
+  const btnNuevoClienteDesdeBuscador = document.getElementById("btnNuevoClienteDesdeBuscador");
+  if(btnNuevoClienteDesdeBuscador) {
+    btnNuevoClienteDesdeBuscador.addEventListener("click", () => {
+      modalBuscarCliente.style.display = "none";
+      document.getElementById("btnCrearClienteRapido").click();
+    });
+  }
+
+  // Hook original buttons that are no longer needed
+  const btnNuevaVenta = document.getElementById("btnNuevaVenta");
+  if(btnNuevaVenta) btnNuevaVenta.style.display = "none";
+
+  // Simulate btnNuevaVenta click to preload logic (cargarProductos, cargarClientes, etc) without showing old modal
+  setTimeout(() => {
+    if(btnNuevaVenta) btnNuevaVenta.click();
+    const oldModal = document.getElementById("modalVenta");
+    if(oldModal) oldModal.style.display = "none"; // Ensure it stays hidden
+  }, 500);
+
+});
