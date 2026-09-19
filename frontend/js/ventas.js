@@ -1237,6 +1237,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const btnBuscarCliente = document.getElementById("btnBuscarCliente");
 
   const autocompleteClientes = document.getElementById("autocompleteClientes");
+  const clienteVentaNombre = document.getElementById("clienteVentaNombre");
   
   if (clienteVentaNombre && autocompleteClientes) {
     clienteVentaNombre.addEventListener("input", async (e) => {
@@ -1281,7 +1282,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     // The previous listener was on clienteVentaNombre.
   }
 
-  const clienteVentaNombre = document.getElementById("clienteVentaNombre");
   const modalBuscarCliente = document.getElementById("modalBuscarCliente");
   const cerrarModalBuscarCliente = document.getElementById("cerrarModalBuscarCliente");
   const tablaClientesBuscadorBody = document.getElementById("tablaClientesBuscadorBody");
