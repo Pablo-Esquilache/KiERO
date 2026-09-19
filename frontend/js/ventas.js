@@ -132,7 +132,7 @@ if (btnNuevaVenta) {
     await cargarClientes();
     await cargarProductos();
     await cargarMetodosYDescuentos();
-    modalVenta.style.display = "flex";
+    // modalVenta.style.display = "flex";
   });
 }
 
@@ -625,7 +625,7 @@ function activarBotonesEditar() {
 
       renderCarrito();
 
-      modalVenta.style.display = "flex";
+      // modalVenta.style.display = "flex";
     });
   });
 }
