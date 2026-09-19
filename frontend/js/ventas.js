@@ -1235,6 +1235,52 @@ document.addEventListener("DOMContentLoaded", async () => {
   
   // Expose Clientes to Modal
   const btnBuscarCliente = document.getElementById("btnBuscarCliente");
+
+  const autocompleteClientes = document.getElementById("autocompleteClientes");
+  
+  if (clienteVentaNombre && autocompleteClientes) {
+    clienteVentaNombre.addEventListener("input", async (e) => {
+      const val = e.target.value.toLowerCase().trim();
+      if (!val) {
+        autocompleteClientes.style.display = "none";
+        return;
+      }
+      
+      // Fetch if empty
+      if (!allClientes || allClientes.length === 0) {
+        allClientes = await ClientesAPI.getAll(comercioId);
+      }
+      
+      const filtrados = allClientes.filter(c => c.nombre.toLowerCase().includes(val)).slice(0, 10);
+      
+      autocompleteClientes.innerHTML = "";
+      if (filtrados.length > 0) {
+        filtrados.forEach(c => {
+          const li = document.createElement("li");
+          li.textContent = c.nombre;
+          li.addEventListener("mousedown", (ev) => {
+            ev.preventDefault(); // Prevents blur
+            clienteVenta.value = c.id;
+            clienteVentaNombre.value = c.nombre;
+            autocompleteClientes.style.display = "none";
+          });
+          autocompleteClientes.appendChild(li);
+        });
+        autocompleteClientes.style.display = "block";
+      } else {
+        autocompleteClientes.style.display = "none";
+      }
+    });
+
+    clienteVentaNombre.addEventListener("blur", () => {
+      setTimeout(() => autocompleteClientes.style.display = "none", 150);
+    });
+    
+    // Remove the old click listener that opens the modal
+    // Actually, let's just make sure it doesn't open the modal if we click it.
+    // The previous listener was on clienteVentaNombre.
+  }
+
   const clienteVentaNombre = document.getElementById("clienteVentaNombre");
   const modalBuscarCliente = document.getElementById("modalBuscarCliente");
   const cerrarModalBuscarCliente = document.getElementById("cerrarModalBuscarCliente");
@@ -1251,14 +1297,28 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   if(btnBuscarCliente) btnBuscarCliente.addEventListener("click", openClientModal);
-  if(clienteVentaNombre) clienteVentaNombre.addEventListener("click", openClientModal);
+  if(clienteVentaNombre) // clienteVentaNombre.addEventListener("click", openClientModal);
   
   if(cerrarModalBuscarCliente) {
     cerrarModalBuscarCliente.addEventListener("click", () => modalBuscarCliente.style.display = "none");
   }
 
   if(inputBuscarClienteModal) {
-    inputBuscarClienteModal.addEventListener("input", (e) => {
+    
+  const modalTablaContainer = document.querySelector("#modalBuscarCliente .v-tabla-container");
+  if (modalTablaContainer) {
+    modalTablaContainer.addEventListener("scroll", () => {
+      if (modalTablaContainer.scrollTop + modalTablaContainer.clientHeight >= modalTablaContainer.scrollHeight - 50) {
+        if (modalVisibleCount < currentFilteredClientes.length) {
+          modalVisibleCount += 20;
+          renderClientesBuscadorLazy(true);
+        }
+      }
+    });
+  }
+
+  inputBuscarClienteModal.addEventListener("input", (e) => {
+
       const q = e.target.value.toLowerCase();
       const filtrados = allClientes.filter(c => c.nombre.toLowerCase().includes(q));
       renderClientesBuscador(filtrados);
@@ -1284,7 +1344,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const btnNuevoClienteDesdeBuscador = document.getElementById("btnNuevoClienteDesdeBuscador");
   if(btnNuevoClienteDesdeBuscador) {
     btnNuevoClienteDesdeBuscador.addEventListener("click", () => {
-      modalBuscarCliente.style.display = "none";
+      // DO NOT HIDE modalBuscarCliente so it stays behind
       document.getElementById("btnCrearClienteRapido").click();
     });
   }

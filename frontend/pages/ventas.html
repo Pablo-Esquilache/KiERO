@@ -68,7 +68,10 @@
             <div class="pos-info-box">
               <label>Cliente</label>
               <input type="hidden" id="clienteVenta" required>
-              <input type="text" id="clienteVentaNombre" class="app-input" style="cursor:pointer; width: 100%; margin-bottom: 10px;" placeholder="Seleccionar cliente..." readonly>
+              <div style="position: relative; width: 100%; margin-bottom: 10px;">
+                <input type="text" id="clienteVentaNombre" class="app-input" style="width: 100%;" placeholder="Buscar cliente..." autocomplete="off">
+                <ul id="autocompleteClientes" class="app-autocomplete-list" style="display:none;"></ul>
+              </div>
               <div style="display: flex; gap: 8px;">
                 <button type="button" id="btnBuscarCliente" class="app-btn-secondary" style="flex: 1; padding: 10px;" title="Buscar Cliente">🔍 Buscar</button>
                 <button type="button" id="btnCrearClienteRapido" class="app-btn-primary" style="flex: 1; padding: 10px; margin: 0;" title="Crear nuevo cliente">+ Nuevo</button>
