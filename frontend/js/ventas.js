@@ -1191,9 +1191,18 @@ if (formClienteRapido) {
       alert("Cliente guardado correctamente");
       modalCrearClienteRapido.style.display = "none";
       
-      // Recargar lista y seleccionar al recién creado
-      await cargarClientes();
-      clienteVenta.value = nuevoCliente.id;
+      const modalBuscar = document.getElementById("modalBuscarCliente");
+      if (modalBuscar && modalBuscar.style.display === "flex") {
+        allClientes = await ClientesAPI.getAll(comercioId);
+        currentFilteredClientes = allClientes;
+        modalVisibleCount = 20;
+        renderClientesBuscadorLazy(false);
+      } else {
+        const cVal = document.getElementById("clienteVenta");
+        const cNom = document.getElementById("clienteVentaNombre");
+        if (cVal) cVal.value = nuevoCliente.id;
+        if (cNom) cNom.value = nuevoCliente.nombre;
+      }
     } catch (err) {
       alert("Error guardando cliente rápido: " + (err.message || "Error interno"));
     }
