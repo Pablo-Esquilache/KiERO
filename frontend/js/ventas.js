@@ -1244,7 +1244,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let allClientes = [];
 
   const openClientModal = async () => {
-    allClientes = await window.ClientesAPI.getAll(comercioId);
+    allClientes = await ClientesAPI.getAll(comercioId);
     renderClientesBuscador(allClientes);
     modalBuscarCliente.style.display = "flex";
     inputBuscarClienteModal.focus();
