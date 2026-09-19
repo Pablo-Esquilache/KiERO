@@ -655,3 +655,168 @@ body.role-admin #tab-reportes {
     grid-template-columns: 1fr;
   }
 }
+
+/* ==============================
+   POS 80/20 LAYOUT
+============================== */
+.app-container {
+  /* Hacemos que ocupe todo el alto disponible menos el navbar */
+  height: calc(100vh - 60px);
+  display: flex;
+  flex-direction: column;
+  padding: 15px 20px;
+  overflow: hidden; /* Evitar scroll de la pagina entera */
+}
+
+.pos-header {
+  flex-shrink: 0;
+  margin-bottom: 10px;
+}
+.pos-header .app-title {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.pos-layout {
+  flex-grow: 1;
+  display: flex;
+  min-height: 0; /* Important for inner scrolling */
+}
+
+.pos-layout .app-form-venta {
+  display: grid;
+  grid-template-columns: 22% 78%; /* 20/80 ratio */
+  gap: 20px;
+  width: 100%;
+  height: 100%;
+}
+
+/* --- LEFT COLUMN --- */
+.pos-left {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+}
+
+.pos-info-box {
+  display: flex;
+  flex-direction: column;
+}
+.pos-info-box label {
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* --- RIGHT COLUMN --- */
+.pos-right {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  height: 100%;
+  min-height: 0; /* needed for flex children overflow */
+}
+
+.pos-right-top {
+  display: flex;
+  gap: 10px;
+  background: #ffffff;
+  padding: 15px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+  flex-shrink: 0;
+}
+
+.pos-right-middle {
+  flex-grow: 1;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+  overflow-y: auto; /* SCROLL DEL CARRITO */
+  min-height: 0;
+}
+
+.pos-right-middle thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #f8fafc;
+}
+
+.pos-right-bottom {
+  flex-shrink: 0;
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 -4px 15px rgba(0,0,0,0.03);
+}
+
+.pos-totals-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.pos-tot-col {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.pos-tot-col label {
+  font-weight: 600;
+  color: #64748b;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+}
+.pos-val {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.pos-final {
+  background: #f8fafc;
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 2px solid #e2e8f0;
+}
+.pos-val-final {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #10b981;
+}
+
+.app-btn-guardar {
+  width: 100%;
+  padding: 20px;
+  font-size: 1.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  background-color: #10b981;
+  transition: all 0.2s;
+  border-radius: 10px;
+}
+.app-btn-guardar:hover {
+  background-color: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+}
+
+#history-container {
+  overflow-y: auto;
+  height: 100%;
+}

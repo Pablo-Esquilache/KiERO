@@ -50,108 +50,88 @@
     <!-- CONTENIDO PRINCIPAL -->
     <!-- ========================= -->
     <main class="app-container">
-      <div class="app-controls" style="margin-bottom: 20px;"><h1 class="app-title" style="margin-bottom:0;">Punto de Venta</h1><button id="btnToggleVista" class="app-btn-secondary">Ver Historial del Día</button></div>
+      
 
       <!-- ========================= -->
-      <div id="pos-container" class="pos-container">
-<form class="app-form-venta">
-          <!-- DATOS GENERALES -->
-          <div class="app-form-row">
-            <div class="app-form-group">
-              <label>Fecha</label>
-              <input
-                type="date"
-                id="fechaVenta"
-                class="app-input"
-                required
-                readonly
-              />
+      
+      <div class="pos-header"><h1 class="app-title">Punto de Venta</h1></div>
+      <div id="pos-container" class="pos-layout">
+        <form class="app-form-venta">
+          <!-- LEFT COLUMN (20%) -->
+          <div class="pos-left">
+            <div class="pos-info-box">
+              <label>Fecha de hoy</label>
+              <input type="date" id="fechaVenta" class="app-input" required readonly />
+              <button type="button" id="btnToggleVista" class="app-btn-secondary" style="width: 100%; margin-top: 15px;">Ver Historial del Día</button>
             </div>
 
-            <div class="app-form-group">
+            <div class="pos-info-box">
               <label>Cliente</label>
-              <div style="display: flex; gap: 8px; width: 100%;">
-                <input type="hidden" id="clienteVenta" required><input type="text" id="clienteVentaNombre" class="app-input" style="flex: 1; cursor:pointer;" placeholder="Seleccionar cliente (Click aquí)" readonly><button type="button" id="btnBuscarCliente" class="app-btn-secondary" style="padding: 0 12px; font-weight: bold; font-size: 1.2rem; flex: 0 0 auto;" title="Buscar Cliente">🔍</button>
-                <button type="button" id="btnCrearClienteRapido" class="app-btn-secondary" style="padding: 0 12px; font-weight: bold; font-size: 1.2rem; flex: 0 0 auto;" title="Crear nuevo cliente">+</button>
+              <input type="hidden" id="clienteVenta" required>
+              <input type="text" id="clienteVentaNombre" class="app-input" style="cursor:pointer; width: 100%; margin-bottom: 10px;" placeholder="Seleccionar cliente..." readonly>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" id="btnBuscarCliente" class="app-btn-secondary" style="flex: 1; padding: 10px;" title="Buscar Cliente">🔍 Buscar</button>
+                <button type="button" id="btnCrearClienteRapido" class="app-btn-primary" style="flex: 1; padding: 10px; margin: 0;" title="Crear nuevo cliente">+ Nuevo</button>
               </div>
             </div>
           </div>
 
-          <!-- AGREGAR PRODUCTO -->
-          <div class="app-carrito-add">
-            <input
-              type="text"
-              id="barcodeVenta"
-              class="app-input"
-              placeholder="📱 Escanear con pistola..."
-              style="max-width: 250px; border-color: #3fd18c;"
-            />
-            <select id="productoVenta" class="app-input"></select>
-            <button
-              type="button"
-              id="btnBuscarProducto"
-              class="app-btn-secondary"
-            >
-              🔍
-            </button>
-            <input
-              type="number"
-              id="cantidadVenta"
-              min="1"
-              class="app-input"
-              placeholder="Cant."
-            />
-            <button
-              type="button"
-              id="btnAgregarProducto"
-              class="app-btn-secondary"
-            >
-              Agregar
-            </button>
-          </div>
-
-          <!-- CARRITO -->
-          <div class="app-carrito-container">
-            <table class="app-tabla">
-              <thead>
-                <tr>
-                  <th>Producto</th>
-                  <th>Cant.</th>
-                  <th>Precio</th>
-                  <th>Subtotal</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="carritoBody"></tbody>
-            </table>
-          </div>
-
-          <!-- RESUMEN -->
-          <div class="app-resumen">
-            <div>Subtotal: $<span id="subtotalVenta">0.00</span></div>
-
-            <div class="app-form-group">
-              <label>Método de pago</label>
-              <select id="metodoPagoVenta" class="app-input" required>
-                <!-- Llenado dinámicamente -->
-              </select>
+          <!-- RIGHT COLUMN (80%) -->
+          <div class="pos-right">
+            
+            <!-- TOP: Product Search -->
+            <div class="pos-right-top">
+              <input type="text" id="barcodeVenta" class="app-input" placeholder="📱 Escanear con pistola..." style="flex: 3; border-color: #3fd18c; font-size: 1.1rem; padding: 15px;" />
+              
+              <!-- El select sigue existiendo para no romper js, pero visualmente lo achicamos o le damos otro rol -->
+              <select id="productoVenta" class="app-input" style="flex: 2;"></select>
+              
+              <button type="button" id="btnBuscarProducto" class="app-btn-secondary" style="padding: 0 15px;" title="Búsqueda Avanzada">🔍</button>
+              
+              <input type="number" id="cantidadVenta" min="1" class="app-input" placeholder="Cant." style="flex: 0.5; max-width: 80px; text-align: center;" />
+              <button type="button" id="btnAgregarProducto" class="app-btn-secondary" style="padding: 0 20px;">Agregar</button>
             </div>
 
-            <div class="app-form-group">
-              <label>Descuento</label>
-              <select id="descuentoVenta" class="app-input app-input-small">
-                <!-- Llenado dinámicamente -->
-              </select>
+            <!-- MIDDLE: Cart -->
+            <div class="app-carrito-container pos-right-middle">
+              <table class="app-tabla">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th style="width: 80px;">Cant.</th>
+                    <th style="width: 120px;">Precio</th>
+                    <th style="width: 120px;">Subtotal</th>
+                    <th style="width: 50px;"></th>
+                  </tr>
+                </thead>
+                <tbody id="carritoBody"></tbody>
+              </table>
             </div>
 
-            <div class="app-total-final">
-              Total Final: $<span id="totalFinalVenta">0.00</span>
+            <!-- BOTTOM: Totals -->
+            <div class="pos-right-bottom">
+              <div class="pos-totals-grid">
+                <div class="pos-tot-col">
+                  <label>Subtotal</label>
+                  <div class="pos-val">$<span id="subtotalVenta">0.00</span></div>
+                </div>
+                <div class="pos-tot-col">
+                  <label>Descuento</label>
+                  <select id="descuentoVenta" class="app-input"></select>
+                </div>
+                <div class="pos-tot-col">
+                  <label>Método de pago</label>
+                  <select id="metodoPagoVenta" class="app-input" required></select>
+                </div>
+                <div class="pos-tot-col pos-final">
+                  <label>Total Final</label>
+                  <div class="pos-val-final">$<span id="totalFinalVenta">0.00</span></div>
+                </div>
+              </div>
+              <button type="submit" class="app-btn-primary app-btn-guardar">COBRAR VENTA</button>
             </div>
+
           </div>
-
-          <button type="submit" class="app-btn-primary app-btn-guardar">
-            Guardar venta
-          </button>
         </form>
       </div>
 
