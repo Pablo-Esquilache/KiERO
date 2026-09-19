@@ -659,14 +659,7 @@ body.role-admin #tab-reportes {
 /* ==============================
    POS 80/20 LAYOUT
 ============================== */
-.app-container {
-  /* Hacemos que ocupe todo el alto disponible menos el navbar */
-  height: calc(100vh - 60px);
-  display: flex;
-  flex-direction: column;
-  padding: 15px 20px;
-  overflow: hidden; /* Evitar scroll de la pagina entera */
-}
+.app-container {\n  max-width: 100% !important;\n  margin: 0 !important;\n  padding: 10px 15px !important;\n  height: calc(100vh - 64px);\n  display: flex;\n  flex-direction: column;\n  overflow: hidden;\n}
 
 .pos-header {
   flex-shrink: 0;
@@ -753,14 +746,7 @@ body.role-admin #tab-reportes {
   background: #f8fafc;
 }
 
-.pos-right-bottom {
-  flex-shrink: 0;
-  background: #ffffff;
-  padding: 20px;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 -4px 15px rgba(0,0,0,0.03);
-}
+.pos-right-bottom {\n  flex-shrink: 0;\n  background: #ffffff;\n  padding: 15px 20px;\n  border-radius: 12px;\n  border: 1px solid #e2e8f0;\n  box-shadow: 0 -4px 15px rgba(0,0,0,0.03);\n}
 
 .pos-totals-grid {
   display: grid;
@@ -801,8 +787,7 @@ body.role-admin #tab-reportes {
 
 .app-btn-guardar {
   width: 100%;
-  padding: 20px;
-  font-size: 1.6rem;
+  padding: 15px;\n  font-size: 1.4rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 2px;
