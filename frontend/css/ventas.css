@@ -874,3 +874,22 @@ body.role-admin #tab-reportes {
 .app-autocomplete-list li:last-child {
   border-bottom: none;
 }
+\n
+/* Thin out top bar */
+.pos-search-bar {
+  padding: 8px 12px !important;
+}
+.pos-search-bar .app-input, .pos-search-bar .app-btn-secondary, .pos-search-bar .app-btn-primary {
+  height: 38px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  line-height: 36px !important;
+}
+#modalProductos .app-modal-content {
+  width: 90% !important;
+  max-width: 800px !important;
+}
+#modalProductos .app-tabla-container {
+  max-height: 50vh;
+  overflow-y: auto;
+}

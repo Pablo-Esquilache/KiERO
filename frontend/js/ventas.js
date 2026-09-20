@@ -202,6 +202,14 @@ function limpiarFormulario() {
 // ==============================
 async function cargarClientes() {
   const clientes = await ClientesAPI.getAll(comercioId);
+    
+    // Auto-select Consumidor Final
+    const consumidorFinal = clientes.find(c => c.nombre.trim().toLowerCase() === 'consumidor final');
+    if (consumidorFinal) {
+      document.getElementById("clienteVenta").value = consumidorFinal.id;
+      document.getElementById("clienteVentaNombre").value = consumidorFinal.nombre;
+    }
+
 
   // clienteVenta select disabled by refactor
   clientes.forEach((c) => {
@@ -1471,6 +1479,53 @@ document.addEventListener("DOMContentLoaded", () => {
       
       ventasCachePrincipal = filtered;
       renderVentasPrincipal(filtered);
+    });
+  }
+});
+\n
+// ==============================
+// AUTOCOMPLETE PRODUCTOS
+// ==============================
+document.addEventListener("DOMContentLoaded", () => {
+  const productoVentaNombre = document.getElementById("productoVentaNombre");
+  const productoVentaId = document.getElementById("productoVenta");
+  const autocompleteProductos = document.getElementById("autocompleteProductos");
+
+  if (productoVentaNombre && autocompleteProductos) {
+    productoVentaNombre.addEventListener("input", (e) => {
+      const val = e.target.value.toLowerCase().trim();
+      if (!val) {
+        autocompleteProductos.style.display = "none";
+        productoVentaId.value = "";
+        return;
+      }
+      
+      const filtrados = (typeof productosCache !== 'undefined' ? productosCache : []).filter(p => p.nombre.toLowerCase().includes(val) || (p.codigo_barras && p.codigo_barras.toLowerCase().includes(val))).slice(0, 10);
+      
+      autocompleteProductos.innerHTML = "";
+      if (filtrados.length > 0) {
+        filtrados.forEach(p => {
+          const li = document.createElement("li");
+          li.innerHTML = `${p.nombre} - $${Number(p.precio_venta).toFixed(2)}`;
+          li.addEventListener("mousedown", (ev) => {
+            ev.preventDefault(); // Prevents blur
+            productoVentaId.value = p.id;
+            productoVentaNombre.value = p.nombre;
+            autocompleteProductos.style.display = "none";
+            // Auto focus cantidad
+            const cant = document.getElementById("cantidadVenta");
+            if (cant) cant.focus();
+          });
+          autocompleteProductos.appendChild(li);
+        });
+        autocompleteProductos.style.display = "block";
+      } else {
+        autocompleteProductos.style.display = "none";
+      }
+    });
+
+    productoVentaNombre.addEventListener("blur", () => {
+      setTimeout(() => autocompleteProductos.style.display = "none", 150);
     });
   }
 });
