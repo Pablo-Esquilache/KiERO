@@ -131,25 +131,13 @@
             </div>
             <div class="app-form-group">
               <label>Localidad</label>
-              <div style="display: flex; gap: 8px; align-items: center">
-                <select id="localidad" class="app-input">
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <select id="localidad" class="app-input" style="flex: 1;">
                   <option value="">Seleccionar localidad</option>
                 </select>
-                <button
-                  type="button"
-                  id="btnNuevaLocalidad"
-                  class="app-btn-secondary"
-                >
-                  Nueva
-                </button>
+                <input type="text" id="nuevaLocalidad" class="app-input" placeholder="Escribí nueva localidad" style="display: none; flex: 1;" />
+                <button type="button" id="btnNuevaLocalidad" class="app-btn-secondary" style="flex-shrink: 0;">Nueva</button>
               </div>
-              <input
-                type="text"
-                id="nuevaLocalidad"
-                class="app-input"
-                placeholder="Escribí nueva localidad"
-                style="display: none; margin-top: 8px"
-              />
             </div>
           </div>
 

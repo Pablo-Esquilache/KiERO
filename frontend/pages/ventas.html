@@ -515,7 +515,7 @@
     <div id="modalCrearClienteRapido" class="app-modal" style="z-index: 11000;">
       <div class="app-modal-content-producto">
         <div class="app-modal-header">
-          <h2 class="app-subtitle">Nuevo Cliente Rápido</h2>
+          <h2 class="app-subtitle">Nuevo Cliente</h2>
           <button type="button" class="app-close" id="cerrarModalClienteRapido">Cerrar</button>
         </div>
 
@@ -553,21 +553,13 @@
             </div>
             <div class="app-form-group">
               <label>Localidad</label>
-              <div style="display: flex; gap: 8px; align-items: center">
-                <select id="localidadClienteRapido" class="app-input">
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <select id="localidadClienteRapido" class="app-input" style="flex: 1;">
                   <option value="">Seleccionar localidad</option>
                 </select>
-                <button type="button" id="btnNuevaLocalidadClienteRapido" class="app-btn-secondary">
-                  Nueva
-                </button>
+                <input type="text" id="nuevaLocalidadClienteRapido" class="app-input" placeholder="Escribí nueva localidad" style="display: none; flex: 1;" />
+                <button type="button" id="btnNuevaLocalidadClienteRapido" class="app-btn-secondary" style="flex-shrink: 0;">Nueva</button>
               </div>
-              <input
-                type="text"
-                id="nuevaLocalidadClienteRapido"
-                class="app-input"
-                placeholder="Escribí nueva localidad"
-                style="display: none; margin-top: 8px"
-              />
             </div>
           </div>
 

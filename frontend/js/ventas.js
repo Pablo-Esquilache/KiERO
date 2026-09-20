@@ -204,7 +204,7 @@ async function cargarClientes() {
   const clientes = await ClientesAPI.getAll(comercioId);
     
     // Auto-select Consumidor Final
-    const consumidorFinal = clientes.find(c => c.nombre.trim().toLowerCase() === 'consumidor final');
+    const consumidorFinal = clientes.find(c => c.nombre && c.nombre.toLowerCase().includes('consumidor'));
     if (consumidorFinal) {
       document.getElementById("clienteVenta").value = consumidorFinal.id;
       document.getElementById("clienteVentaNombre").value = consumidorFinal.nombre;
@@ -1549,4 +1549,20 @@ document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => autocompleteProductos.style.display = "none", 150);
     });
   }
+});
+\n
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    if (typeof allClientes !== 'undefined' && allClientes) {
+      const cf = allClientes.find(c => c.nombre && c.nombre.toLowerCase().includes('consumidor'));
+      if (cf) {
+        const inputId = document.getElementById("clienteVenta");
+        const inputNombre = document.getElementById("clienteVentaNombre");
+        if (inputId && inputNombre && !inputId.value) {
+          inputId.value = cf.id;
+          inputNombre.value = cf.nombre;
+        }
+      }
+    }
+  }, 1500); // 1.5s delay to ensure everything loaded
 });
