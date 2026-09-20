@@ -93,7 +93,7 @@ async function obtenerCaja() {
       // Forzamos a mostrar la caja abierta para que la pueda cerrar
       estadoCajaSpan.textContent = `Abierta (${fechaCajaDate.toLocaleDateString("es-AR")})`;
       bloqueApertura.style.display = "none";
-      bloqueResumen.style.display = "block";
+      bloqueResumen.style.display = "flex";
       
       await calcularResumen();
       return; // Detenemos la ejecución normal para obligarlo a quedarse en este estado visual
@@ -108,7 +108,7 @@ async function obtenerCaja() {
   } else if (cajaActual.estado === "abierta") {
     estadoCajaSpan.textContent = "Abierta";
     bloqueApertura.style.display = "none";
-    bloqueResumen.style.display = "block";
+    bloqueResumen.style.display = "flex";
 
     await calcularResumen();
 
