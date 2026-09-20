@@ -225,18 +225,39 @@ async function cargarMetodosYDescuentos() {
     const rMetodos = await fetch(`/api/ajustes/metodos_pago/${comercioId}`);
     if (rMetodos.ok) {
       const metodos = await rMetodos.json();
-      metodoPagoVenta.innerHTML = metodos.filter(m => m.activo).map(m => `<option value="${m.nombre}">${m.nombre}</option>`).join("");
+      if (metodos.length > 0) {
+        metodoPagoVenta.innerHTML = metodos.filter(m => m.activo).map(m => `<option value="${m.nombre}">${m.nombre}</option>`).join("");
+      } else {
+        metodoPagoVenta.innerHTML = '<option value="Efectivo">Efectivo</option>';
+      }
+    } else {
+      metodoPagoVenta.innerHTML = '<option value="Efectivo">Efectivo</option>';
     }
+  } catch (err) { 
+    console.error("Error cargando metodos", err);
+    metodoPagoVenta.innerHTML = '<option value="Efectivo">Efectivo</option>';
+  }
+  metodoPagoVenta.value = "Efectivo"; // Default
 
+  try {
     const rDescuentos = await fetch(`/api/ajustes/descuentos/${comercioId}`);
     if (rDescuentos.ok) {
       const descuentos = await rDescuentos.json();
-      descuentoVenta.innerHTML = descuentos.filter(d => d.activo).map(d => `<option value="${d.porcentaje}">${d.porcentaje}%</option>`).join("");
+      if (descuentos.length > 0) {
+        descuentoVenta.innerHTML = descuentos.filter(d => d.activo).map(d => `<option value="${d.porcentaje}">${d.porcentaje}%</option>`).join("");
+      } else {
+        descuentoVenta.innerHTML = '<option value="0">0%</option>';
+      }
+    } else {
+      descuentoVenta.innerHTML = '<option value="0">0%</option>';
     }
   } catch (err) { 
-    console.error("Error cargando metodos y descuentos", err);
+    console.error("Error cargando descuentos", err);
+    descuentoVenta.innerHTML = '<option value="0">0%</option>';
   }
+  descuentoVenta.value = "0"; // Default
 }
+
 
 // ==============================
 // PRODUCTOS
@@ -1506,7 +1527,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (filtrados.length > 0) {
         filtrados.forEach(p => {
           const li = document.createElement("li");
-          li.innerHTML = `${p.nombre} - $${Number(p.precio_venta).toFixed(2)}`;
+          li.innerHTML = `${p.nombre} - $${Number(p.precio).toFixed(2)}`;
           li.addEventListener("mousedown", (ev) => {
             ev.preventDefault(); // Prevents blur
             productoVentaId.value = p.id;
