@@ -16,6 +16,10 @@ let comercioId = session?.comercio_id || null;
 // --- GLOBAL STATE FOR MODALS ---
 let allClientes = [];
 let modalVisibleCount = 20;
+
+let ventasVisibleCount = 15;
+let currentFilteredVentas = [];
+
 let currentFilteredClientes = [];
 
 const renderClientesBuscadorLazy = (append = false) => {
@@ -470,31 +474,42 @@ const ventasHoy = ventas.filter((v) => {
   renderVentasPrincipal(ventasHoy);
 }
 // ==============================
-function renderVentasPrincipal(lista) {
-  tablaVentasBody.innerHTML = "";
 
-  lista.forEach((v) => {
+const renderVentasPrincipalLazy = (append = false) => {
+  if (!tablaVentasBody) return;
+  if (!append) tablaVentasBody.innerHTML = "";
+  
+  const limit = Math.min(ventasVisibleCount, currentFilteredVentas.length);
+  const startIndex = append ? ventasVisibleCount - 15 : 0;
+
+  for (let i = startIndex; i < limit; i++) {
+    const v = currentFilteredVentas[i];
     const fila = document.createElement("tr");
     fila.innerHTML = `
       <td>${formatearFecha(v.fecha)}</td>
-      <td>${v.cliente_nombre || "—"}</td>
-      <td>$${Number(v.total_bruto).toFixed(2)}</td>
-      <td>$${Number(v.descuento_monto).toFixed(2)}</td>
-      <td>$${Number(v.total).toFixed(2)}</td>
-      <td>${v.metodo_pago || "—"}</td>
+      <td>${v.cliente_nombre || "-"}</td>
+      <td>${Number(v.total_bruto).toFixed(2)}</td>
+      <td>${Number(v.descuento_monto).toFixed(2)}</td>
+      <td>${Number(v.total).toFixed(2)}</td>
+      <td>${v.metodo_pago || "-"}</td>
       <td>
         <button class="btn-ver-ticket" data-id="${v.id}">Ver Ticket</button>
-        <!-- <button class="btn-editar" data-id="${v.id}">Editar</button> -->
-        <!-- <button class="btn-eliminar" data-id="${v.id}">Eliminar</button> -->
       </td>
     `;
     tablaVentasBody.appendChild(fila);
-  });
-
+  }
+  
   activarBotonesEliminar();
   activarBotonesVerTicket();
   activarBotonesEditar();
+};
+
+function renderVentasPrincipal(lista) {
+  currentFilteredVentas = lista;
+  ventasVisibleCount = 15;
+  renderVentasPrincipalLazy(false);
 }
+
 
 // ==============================
 // FILTROS PRINCIPAL
@@ -1387,4 +1402,75 @@ document.addEventListener("DOMContentLoaded", async () => {
     if(oldModal) oldModal.style.display = "none"; // Ensure it stays hidden
   }, 500);
 
+});
+
+
+// Ticket Modal Listeners
+document.addEventListener("DOMContentLoaded", () => {
+  const btnAceptarTicketExito = document.getElementById("btnAceptarTicketExito");
+  const modalTicketExito = document.getElementById("modalTicketExito");
+  const btnImprimirTicketExito = document.getElementById("btnImprimirTicketExito");
+
+  if(btnAceptarTicketExito) {
+    btnAceptarTicketExito.addEventListener("click", () => {
+      modalTicketExito.style.display = "none";
+      // Actualizar listado de fondo
+      cargarVentas();
+    });
+  }
+
+  if(btnImprimirTicketExito) {
+    btnImprimirTicketExito.addEventListener("click", () => {
+      const contenido = document.getElementById("ticketExitoContenido").innerHTML;
+      const ventana = window.open('', '_blank', 'width=300,height=500');
+      ventana.document.write('<html><head><title>Imprimir Ticket</title></head><body style="font-family: monospace;">');
+      ventana.document.write(contenido);
+      ventana.document.write('</body></html>');
+      ventana.document.close();
+      ventana.onload = () => {
+        ventana.print();
+        ventana.close();
+      };
+    });
+  }
+
+  // History Filter and Volver Listeners
+  const btnVolverVentas = document.getElementById("btnVolverVentas");
+  const posContainer = document.getElementById("pos-container");
+  const historyContainer = document.getElementById("history-container");
+  const title = document.querySelector(".app-title");
+  
+  if (btnVolverVentas) {
+    btnVolverVentas.addEventListener("click", () => {
+      posContainer.style.display = "grid";
+      historyContainer.style.display = "none";
+      title.textContent = "Punto de Venta";
+    });
+  }
+
+  const filtroFechaHistorial = document.getElementById("filtroFechaHistorial");
+  if (filtroFechaHistorial) {
+    // Set default to today
+    const hoyLocal = new Date();
+    // Format YYYY-MM-DD
+    const tzoffset = hoyLocal.getTimezoneOffset() * 60000;
+    const localISOTime = (new Date(Date.now() - tzoffset)).toISOString().slice(0, 10);
+    filtroFechaHistorial.value = localISOTime;
+
+    filtroFechaHistorial.addEventListener("change", (e) => {
+      const selectedDate = e.target.value; // YYYY-MM-DD
+      if (!selectedDate) {
+        renderVentasPrincipal(ventasCacheModal); // all
+        return;
+      }
+      
+      const filtered = ventasCacheModal.filter(v => {
+        if (!v.fecha) return false;
+        return v.fecha.startsWith(selectedDate); // Assumes v.fecha is ISO format from db
+      });
+      
+      ventasCachePrincipal = filtered;
+      renderVentasPrincipal(filtered);
+    });
+  }
 });
