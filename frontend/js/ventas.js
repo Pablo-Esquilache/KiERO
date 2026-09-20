@@ -13,6 +13,38 @@ const session = JSON.parse(localStorage.getItem("session"));
 const firebaseUID = session?.uid;
 let comercioId = session?.comercio_id || null;
 
+// --- GLOBAL STATE FOR MODALS ---
+let allClientes = [];
+let modalVisibleCount = 20;
+let currentFilteredClientes = [];
+
+const renderClientesBuscadorLazy = (append = false) => {
+  const tabla = document.getElementById("tablaClientesBuscadorBody");
+  if (!tabla) return;
+  if (!append) {
+    tabla.innerHTML = "";
+  }
+  const limit = Math.min(modalVisibleCount, currentFilteredClientes.length);
+  const startIndex = append ? modalVisibleCount - 20 : 0;
+  for (let i = startIndex; i < limit; i++) {
+    const c = currentFilteredClientes[i];
+    const tr = document.createElement("tr");
+    tr.style.cursor = "pointer";
+    tr.innerHTML = `
+      <td>${c.nombre}</td>
+      <td>${c.telefono || "-"}</td>
+      <td>${c.email || "-"}</td>
+    `;
+    tr.addEventListener("click", () => {
+      document.getElementById("clienteVenta").value = c.id;
+      document.getElementById("clienteVentaNombre").value = c.nombre;
+      document.getElementById("modalBuscarCliente").style.display = "none";
+    });
+    tabla.appendChild(tr);
+  }
+};
+
+
 async function cargarComercio() {
   if (!firebaseUID) return;
   const data = await ComercioAPI.getByUid(firebaseUID);
@@ -1296,11 +1328,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   const tablaClientesBuscadorBody = document.getElementById("tablaClientesBuscadorBody");
   const inputBuscarClienteModal = document.getElementById("inputBuscarClienteModal");
   
-  let allClientes = [];
-
   const openClientModal = async () => {
     allClientes = await ClientesAPI.getAll(comercioId);
-    renderClientesBuscador(allClientes);
+    currentFilteredClientes = allClientes;
+    modalVisibleCount = 20;
+    renderClientesBuscadorLazy(false);
     modalBuscarCliente.style.display = "flex";
     inputBuscarClienteModal.focus();
   };
@@ -1327,28 +1359,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   inputBuscarClienteModal.addEventListener("input", (e) => {
-
       const q = e.target.value.toLowerCase();
-      const filtrados = allClientes.filter(c => c.nombre.toLowerCase().includes(q));
-      renderClientesBuscador(filtrados);
+      currentFilteredClientes = allClientes.filter(c => c.nombre.toLowerCase().includes(q));
+      modalVisibleCount = 20;
+      renderClientesBuscadorLazy(false);
     });
   }
   
-  function renderClientesBuscador(clientes) {
-    if(!tablaClientesBuscadorBody) return;
-    tablaClientesBuscadorBody.innerHTML = "";
-    clientes.forEach(c => {
-      const tr = document.createElement("tr");
-      tr.style.cursor = "pointer";
-      tr.innerHTML = `<td>${c.nombre}</td><td>${c.telefono || '-'}</td>`;
-      tr.addEventListener("click", () => {
-        document.getElementById("clienteVenta").value = c.id;
-        document.getElementById("clienteVentaNombre").value = c.nombre;
-        modalBuscarCliente.style.display = "none";
-      });
-      tablaClientesBuscadorBody.appendChild(tr);
-    });
-  }
+  
   
   const btnNuevoClienteDesdeBuscador = document.getElementById("btnNuevoClienteDesdeBuscador");
   if(btnNuevoClienteDesdeBuscador) {
