@@ -874,12 +874,12 @@ body.role-admin #tab-reportes {
 .app-autocomplete-list li:last-child {
   border-bottom: none;
 }
-\n
+
 /* Thin out top bar */
-.pos-search-bar {
+.pos-right-top {
   padding: 8px 12px !important;
 }
-.pos-search-bar .app-input, .pos-search-bar .app-btn-secondary, .pos-search-bar .app-btn-primary {
+.pos-right-top .app-input, .pos-right-top .app-btn-secondary, .pos-right-top .app-btn-primary {
   height: 38px !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;

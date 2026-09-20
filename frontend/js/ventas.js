@@ -1482,7 +1482,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-\n
+
 // ==============================
 // AUTOCOMPLETE PRODUCTOS
 // ==============================
