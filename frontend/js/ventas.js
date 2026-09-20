@@ -1550,7 +1550,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-\n
+
 window.addEventListener('load', () => {
   setTimeout(() => {
     if (typeof allClientes !== 'undefined' && allClientes) {

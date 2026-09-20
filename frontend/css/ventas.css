@@ -893,7 +893,7 @@ body.role-admin #tab-reportes {
   max-height: 50vh;
   overflow-y: auto;
 }
-\n
+
 /* Fix for native selects being crushed */
 select#metodoPagoVenta, select#descuentoVenta {
   height: 38px !important;
