@@ -74,18 +74,9 @@ async function obtenerCaja() {
 
   // Verificamos si la caja devuelta es de un día anterior y sigue abierta
   if (cajaActual && cajaActual.estado === "abierta") {
-    const hoy = new Date();
-    // La DB devuelve la fecha (generalmente un string ISO o timestamp sin timezone)
-    // Creamos localmente la fecha de la caja teniendo cuidado de usar horas locales para evitar el desfasaje del UTC
-    // Un simple slice para parsearla como local ayuda a evitar que "2023-01-02T00:00:00.000Z" se vea como día - 1
-    const [year, month, day] = cajaActual.fecha.split("T")[0].split("-");
-    const fechaCajaDate = new Date(year, month - 1, day);
-
-    // Comparamos anio, mes, y día puramente
-    const esDiaAnterior = 
-      fechaCajaDate.getDate() !== hoy.getDate() ||
-      fechaCajaDate.getMonth() !== hoy.getMonth() ||
-      fechaCajaDate.getFullYear() !== hoy.getFullYear();
+    const hoyString = new Date().toLocaleDateString('sv-SE');
+    const cajaString = cajaActual.fecha.split("T")[0];
+    const esDiaAnterior = hoyString !== cajaString;
 
     if (esDiaAnterior) {
       alert("¡Atención! Tienes una caja abierta de días anteriores. Debes cerrarla antes de continuar operando el día de hoy.");
