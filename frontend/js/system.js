@@ -99,20 +99,15 @@ document.addEventListener("keydown", (e) => {
 
 
 // ==========================================
+// ==========================================
 // VALIDACIÓN GLOBAL: CAJA ABIERTA PARA VENTAS
 // ==========================================
-document.addEventListener("DOMContentLoaded", async () => {
+(async () => {
   const session = JSON.parse(localStorage.getItem("session"));
   const comercioId = session?.comercio_id;
   
   if (comercioId) {
-    const navLinks = document.querySelectorAll(".app-navbar-menu a");
-    let ventasLink = null;
-    navLinks.forEach(link => {
-      if (link.getAttribute("href") === "ventas.html") {
-        ventasLink = link;
-      }
-    });
+    const ventasLink = document.querySelector("#tab-ventas a");
 
     if (ventasLink) {
       try {
@@ -121,7 +116,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           // Bloquear visualmente en el menú global
           ventasLink.style.backgroundColor = "#444";
           ventasLink.style.color = "#888";
-          ventasLink.innerHTML = "Ventas 🔒";
+          ventasLink.innerHTML = "Ventas \uD83D\uDD12";
           ventasLink.title = "Debes abrir la caja para acceder a Ventas";
         } else {
           // Si por algún motivo estaba bloqueado y se abre (por ej. recarga manual)
@@ -136,4 +131,4 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     }
   }
-});
+})();
