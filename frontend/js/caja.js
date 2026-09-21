@@ -79,7 +79,7 @@ async function obtenerCaja() {
     const esDiaAnterior = hoyString !== cajaString;
 
     if (esDiaAnterior) {
-      // alert removed per user request to avoid annoyance
+      alert("¡Atención! Tienes una caja abierta de días anteriores. Debes cerrarla antes de continuar operando el día de hoy.");
       
       // Forzamos a mostrar la caja abierta para que la pueda cerrar
       estadoCajaSpan.textContent = `Abierta (${cajaString.split("-").reverse().join("/")})`;
@@ -214,9 +214,9 @@ btnCerrarCaja?.addEventListener("click", async () => {
     document.getElementById("totalEfectivo").textContent
   );
 
-  const totalDigital = Number(
-    document.getElementById("totalDigital").textContent
-  );
+    const totalDigital = Number(
+      document.getElementById("totalDigital").textContent
+    );
 
   const totalCuentaCorriente = Number(
     document.getElementById("totalCuentaCorriente").textContent
@@ -245,6 +245,7 @@ btnCerrarCaja?.addEventListener("click", async () => {
     return;
   }
 
+  alert("Caja cerrada exitosamente.");
   await obtenerCaja();
 });
 
