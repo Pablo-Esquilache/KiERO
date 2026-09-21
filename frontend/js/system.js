@@ -1,4 +1,4 @@
-import { SystemAPI } from "./api.js";
+import { SystemAPI, CajasAPI } from "./api.js";
 
 // (beforeunload quitado temporalmente)
 
@@ -92,6 +92,47 @@ document.addEventListener("keydown", (e) => {
       const btnGuardar = modalActivo.querySelector('button[type="submit"], .app-btn-guardar, .app-btn-primary');
       if (btnGuardar) {
         btnGuardar.click();
+      }
+    }
+  }
+});
+
+
+// ==========================================
+// VALIDACIÓN GLOBAL: CAJA ABIERTA PARA VENTAS
+// ==========================================
+document.addEventListener("DOMContentLoaded", async () => {
+  const session = JSON.parse(localStorage.getItem("session"));
+  const comercioId = session?.comercio_id;
+  
+  if (comercioId) {
+    const navLinks = document.querySelectorAll(".app-navbar-menu a");
+    let ventasLink = null;
+    navLinks.forEach(link => {
+      if (link.getAttribute("href") === "ventas.html") {
+        ventasLink = link;
+      }
+    });
+
+    if (ventasLink) {
+      try {
+        const cajaActual = await CajasAPI.getHoy(comercioId);
+        if (!cajaActual || cajaActual.estado !== "abierta") {
+          // Bloquear visualmente en el menú global
+          ventasLink.style.backgroundColor = "#444";
+          ventasLink.style.color = "#888";
+          ventasLink.innerHTML = "Ventas 🔒";
+          ventasLink.title = "Debes abrir la caja para acceder a Ventas";
+        } else {
+          // Si por algún motivo estaba bloqueado y se abre (por ej. recarga manual)
+          ventasLink.innerHTML = "Ventas";
+          ventasLink.title = "";
+          // Removemos estilos inline para que herede del CSS
+          ventasLink.style.backgroundColor = "";
+          ventasLink.style.color = "";
+        }
+      } catch (err) {
+        console.error("Error global verificando estado de caja:", err);
       }
     }
   }
