@@ -489,31 +489,29 @@ if (formVenta) {
       // Show ticket
       const modalTicketExito = document.getElementById("modalTicketExito");
       if (modalTicketExito) {
-        const tcCliente = document.getElementById("tc-cliente");
-        const tcItems = document.getElementById("tc-items");
-        const tcSubtotal = document.getElementById("tc-subtotal");
-        const tcDesc = document.getElementById("tc-desc");
-        const tcTotal = document.getElementById("tc-total");
-        const tcPago = document.getElementById("tc-pago");
-        
-        if(tcCliente) tcCliente.textContent = document.getElementById("clienteVentaNombre")?.value || "Consumidor Final";
-        if(tcItems) {
+        const ticketContent = document.getElementById("ticketExitoContenido");
+        if (ticketContent) {
+            const clienteName = document.getElementById("clienteVentaNombre")?.value || "Consumidor Final";
             let itemsHtml = "";
             for(let i of carrito) {
-                itemsHtml += "<div>" + i.cantidad + "x " + i.nombre + " - $" + i.subtotal.toFixed(2) + "</div>";
+                itemsHtml += `<div style="display:flex; justify-content:space-between;"><span>${i.cantidad}x ${i.nombre}</span><span>${i.subtotal.toFixed(2)}</span></div>`;
             }
-            tcItems.innerHTML = itemsHtml;
+            const sub = carrito.reduce((acc, i) => acc + i.subtotal, 0);
+            const desc = Number(descuentoVenta.value) || 0;
+            const tot = sub - (sub * desc / 100);
+            const pago = metodoPagoVenta.value;
+            
+            ticketContent.innerHTML = `
+                <div style="margin-bottom: 5px;"><strong>Cliente:</strong> ${clienteName}</div>
+                <div style="margin-bottom: 5px;"><strong>Mtodo de pago:</strong> ${pago}</div>
+                <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
+                ${itemsHtml}
+                <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
+                <div style="text-align: right;">Subtotal: ${sub.toFixed(2)}</div>
+                <div style="text-align: right;">Descuento: ${desc}%</div>
+                <div style="text-align: right; font-weight: bold; font-size: 1.2em; margin-top: 5px;">Total: ${tot.toFixed(2)}</div>
+            `;
         }
-        
-        const sub = carrito.reduce((acc, i) => acc + i.subtotal, 0);
-        const desc = Number(descuentoVenta.value) || 0;
-        const tot = sub - (sub * desc / 100);
-        
-        if(tcSubtotal) tcSubtotal.textContent = "$" + sub.toFixed(2);
-        if(tcDesc) tcDesc.textContent = desc + "%";
-        if(tcTotal) tcTotal.textContent = "$" + tot.toFixed(2);
-        if(tcPago) tcPago.textContent = metodoPagoVenta.value;
-        
         modalTicketExito.style.display = "flex";
       }
     } catch (err) {
@@ -856,7 +854,11 @@ function renderProductosModal(lista) {
 
       fila.addEventListener("click", () => {
         productoVenta.value = p.id;
-        modalProductos.style.display = "none";
+          const pNombre = document.getElementById("productoVentaNombre");
+          if(pNombre) pNombre.value = p.nombre;
+          const cVenta = document.getElementById("cantidadVenta");
+          if(cVenta) cVenta.focus();
+          modalProductos.style.display = "none";
       });
 
       tablaProductosModalBody.appendChild(fila);

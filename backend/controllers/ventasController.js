@@ -84,12 +84,13 @@ export const getVentaDetalle = async (req, res) => {
 ===================================================== */
 export const createVenta = async (req, res) => {
   const {
-    cliente_id,
-    metodo_pago,
-    descuento_porcentaje = 0,
-    comercio_id,
-    items,
-  } = req.body;
+      fecha,
+      cliente_id,
+      metodo_pago,
+      descuento_porcentaje = 0,
+      comercio_id,
+      items,
+    } = req.body;
 
   const descuento = Number(descuento_porcentaje) || 0;
 
@@ -131,20 +132,21 @@ export const createVenta = async (req, res) => {
     const ventaResult = await client.query(
       `
   INSERT INTO ventas
-(fecha, cliente_id, metodo_pago, total_bruto,
- descuento_monto, descuento_porcentaje, total, comercio_id)
-VALUES (NOW(), $1,$2,$3,$4,$5,$6,$7)
+  (fecha, cliente_id, metodo_pago, total_bruto,
+   descuento_monto, descuento_porcentaje, total, comercio_id)
+  VALUES (COALESCE($8, NOW()), $1,$2,$3,$4,$5,$6,$7)
 RETURNING *
   `,
       [
-        cliente_id,
-        metodo_pago,
-        total_bruto,
-        descuento_monto,
-        descuento,
-        total,
-        comercio_id,
-      ],
+          cliente_id,
+          metodo_pago,
+          total_bruto,
+          descuento_monto,
+          descuento,
+          total,
+          comercio_id,
+          fecha || null
+        ],
     );
 
     const venta = ventaResult.rows[0];
