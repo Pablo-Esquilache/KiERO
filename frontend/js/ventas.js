@@ -225,11 +225,14 @@ async function cargarMetodosYDescuentos() {
     const rMetodos = await fetch(`/api/ajustes/metodos_pago/${comercioId}`);
     if (rMetodos.ok) {
       const metodos = await rMetodos.json();
-      if (metodos.length > 0) {
-        metodoPagoVenta.innerHTML = metodos.filter(m => m.activo).map(m => `<option value="${m.nombre}">${m.nombre}</option>`).join("");
-      } else {
-        metodoPagoVenta.innerHTML = '<option value="Efectivo">Efectivo</option>';
+      const activeMethods = metodos.filter(m => m.activo);
+      
+      // Siempre asegurar que exista "Efectivo"
+      let optionsStr = activeMethods.map(m => `<option value="${m.nombre}">${m.nombre}</option>`).join("");
+      if (!optionsStr.toLowerCase().includes('value="efectivo"')) {
+        optionsStr = '<option value="Efectivo">Efectivo</option>' + optionsStr;
       }
+      metodoPagoVenta.innerHTML = optionsStr;
     } else {
       metodoPagoVenta.innerHTML = '<option value="Efectivo">Efectivo</option>';
     }
@@ -243,11 +246,14 @@ async function cargarMetodosYDescuentos() {
     const rDescuentos = await fetch(`/api/ajustes/descuentos/${comercioId}`);
     if (rDescuentos.ok) {
       const descuentos = await rDescuentos.json();
-      if (descuentos.length > 0) {
-        descuentoVenta.innerHTML = descuentos.filter(d => d.activo).map(d => `<option value="${d.porcentaje}">${d.porcentaje}%</option>`).join("");
-      } else {
-        descuentoVenta.innerHTML = '<option value="0">0%</option>';
+      const activeDesc = descuentos.filter(d => d.activo);
+      
+      // Siempre asegurar que exista "0"
+      let optionsStr = activeDesc.map(d => `<option value="${Number(d.porcentaje)}">${Number(d.porcentaje)}%</option>`).join("");
+      if (!optionsStr.includes('value="0"')) {
+        optionsStr = '<option value="0">0%</option>' + optionsStr;
       }
+      descuentoVenta.innerHTML = optionsStr;
     } else {
       descuentoVenta.innerHTML = '<option value="0">0%</option>';
     }
