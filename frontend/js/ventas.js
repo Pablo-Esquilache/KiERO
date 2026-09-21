@@ -347,6 +347,8 @@ if (btnAgregarProducto) {
 
     productoVenta.value = "";
     cantidadVenta.value = 1;
+    const pNombre = document.getElementById("productoVentaNombre");
+    if (pNombre) pNombre.value = "";
   });
 }
 

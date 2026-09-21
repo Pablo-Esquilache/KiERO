@@ -138,15 +138,15 @@ export const createVenta = async (req, res) => {
 RETURNING *
   `,
       [
-          cliente_id,
-          metodo_pago,
-          total_bruto,
-          descuento_monto,
-          descuento,
-          total,
-          comercio_id,
-          fecha || null
-        ],
+        cliente_id,
+        metodo_pago,
+        total_bruto,
+        descuento_monto,
+        descuento,
+        total,
+        comercio_id,
+        (fecha && fecha.length === 10) ? fecha + "T12:00:00Z" : (fecha || null)
+      ],
     );
 
     const venta = ventaResult.rows[0];
@@ -298,7 +298,7 @@ export const updateVenta = async (req, res) => {
       WHERE id = $8 AND comercio_id = $9
       `,
       [
-        fecha,
+        (fecha && fecha.length === 10) ? fecha + "T12:00:00Z" : (fecha || null),
         cliente_id,
         metodo_pago,
         total_bruto,
