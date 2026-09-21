@@ -106,6 +106,7 @@ export const getMovimientosDia = async (req, res) => {
 
     const baseParams = endTime ? [comercioId, startTime, endTime] : [comercioId, startTime];
     const timeCondition = endTime ? `AND fecha >= $2 AND fecha <= $3` : `AND fecha >= $2`;
+    const dTimeCondition = endTime ? `AND d.fecha >= $2 AND d.fecha <= $3` : `AND d.fecha >= $2`;
 
     const ventas = await pool.query(
       `SELECT id, fecha, total, metodo_pago
@@ -128,7 +129,7 @@ export const getMovimientosDia = async (req, res) => {
        FROM devoluciones d
        LEFT JOIN ventas v ON v.id = d.venta_id
        WHERE d.comercio_id = $1
-       ${timeCondition}`,
+       ${dTimeCondition}`,
       baseParams
     );
 
