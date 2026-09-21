@@ -1159,6 +1159,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (comercioId) {
     await cargarVentas();
     await cargarProductos();
+    await cargarClientes();
+    await cargarMetodosYDescuentos();
 
     // Show modal if redirected by F10
     const urlParams = new URLSearchParams(window.location.search);
@@ -1421,15 +1423,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // Hook original buttons that are no longer needed
-  const btnNuevaVenta = document.getElementById("btnNuevaVenta");
-  if(btnNuevaVenta) btnNuevaVenta.style.display = "none";
-
-  // Simulate btnNuevaVenta click to preload logic (cargarProductos, cargarClientes, etc) without showing old modal
-  setTimeout(() => {
-    if(btnNuevaVenta) btnNuevaVenta.click();
-    const oldModal = document.getElementById("modalVenta");
-    if(oldModal) oldModal.style.display = "none"; // Ensure it stays hidden
-  }, 500);
+  
 
 });
 
