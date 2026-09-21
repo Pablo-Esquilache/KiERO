@@ -79,7 +79,7 @@ async function obtenerCaja() {
     const esDiaAnterior = hoyString !== cajaString;
 
     if (esDiaAnterior) {
-      alert("¡Atención! Tienes una caja abierta de días anteriores. Debes cerrarla antes de continuar operando el día de hoy.");
+      // alert removed per user request to avoid annoyance
       
       // Forzamos a mostrar la caja abierta para que la pueda cerrar
       estadoCajaSpan.textContent = `Abierta (${cajaString.split("-").reverse().join("/")})`;
