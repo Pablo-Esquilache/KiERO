@@ -119,6 +119,7 @@
 }
 
 /* Colores específicos por tarjeta */
+.card-inicial { border-left-color: #64748b; }       /* Gris oscuro */
 .card-efectivo { border-left-color: #10b981; }      /* Verde */
 .card-digital { border-left-color: #3b82f6; }       /* Azul */
 .card-cc { border-left-color: #f59e0b; }            /* Amarillo/Naranja */
