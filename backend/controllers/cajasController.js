@@ -84,20 +84,43 @@ export const getMovimientosDia = async (req, res) => {
   const { comercioId } = req.params;
 
   try {
+    const cajaQuery = await pool.query(
+      `SELECT hora_apertura, hora_cierre FROM cajas 
+       WHERE comercio_id = $1 
+       AND (estado = 'abierta' OR fecha = CURRENT_DATE)
+       ORDER BY fecha DESC LIMIT 1`,
+      [comercioId]
+    );
+
+    let startTime = null;
+    let endTime = null;
+
+    if (cajaQuery.rows.length > 0) {
+      startTime = cajaQuery.rows[0].hora_apertura;
+      endTime = cajaQuery.rows[0].hora_cierre;
+    } else {
+      const hoy = new Date();
+      hoy.setHours(0,0,0,0);
+      startTime = hoy.toISOString();
+    }
+
+    const baseParams = endTime ? [comercioId, startTime, endTime] : [comercioId, startTime];
+    const timeCondition = endTime ? `AND fecha >= $2 AND fecha <= $3` : `AND fecha >= $2`;
+
     const ventas = await pool.query(
       `SELECT id, fecha, total, metodo_pago
-   FROM ventas
-   WHERE comercio_id = $1
-   AND DATE(fecha) = CURRENT_DATE`,
-      [comercioId],
+       FROM ventas
+       WHERE comercio_id = $1
+       ${timeCondition}`,
+      baseParams
     );
 
     const gastos = await pool.query(
       `SELECT id, fecha, importe, descripcion
-   FROM gastos
-   WHERE comercio_id = $1
-   AND DATE(fecha) = CURRENT_DATE`,
-      [comercioId],
+       FROM gastos
+       WHERE comercio_id = $1
+       ${timeCondition}`,
+      baseParams
     );
 
     const devoluciones = await pool.query(
@@ -105,8 +128,8 @@ export const getMovimientosDia = async (req, res) => {
        FROM devoluciones d
        LEFT JOIN ventas v ON v.id = d.venta_id
        WHERE d.comercio_id = $1
-       AND DATE(d.fecha) = CURRENT_DATE`,
-      [comercioId],
+       ${timeCondition}`,
+      baseParams
     );
 
     let movimientos = [];
@@ -114,31 +137,30 @@ export const getMovimientosDia = async (req, res) => {
     ventas.rows.forEach((v) => {
       movimientos.push({
         hora: v.fecha,
-        tipo: "VENTA",
-        //descripcion: `Venta #${v.id} - ${v.metodo_pago}`,
+        tipo: 'VENTA',
         descripcion: `Venta - ${v.metodo_pago}`,
         metodo_pago: v.metodo_pago,
         ingreso: Number(v.total),
         egreso: 0,
       });
     });
+
     gastos.rows.forEach((g) => {
       movimientos.push({
         hora: g.fecha,
-        tipo: "GASTO",
-        descripcion: g.descripcion || `Gasto #${g.id}`,
+        tipo: 'GASTO',
+        descripcion: g.descripcion,
+        metodo_pago: 'Efectivo',
         ingreso: 0,
         egreso: Number(g.importe),
       });
     });
 
     devoluciones.rows.forEach((d) => {
-      let descripcionBase = d.metodo_pago === 'Cuenta Corriente' ? 'Devolución (Cta. Cte.)' : 'Devolución';
       movimientos.push({
         hora: d.fecha,
-        tipo: "DEVOLUCION",
-        //descripcion: `Devolución #${d.id}`,
-        descripcion: descripcionBase,
+        tipo: 'DEVOLUCION',
+        descripcion: `Devolución - ${d.metodo_pago}`,
         metodo_pago: d.metodo_pago,
         ingreso: 0,
         egreso: Number(d.total),
@@ -147,37 +169,33 @@ export const getMovimientosDia = async (req, res) => {
 
     movimientos.sort((a, b) => new Date(b.hora) - new Date(a.hora));
 
-    let totalEfectivo = 0;
-    let totalDigital = 0;
-    let totalCuentaCorriente = 0;
-    let totalEgresos = 0;
-    let totalDevoluciones = 0;
+    let t = {
+      efectivo: 0,
+      digital: 0,
+      cuenta_corriente: 0,
+      egresos: 0,
+      devoluciones: 0,
+    };
 
-    movimientos.forEach(m => {
-      if (m.tipo === "VENTA") {
-        if (m.metodo_pago === "Efectivo") totalEfectivo += m.ingreso;
-        else if (m.metodo_pago === "Cuenta Corriente") totalCuentaCorriente += m.ingreso;
-        else totalDigital += m.ingreso;
-      } else if (m.tipo === "DEVOLUCION") {
-        totalDevoluciones += m.egreso;
-      } else if (m.tipo === "GASTO") {
-        totalEgresos += m.egreso;
-      }
+    ventas.rows.forEach((v) => {
+      const tot = Number(v.total);
+      if (v.metodo_pago === 'Efectivo') t.efectivo += tot;
+      else if (v.metodo_pago === 'Cuenta Corriente') t.cuenta_corriente += tot;
+      else t.digital += tot;
     });
 
-    res.json({
-      movimientos,
-      totales: {
-        efectivo: totalEfectivo,
-        digital: totalDigital,
-        cuenta_corriente: totalCuentaCorriente,
-        egresos: totalEgresos,
-        devoluciones: totalDevoluciones
-      }
+    gastos.rows.forEach((g) => {
+      t.egresos += Number(g.importe);
     });
+
+    devoluciones.rows.forEach((d) => {
+      t.devoluciones += Number(d.total);
+    });
+
+    res.json({ movimientos, totales: t });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error obteniendo movimientos" });
+    console.error('Error obteniendo movimientos:', err);
+    res.status(500).json({ error: 'Error obteniendo movimientos' });
   }
 };
 
