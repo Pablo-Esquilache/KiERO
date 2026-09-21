@@ -22,12 +22,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (comercioId) {
         try {
             const cajaActual = await CajasAPI.getHoy(comercioId);
+            const posHeader = document.querySelector(".pos-header");
+            const posContainer = document.getElementById("pos-container");
+            const historyContainer = document.getElementById("history-container");
+            const btnToggleVista = document.getElementById("btnToggleVista");
+            
             if (!cajaActual || cajaActual.estado !== "abierta") {
-                const posHeader = document.querySelector(".pos-header");
-                const posContainer = document.getElementById("pos-container");
-                const historyContainer = document.getElementById("history-container");
-                const btnToggleVista = document.getElementById("btnToggleVista");
-                
                 if (posHeader) posHeader.style.display = "none";
                 if (posContainer) posContainer.style.display = "none";
                 if (historyContainer) historyContainer.style.display = "none";
@@ -54,6 +54,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                     navItem.style.color = "#ccc";
                     navItem.innerHTML = "Ventas 🔒";
                 }
+            } else {
+                // Caja abierta: mostramos la interfaz que estaba oculta por defecto en HTML
+                if (posHeader) posHeader.style.display = "block";
+                if (posContainer) posContainer.style.display = "grid";
             }
         } catch (err) {
             console.error("Error al verificar estado de caja para bloqueo:", err);
