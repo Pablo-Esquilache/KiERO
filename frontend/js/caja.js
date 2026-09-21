@@ -91,7 +91,7 @@ async function obtenerCaja() {
       alert("¡Atención! Tienes una caja abierta de días anteriores. Debes cerrarla antes de continuar operando el día de hoy.");
       
       // Forzamos a mostrar la caja abierta para que la pueda cerrar
-      estadoCajaSpan.textContent = `Abierta (${fechaCajaDate.toLocaleDateString("es-AR")})`;
+      estadoCajaSpan.textContent = `Abierta (${cajaString.split("-").reverse().join("/")})`;
       bloqueApertura.style.display = "none";
       bloqueResumen.style.display = "flex";
       
@@ -196,9 +196,10 @@ btnAbrirCaja?.addEventListener("click", async () => {
 
   try {
     const data = await CajasAPI.abrir({
-      comercio_id: comercioId,
-      saldo_inicial: saldo,
-    });
+        comercio_id: comercioId,
+        saldo_inicial: saldo,
+        fecha: new Date().toLocaleDateString('sv-SE') // local YYYY-MM-DD
+      });
   } catch (error) {
     alert(error.message || "Error al abrir caja");
     return;

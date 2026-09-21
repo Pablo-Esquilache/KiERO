@@ -16,10 +16,8 @@ async function cerrarSesion() {
       try {
         const cajaActual = await CajasAPI.getHoy(session.comercio_id);
         if (cajaActual && cajaActual.estado === "abierta") {
-          const confirmarCierre = confirm("Aún tienes una caja abierta. ¿Estás seguro de que deseas cerrar sesión sin antes cerrarla?");
-          if (!confirmarCierre) {
-            return; // El usuario cancela el logout para ir a cerrar la caja
-          }
+          alert("No puedes cerrar sesión porque tienes una caja abierta.\\nDebes cerrarla primero en la sección Caja para que quede registrado el saldo final.");
+          return;
         }
       } catch (err) {
         console.warn("No se pudo verificar el estado de la caja al cerrar sesión:", err);

@@ -27,14 +27,14 @@ export const getCajaHoy = async (req, res) => {
  * POST - Abrir caja
  */
 export const abrirCaja = async (req, res) => {
-  const { comercio_id, saldo_inicial } = req.body;
+  const { comercio_id, saldo_inicial, fecha } = req.body;
 
   try {
     const { rows } = await pool.query(
       `INSERT INTO cajas (comercio_id, fecha, saldo_inicial)
-       VALUES ($1, CURRENT_DATE, $2)
+       VALUES ($1, COALESCE($3, CURRENT_DATE), $2)
        RETURNING *`,
-      [comercio_id, saldo_inicial],
+      [comercio_id, saldo_inicial, (fecha && fecha.length === 10) ? fecha + "T12:00:00Z" : null],
     );
 
     res.json(rows[0]);
