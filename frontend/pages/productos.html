@@ -95,7 +95,7 @@
 
     <!-- MODAL NUEVO / EDITAR PRODUCTO -->
     <div id="modalProducto" class="app-modal">
-      <div class="app-modal-content-producto">
+      <div class="app-modal-content">
         <div class="app-modal-header">
           <h2 class="app-subtitle" id="tituloModalProducto">Nuevo producto</h2>
           <button type="button" class="app-close">Cerrar</button>
@@ -105,40 +105,18 @@
           <div class="app-form-row">
             <div class="app-form-group">
               <label>Nombre</label>
-              <input
-                type="text"
-                id="nombreProducto"
-                class="app-input"
-                required
-              />
+              <input type="text" id="nombreProducto" class="app-input" required />
             </div>
 
             <div class="app-form-group">
               <label>Categoría</label>
-              <select id="categoriaProducto" class="app-input">
-                <option value="" disabled selected>
-                  Seleccionar categoría
-                </option>
-              </select>
-            </div>
-            <div
-              class="app-form-group"
-              style="display: flex; gap: 8px; align-items: center"
-            >
-              <button
-                type="button"
-                id="btnNuevaCategoria"
-                class="app-btn-secondary"
-              >
-                Nueva
-              </button>
-              <input
-                type="text"
-                id="nuevaCategoriaProducto"
-                class="app-input"
-                placeholder="Escribí nueva categoría"
-                style="display: none; margin-top: 8px"
-              />
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <select id="categoriaProducto" class="app-input" style="flex: 1;">
+                  <option value="" disabled selected>Seleccionar categoría</option>
+                </select>
+                <input type="text" id="nuevaCategoriaProducto" class="app-input" placeholder="Escribí nueva categoría" style="display: none; flex: 1;" />
+                <button type="button" id="btnNuevaCategoria" class="app-btn-secondary" style="flex-shrink: 0;">Nueva</button>
+              </div>
             </div>
           </div>
 

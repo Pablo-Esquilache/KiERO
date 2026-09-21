@@ -100,6 +100,7 @@ async function cargarCategorias() {
 // ABRIR MODAL
 // ------------------------------
 btnNuevoProducto.addEventListener("click", () => {
+  mostrarInputNuevaCategoria(false);
   modoEdicion = false;
   productoEditandoId = null;
 
@@ -111,10 +112,28 @@ btnNuevoProducto.addEventListener("click", () => {
 // ------------------------------
 // NUEVA CATEGORÍA
 // ------------------------------
+
+// ------------------------------
+// MANEJO DE CATEGORÍA
+// ------------------------------
+function mostrarInputNuevaCategoria(mostrar) {
+  const selectCat = document.getElementById("categoriaProducto");
+  const inputCat = document.getElementById("nuevaCategoriaProducto");
+  if (mostrar) {
+    inputCat.style.display = "block";
+    selectCat.style.display = "none";
+  } else {
+    inputCat.style.display = "none";
+    selectCat.style.display = "inline-block";
+    inputCat.value = "";
+  }
+}
+
 btnNuevaCategoria.addEventListener("click", () => {
-  nuevaCategoriaProducto.style.display = "block";
-  nuevaCategoriaProducto.focus();
+  mostrarInputNuevaCategoria(true);
+  document.getElementById("nuevaCategoriaProducto").focus();
 });
+
 
 // ------------------------------
 // CERRAR MODAL
@@ -265,7 +284,17 @@ function editarProducto(id) {
 
   tituloModal.textContent = "Editar producto";
   nombreProducto.value = p.nombre;
-  categoriaProducto.value = p.categoria || "";
+  const categoriasExistentes = Array.from(categoriaProducto.options).map(opt => opt.value);
+  if (p.categoria && categoriasExistentes.includes(p.categoria)) {
+    mostrarInputNuevaCategoria(false);
+    categoriaProducto.value = p.categoria;
+  } else if (p.categoria) {
+    mostrarInputNuevaCategoria(true);
+    document.getElementById("nuevaCategoriaProducto").value = p.categoria;
+  } else {
+    mostrarInputNuevaCategoria(false);
+    categoriaProducto.value = "";
+  }
   codigoBarrasProducto.value = p.codigo_barras || "";
   stockProducto.value = p.stock;
   precioProducto.value = p.precio;
