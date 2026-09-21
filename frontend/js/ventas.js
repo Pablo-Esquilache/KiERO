@@ -193,6 +193,23 @@ function limpiarFormulario() {
   descuentoVenta.value = "0";
   cantidadVenta.value = 1;
   productoVenta.value = "";
+  
+  const pNombre = document.getElementById("productoVentaNombre");
+  if(pNombre) pNombre.value = "";
+  
+  // Reseleccionar consumidor final
+  if (typeof allClientes !== 'undefined' && allClientes) {
+    const cf = allClientes.find(c => c.nombre && c.nombre.toLowerCase().includes('consumidor'));
+    const cVenta = document.getElementById("clienteVenta");
+    const cVentaNombre = document.getElementById("clienteVentaNombre");
+    if (cf && cVenta && cVentaNombre) {
+      cVenta.value = cf.id;
+      cVentaNombre.value = cf.nombre;
+    } else if (cVenta && cVentaNombre) {
+      cVenta.value = "";
+      cVentaNombre.value = "";
+    }
+  }
 
   ventaEnEdicionId = null;
 }
@@ -467,6 +484,37 @@ if (formVenta) {
         await VentasAPI.update(ventaEnEdicionId, payload);
       } else {
         await VentasAPI.create(payload);
+      }
+      
+      // Show ticket
+      const modalTicketExito = document.getElementById("modalTicketExito");
+      if (modalTicketExito) {
+        const tcCliente = document.getElementById("tc-cliente");
+        const tcItems = document.getElementById("tc-items");
+        const tcSubtotal = document.getElementById("tc-subtotal");
+        const tcDesc = document.getElementById("tc-desc");
+        const tcTotal = document.getElementById("tc-total");
+        const tcPago = document.getElementById("tc-pago");
+        
+        if(tcCliente) tcCliente.textContent = document.getElementById("clienteVentaNombre")?.value || "Consumidor Final";
+        if(tcItems) {
+            let itemsHtml = "";
+            for(let i of carrito) {
+                itemsHtml += "<div>" + i.cantidad + "x " + i.nombre + " - $" + i.subtotal.toFixed(2) + "</div>";
+            }
+            tcItems.innerHTML = itemsHtml;
+        }
+        
+        const sub = carrito.reduce((acc, i) => acc + i.subtotal, 0);
+        const desc = Number(descuentoVenta.value) || 0;
+        const tot = sub - (sub * desc / 100);
+        
+        if(tcSubtotal) tcSubtotal.textContent = "$" + sub.toFixed(2);
+        if(tcDesc) tcDesc.textContent = desc + "%";
+        if(tcTotal) tcTotal.textContent = "$" + tot.toFixed(2);
+        if(tcPago) tcPago.textContent = metodoPagoVenta.value;
+        
+        modalTicketExito.style.display = "flex";
       }
     } catch (err) {
       alert(err.message || "Error guardando venta");
