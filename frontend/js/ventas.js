@@ -1,3 +1,9 @@
+// Global targets for Modals
+window.targetClientInput = 'clienteVenta';
+window.targetClientNameInput = 'clienteVentaNombre';
+window.targetProductInput = 'productoVenta';
+window.targetProductNameInput = 'productoVentaNombre';
+
 import {
   VentasAPI,
   ComercioAPI,
@@ -92,8 +98,8 @@ const renderClientesBuscadorLazy = (append = false) => {
       <td>${c.email || "-"}</td>
     `;
     tr.addEventListener("click", () => {
-      document.getElementById("clienteVenta").value = c.id;
-      document.getElementById("clienteVentaNombre").value = c.nombre;
+      document.getElementById(window.targetClientInput).value = c.id;
+        document.getElementById(window.targetClientNameInput).value = c.nombre;
       document.getElementById("modalBuscarCliente").style.display = "none";
     });
     tabla.appendChild(tr);
@@ -907,11 +913,17 @@ function renderProductosModal(lista) {
       fila.style.cursor = "pointer";
 
       fila.addEventListener("click", () => {
-        productoVenta.value = p.id;
-          const pNombre = document.getElementById("productoVentaNombre");
-          if(pNombre) pNombre.value = p.nombre;
-          const cVenta = document.getElementById("cantidadVenta");
-          if(cVenta) cVenta.focus();
+          const tId = document.getElementById(window.targetProductInput || 'productoVenta');
+          const tName = document.getElementById(window.targetProductNameInput || 'productoVentaNombre');
+          
+          if(tId) tId.value = p.id;
+          if(tName) tName.value = p.nombre;
+          
+          // Focus the quantity input based on which module we are in
+          const isDev = window.targetProductInput === 'productoDevolucion';
+          const qtyInput = document.getElementById(isDev ? "cantidadDevolucion" : "cantidadVenta");
+          if (qtyInput) qtyInput.focus();
+          
           modalProductos.style.display = "none";
       });
 
@@ -1837,4 +1849,34 @@ formDevolucionNuevo?.addEventListener("submit", async (e) => {
     console.error(error);
     alert(error.message);
   }
+});
+
+// ==========================================
+// LUPITAS EN DEVOLUCIONES
+// ==========================================
+document.getElementById("btnBuscarClienteDev")?.addEventListener("click", () => {
+  window.targetClientInput = 'clienteDevolucion';
+  window.targetClientNameInput = 'clienteDevolucionNombre';
+  const m = document.getElementById("modalBuscarCliente");
+  if(m) {
+    m.style.display = "flex";
+    document.getElementById("inputBuscarClienteModal")?.focus();
+  }
+});
+
+document.getElementById("btnBuscarProductoDev")?.addEventListener("click", () => {
+  window.targetProductInput = 'productoDevolucion';
+  window.targetProductNameInput = 'productoDevolucionNombre';
+  const m = document.getElementById("modalProductos");
+  if(m) {
+    m.style.display = "flex";
+    document.getElementById("buscarProductoModal")?.focus();
+  }
+});
+
+// Update the main POS button to set targets
+document.getElementById("btnBuscarProducto")?.addEventListener("click", () => {
+  window.targetProductInput = 'productoVenta';
+  window.targetProductNameInput = 'productoVentaNombre';
+  // modal open logic is elsewhere, this just sets targets
 });
