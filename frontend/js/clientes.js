@@ -329,10 +329,16 @@ async function verHistorial(clienteId) {
     // 1️⃣ Ventas y Devoluciones
     const ventas = await HistorialAPI.getVentasPorCliente(clienteId, comercioId);
     let devoluciones = [];
+    let pagos = [];
     try {
       const allDevoluciones = await DevolucionesAPI.getAll(comercioId);
       devoluciones = allDevoluciones.filter(d => d.cliente_id == clienteId);
     } catch(e) { console.warn("Error cargando devoluciones"); }
+    
+    try {
+      const ccData = await ClientesAPI.getCuentaCorriente(clienteId, comercioId);
+      pagos = ccData.filter(m => m.tipo === 'pago');
+    } catch(e) { console.warn("Error cargando pagos"); }
 
     historialActual = ventas;
     clienteActualHistorial = clienteId;
@@ -345,6 +351,7 @@ async function verHistorial(clienteId) {
     let movimientos = [];
     ventas.forEach(v => movimientos.push({...v, tipo_operacion: 'venta'}));
     devoluciones.forEach(d => movimientos.push({...d, tipo_operacion: 'devolucion', metodo_pago: 'A Favor'}));
+    pagos.forEach(p => movimientos.push({...p, fecha: p.created_at, tipo_operacion: 'pago', metodo_pago: 'Efectivo', total: p.monto}));
     movimientos.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
     // 4️⃣ Matemática
