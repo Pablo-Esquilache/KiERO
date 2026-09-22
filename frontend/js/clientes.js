@@ -504,25 +504,7 @@ document
     XLSX.writeFile(wb, `historial_cliente_${clienteActualHistorial}.xlsx`);
   });
 
-document.getElementById("btnDescargarDetalle").addEventListener("click", () => {
-  if (!detalleActual.length) {
-    alert("No hay detalle para exportar");
-    return;
-  }
 
-  const dataExcel = detalleActual.map((item) => ({
-    Producto: item.producto_nombre,
-    Cantidad: item.cantidad,
-    "Precio Unitario": Number(item.precio_unitario),
-    Subtotal: Number(item.subtotal),
-  }));
-
-  const ws = XLSX.utils.json_to_sheet(dataExcel);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Detalle");
-
-  XLSX.writeFile(wb, `detalle_venta_${ventaActualDetalle}.xlsx`);
-});
 
 btnCerrarHistorial.addEventListener("click", () => {
   modalHistorial.style.display = "none";
