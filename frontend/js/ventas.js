@@ -1008,9 +1008,7 @@ function renderProductosModal(lista) {
 buscarProductoModal?.addEventListener("input", () => {
   const texto = buscarProductoModal.value.toLowerCase();
 
-  const filtrados = productosCache.filter((p) =>
-    p.nombre.toLowerCase().includes(texto),
-  );
+  const filtrados = productosCache.filter((p) => p.nombre.toLowerCase().includes(texto) || (p.codigo_barras && p.codigo_barras.includes(texto)));
 
   renderProductosModal(filtrados);
 });
@@ -1366,7 +1364,7 @@ clienteDevolucionNombre?.addEventListener("input", async (e) => {
   }
   filtrados.forEach(c => {
     const li = document.createElement("li");
-    li.textContent = `${c.nombre} (${c.documento || '-'})`;
+    li.textContent = c.documento ? `${c.nombre} (${c.documento})` : c.nombre;
     li.addEventListener("mousedown", (ev) => {
       ev.preventDefault();
       if(clienteDevolucion) clienteDevolucion.value = c.id;
@@ -1526,4 +1524,10 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+});
+
+const cerrarModalBuscarCliente = document.getElementById("cerrarModalBuscarCliente");
+cerrarModalBuscarCliente?.addEventListener("click", () => {
+  const m = document.getElementById("modalBuscarCliente");
+  if (m) m.style.display = "none";
 });
