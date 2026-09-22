@@ -483,7 +483,7 @@ async function verDetalleVenta(ventaId) {
 }
 
 document
-  .getElementById("btnDescargarHistorial")
+  .getElementById("btnDescargarResumen")
   .addEventListener("click", () => {
     if (!historialActual.length) {
       alert("No hay datos para exportar");
