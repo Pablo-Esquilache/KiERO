@@ -104,9 +104,10 @@ async function obtenerCaja() {
     await calcularResumen();
 
   } else if (cajaActual.estado === "cerrada") {
-    estadoCajaSpan.textContent = "Cerrada";
-    bloqueApertura.style.display = "none";
+    estadoCajaSpan.textContent = "Cerrada (Podés reabrirla)";
+    bloqueApertura.style.display = "flex";
     bloqueResumen.style.display = "none";
+    btnAbrirCaja.textContent = "Reabrir Caja";
   }
 }
 
