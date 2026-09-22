@@ -1178,7 +1178,8 @@ btnConfirmarDevolucion?.addEventListener("click", async () => {
   await cargarVentas();
 });
 
-btnVerDevoluciones?.addEventListener("click", async () => {
+const btnVerDevolucionesLeft = document.getElementById("btnVerDevolucionesLeft");
+btnVerDevolucionesLeft?.addEventListener("click", async () => {
   await cargarDevoluciones();
   modalVerDevoluciones.style.display = "flex";
 });
@@ -1408,17 +1409,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   
   if(btnToggleVista) {
     btnToggleVista.addEventListener("click", () => {
-      if(posContainer.style.display === "none") {
-        posContainer.style.display = "grid";
-        historyContainer.style.display = "none";
-        btnToggleVista.textContent = "Ver Historial del Día";
-        title.textContent = "Punto de Venta";
-      } else {
-        posContainer.style.display = "none";
-        historyContainer.style.display = "block";
-        btnToggleVista.textContent = "Volver a Punto de Venta";
-        title.textContent = "Historial de Ventas";
-      }
+              if(posContainer.style.display === "none") {
+          posContainer.style.display = "grid";
+          historyContainer.style.display = "none";
+          btnToggleVista.textContent = "Ir al Historial de Ventas";
+          title.textContent = "Punto de Venta";
+        } else {
+          posContainer.style.display = "none";
+          historyContainer.style.display = "block";
+          btnToggleVista.textContent = "Ir a Punto de Venta";
+          title.textContent = "Historial de Ventas";
+        }
     });
   }
 
@@ -1705,7 +1706,7 @@ clienteDevolucionNombre?.addEventListener("input", (e) => {
     clienteDevolucion.value = "";
     return;
   }
-  const filtrados = clientes.filter(c => c.nombre.toLowerCase().includes(q) || c.documento.includes(q));
+  const filtrados = allClientes.filter(c => c.nombre.toLowerCase().includes(q) || c.documento.includes(q));
   if (filtrados.length === 0) {
     autocompleteClientesDevolucion.style.display = "none";
     return;
@@ -1732,7 +1733,7 @@ productoDevolucionNombre?.addEventListener("input", (e) => {
     productoDevolucion.value = "";
     return;
   }
-  const filtrados = productos.filter(p => p.nombre.toLowerCase().includes(q) || p.codigo_barras?.includes(q));
+  const filtrados = productosCache.filter(p => p.nombre.toLowerCase().includes(q) || p.codigo_barras?.includes(q));
   if (filtrados.length === 0) {
     autocompleteProductosDevolucion.style.display = "none";
     return;
@@ -1777,7 +1778,7 @@ btnAgregarDevolucionNuevo?.addEventListener("click", () => {
     return;
   }
   
-  const prodObj = productos.find(p => p.id == prodId);
+  const prodObj = productosCache.find(p => p.id == prodId);
   if (!prodObj) return;
 
   const ex = carritoDevolucion.find(i => i.producto_id == prodId);
