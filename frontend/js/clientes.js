@@ -484,17 +484,7 @@ async function verDetalleVenta(ventaId) {
     // Cabecera Cliente en Ticket
     const cliObj = clientes.find(c => c.id == clienteActualHistorial);
     const nombreCli = cliObj ? cliObj.nombre : "Consumidor Final";
-    
-    // Buscamos si existe el div del cliente, sino lo creamos.
-    let ticketClienteDiv = document.getElementById("ticketClienteDetalle");
-    if (!ticketClienteDiv) {
-      ticketClienteDiv = document.createElement("div");
-      ticketClienteDiv.id = "ticketClienteDetalle";
-      ticketClienteDiv.style.marginBottom = "5px";
-      const fechaDiv = document.getElementById("ticketFechaDetalle").parentNode;
-      fechaDiv.parentNode.insertBefore(ticketClienteDiv, fechaDiv);
-    }
-    ticketClienteDiv.innerHTML = `<strong>Cliente:</strong> ${nombreCli}`;
+    document.getElementById("ticketNombreCli").textContent = nombreCli;
 
     tablaDetalleBody.innerHTML = "";
     let total = 0;
@@ -632,3 +622,17 @@ function escapeQuote(str) {
   if (!str) return "";
   return str.replace(/'/g, "\\'");
 }
+
+// Imprimir ticket historial
+document.getElementById("btnImprimirTicketHistorial")?.addEventListener("click", () => {
+  const contenido = document.getElementById("ticketContenidoImprimir").innerHTML;
+  const ventana = window.open('', '_blank', 'width=300,height=500');
+  ventana.document.write('<html><head><title>Imprimir Ticket</title></head><body style="font-family: monospace;">');
+  ventana.document.write(contenido);
+  ventana.document.write('</body></html>');
+  ventana.document.close();
+  ventana.onload = () => {
+    ventana.print();
+    ventana.close();
+  };
+});
