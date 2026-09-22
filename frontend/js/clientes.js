@@ -376,18 +376,29 @@ async function verHistorial(clienteId) {
         `;
       });
 
+      
+      // Highlight debt
+      let saldoHtml = '';
+      if (saldo > 0) {
+        saldoHtml = `<strong style="color: #e53935; font-size: 18px;">$ ${saldo.toFixed(2)} (DEUDA)</strong>`;
+      } else if (saldo < 0) {
+        saldoHtml = `<strong style="color: #43a047; font-size: 18px;">$ ${Math.abs(saldo).toFixed(2)} (A FAVOR)</strong>`;
+      } else {
+        saldoHtml = `<strong>$ 0.00 (AL DÍA)</strong>`;
+      }
+
       document.getElementById("resumenHistorial").innerHTML = `
-  <div class="resumen-item">
-    <span>Total contado</span>
-    <strong>$${totalContado.toFixed(2)}</strong>
+  <div class="resumen-item" style="border-left: 4px solid #43a047;">
+    <span>Pagado al Contado</span>
+    <strong>$ ${totalContado.toFixed(2)}</strong>
   </div>
-  <div class="resumen-item">
-    <span>Saldo cuenta corriente</span>
-    <strong>$${saldo.toFixed(2)}</strong>
+  <div class="resumen-item" style="border-left: 4px solid #2196f3;">
+    <span>Total Histórico Comprado</span>
+    <strong>$ ${totalGeneral.toFixed(2)}</strong>
   </div>
-  <div class="resumen-item">
-    <span>Total general ventas</span>
-    <strong>$${totalGeneral.toFixed(2)}</strong>
+  <div class="resumen-item" style="background: ${saldo > 0 ? '#ffebee' : (saldo < 0 ? '#e8f5e9' : '#f8fafc')}; border: 1px solid ${saldo > 0 ? '#ffcdd2' : (saldo < 0 ? '#c8e6c9' : '#e2e8f0')};">
+    <span>Estado de Cuenta Corriente</span>
+    ${saldoHtml}
   </div>
 `;
 
@@ -524,10 +535,15 @@ document
 
 async function cargarCuentaCorriente(clienteId) {
   const dataSaldo = await ClientesAPI.getSaldo(clienteId, comercioId);
-  const saldo = dataSaldo.saldo;
+  const saldo = Number(dataSaldo.saldo);
 
-  ccSaldo.textContent = `Saldo: $${saldo.toFixed(2)}`;
-  ccSaldo.style.color = saldo > 0 ? "red" : "lime";
+  if (saldo > 0) {
+    ccSaldo.innerHTML = `DEUDA TOTAL: <span style="color: #e53935;">$ ${saldo.toFixed(2)}</span>`;
+  } else if (saldo < 0) {
+    ccSaldo.innerHTML = `SALDO A FAVOR: <span style="color: #43a047;">$ ${Math.abs(saldo).toFixed(2)}</span>`;
+  } else {
+    ccSaldo.innerHTML = `AL DÍA: <span style="color: #333;">$ 0.00</span>`;
+  }
 
   const movimientos = await ClientesAPI.getCuentaCorriente(
     clienteId,
@@ -536,12 +552,19 @@ async function cargarCuentaCorriente(clienteId) {
 
   tablaCC.innerHTML = "";
 
+  if (!movimientos || movimientos.length === 0) {
+    tablaCC.innerHTML = "<tr><td colspan='3'>No hay movimientos registrados</td></tr>";
+    return;
+  }
+
   movimientos.forEach((m) => {
+    const isDeuda = m.tipo === "venta";
+    const amountStr = Number(m.monto).toFixed(2);
     tablaCC.innerHTML += `
       <tr>
         <td>${formatearFecha(m.created_at)}</td>
-        <td>${m.tipo}</td>
-        <td>${m.tipo === "venta" ? "+" : "-"}$${Number(m.monto).toFixed(2)}</td>
+        <td>${isDeuda ? '<span style="color:#e53935; font-weight:bold;">Compra fiada</span>' : '<span style="color:#43a047; font-weight:bold;">Pago realizado</span>'}</td>
+        <td style="color: ${isDeuda ? '#e53935' : '#43a047'}">${isDeuda ? "+" : "-"} $ ${amountStr}</td>
       </tr>
     `;
   });

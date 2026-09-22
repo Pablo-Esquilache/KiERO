@@ -114,8 +114,8 @@ document.addEventListener("keydown", (e) => {
         const cajaActual = await CajasAPI.getHoy(comercioId);
         if (!cajaActual || cajaActual.estado !== "abierta") {
           // Bloquear visualmente en el menú global
-          ventasLink.style.backgroundColor = "#444";
-          ventasLink.style.color = "#888";
+          
+          
           ventasLink.innerHTML = "Ventas \uD83D\uDD12";
           ventasLink.title = "Debes abrir la caja para acceder a Ventas";
         } else {

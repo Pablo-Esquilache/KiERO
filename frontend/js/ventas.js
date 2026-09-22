@@ -50,8 +50,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 // Also grey out the active nav item
                 const navItem = document.querySelector(".app-navbar-menu a.app-active");
                 if (navItem) {
-                    navItem.style.backgroundColor = "#555";
-                    navItem.style.color = "#ccc";
+                    
+                    
                     navItem.innerHTML = "Ventas 🔒";
                 }
             } else {
