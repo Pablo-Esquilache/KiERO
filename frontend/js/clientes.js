@@ -1,4 +1,4 @@
-import { ComercioAPI, ClientesAPI, HistorialAPI, VentasAPI } from "./api.js";
+import { ComercioAPI, ClientesAPI, HistorialAPI, VentasAPI, DevolucionesAPI } from "./api.js";
 
 // ===========================================================
 // SESIÓN / COMERCIO
@@ -44,14 +44,11 @@ const btnCerrarHistorial = document.querySelector(".app-close-historial");
 let historialActual = [];
 let clienteActualHistorial = null;
 
-const modalCC = document.getElementById("app-modal-cc");
-const tablaCC = document.getElementById("tablaCuentaCorriente");
-const ccSaldo = document.getElementById("ccSaldo");
+const modalPago = document.getElementById("app-modal-pago");
+const btnRegistrarPagoHistorial = document.getElementById("btnRegistrarPagoHistorial");
+const btnCerrarModalPago = document.getElementById("btnCerrarModalPago");
 const ccRegistrarPago = document.getElementById("ccRegistrarPago");
 const ccMontoPago = document.getElementById("ccMontoPago");
-const btnCerrarCC = document.querySelector(".app-close-cc");
-
-let clienteActualCC = null;
 
 // ===========================================================
 // ESTADO
@@ -320,102 +317,122 @@ function editarCliente(id) {
 
 async function verHistorial(clienteId) {
   const role = session?.role;
-
   if (role !== "admin") {
     alert("No tenés permisos para ver el historial");
     return;
   }
 
-  tablaHistorialBody.innerHTML =
-    "<tr><td colspan='5'>Cargando...</td></tr>";
+  tablaHistorialBody.innerHTML = "<tr><td colspan='5'>Cargando...</td></tr>";
+  document.getElementById("resumenHistorial").innerHTML = "";
 
   try {
-    // 1️⃣ Traer historial de ventas
-    const data = await HistorialAPI.getVentasPorCliente(
-      clienteId,
-      comercioId,
-    );
+    // 1️⃣ Ventas y Devoluciones
+    const ventas = await HistorialAPI.getVentasPorCliente(clienteId, comercioId);
+    let devoluciones = [];
+    try {
+      const allDevoluciones = await DevolucionesAPI.getAll(comercioId);
+      devoluciones = allDevoluciones.filter(d => d.cliente_id == clienteId);
+    } catch(e) { console.warn("Error cargando devoluciones"); }
 
-    historialActual = data;
+    historialActual = ventas;
     clienteActualHistorial = clienteId;
 
-    // 2️⃣ Traer saldo real de cuenta corriente
+    // 2️⃣ Saldo
     const dataSaldo = await ClientesAPI.getSaldo(clienteId, comercioId);
     const saldo = Number(dataSaldo.saldo);
 
-    // 3️⃣ Render
-    tablaHistorialBody.innerHTML = "";
+    // 3️⃣ Unificar y ordenar movimientos (Ventas + Devoluciones)
+    let movimientos = [];
+    ventas.forEach(v => movimientos.push({...v, tipo_operacion: 'venta'}));
+    devoluciones.forEach(d => movimientos.push({...d, tipo_operacion: 'devolucion', metodo_pago: 'A Favor'}));
+    movimientos.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
-    if (!data.length) {
-      tablaHistorialBody.innerHTML =
-        "<tr><td colspan='5'>Sin compras registradas</td></tr>";
+    // 4️⃣ Matemática
+    let totalEfectivo = 0;
+    let totalDigital = 0;
+    let totalDevoluciones = 0;
+    let totalOperatoria = 0;
+
+    ventas.forEach(v => {
+      const vTot = Number(v.total);
+      totalOperatoria += vTot;
+      if (v.metodo_pago === 'Efectivo') {
+        totalEfectivo += vTot;
+      } else if (v.metodo_pago !== 'Cuenta Corriente') {
+        totalDigital += vTot;
+      }
+    });
+    devoluciones.forEach(d => {
+      totalDevoluciones += Number(d.total);
+    });
+
+    // 5️⃣ Render Resumen
+    let saldoHtml = '';
+    if (saldo > 0) {
+      saldoHtml = `<strong style="color: #e53935; font-size: 16px;">$ ${saldo.toFixed(2)} (DEUDA)</strong>`;
+    } else if (saldo < 0) {
+      saldoHtml = `<strong style="color: #43a047; font-size: 16px;">$ ${Math.abs(saldo).toFixed(2)} (A FAVOR)</strong>`;
     } else {
-      let totalGeneral = 0;
-      let totalContado = 0;
+      saldoHtml = `<strong style="font-size: 16px;">$ 0.00 (AL DÍA)</strong>`;
+    }
 
-      data.forEach((v) => {
-        const totalVenta = Number(v.total);
+    document.getElementById("resumenHistorial").innerHTML = `
+      <div class="caja-card" style="border-left: 4px solid #10b981; padding: 10px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 6px;">
+        <span style="font-size: 12px; color: #64748b;">Efectivo</span><br/>
+        <strong style="font-size: 16px; color: #1e293b;">$ ${totalEfectivo.toFixed(2)}</strong>
+      </div>
+      <div class="caja-card" style="border-left: 4px solid #3b82f6; padding: 10px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 6px;">
+        <span style="font-size: 12px; color: #64748b;">Digitales</span><br/>
+        <strong style="font-size: 16px; color: #1e293b;">$ ${totalDigital.toFixed(2)}</strong>
+      </div>
+      <div class="caja-card" style="border-left: 4px solid #f59e0b; padding: 10px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 6px;">
+        <span style="font-size: 12px; color: #64748b;">Devoluciones</span><br/>
+        <strong style="font-size: 16px; color: #1e293b;">$ ${totalDevoluciones.toFixed(2)}</strong>
+      </div>
+      <div class="caja-card" style="border-left: 4px solid #6366f1; padding: 10px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 6px;">
+        <span style="font-size: 12px; color: #64748b;">Total Operatoria</span><br/>
+        <strong style="font-size: 16px; color: #1e293b;">$ ${totalOperatoria.toFixed(2)}</strong>
+      </div>
+      <div class="caja-card" style="border-left: 4px solid ${saldo > 0 ? '#e53935' : (saldo < 0 ? '#43a047' : '#94a3b8')}; padding: 10px; background: ${saldo > 0 ? '#ffebee' : (saldo < 0 ? '#e8f5e9' : '#f8fafc')}; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 6px;">
+        <span style="font-size: 12px; color: #64748b;">Cuenta Corriente</span><br/>
+        ${saldoHtml}
+      </div>
+    `;
 
-        totalGeneral += totalVenta;
-
-        if (v.metodo_pago !== "Cuenta Corriente") {
-          totalContado += totalVenta;
-        }
-
+    // 6️⃣ Render Tabla
+    tablaHistorialBody.innerHTML = "";
+    if (!movimientos.length) {
+      tablaHistorialBody.innerHTML = "<tr><td colspan='5'>Sin movimientos registrados</td></tr>";
+    } else {
+      movimientos.forEach(m => {
+        const isVenta = m.tipo_operacion === 'venta';
         tablaHistorialBody.innerHTML += `
           <tr>
-            <td>${formatearFecha(v.fecha)}</td>
-            <td>${v.metodo_pago}</td>
-            <td>$${totalVenta.toFixed(2)}</td>
+            <td>${formatearFecha(m.fecha)}</td>
             <td>
-              <button class="btn-ver-detalle" data-id="${v.id}">
-                Ver detalle
-              </button>
+              ${isVenta 
+                ? '<span style="color:#1e293b; font-weight:500;">Venta</span>' 
+                : '<span style="color:#f59e0b; font-weight:500;">Devolución</span>'}
+            </td>
+            <td>${m.metodo_pago}</td>
+            <td style="color:${isVenta ? '#1e293b' : '#f59e0b'}">
+              ${isVenta ? '' : '-'}${Number(m.total).toFixed(2)}
+            </td>
+            <td>
+              ${isVenta ? `<button class="btn-ver-detalle" data-id="${m.id}">Ver Tique</button>` : '-'}
             </td>
           </tr>
         `;
       });
-
-      
-      // Highlight debt
-      let saldoHtml = '';
-      if (saldo > 0) {
-        saldoHtml = `<strong style="color: #e53935; font-size: 18px;">$ ${saldo.toFixed(2)} (DEUDA)</strong>`;
-      } else if (saldo < 0) {
-        saldoHtml = `<strong style="color: #43a047; font-size: 18px;">$ ${Math.abs(saldo).toFixed(2)} (A FAVOR)</strong>`;
-      } else {
-        saldoHtml = `<strong>$ 0.00 (AL DÍA)</strong>`;
-      }
-
-      document.getElementById("resumenHistorial").innerHTML = `
-  <div class="resumen-item" style="border-left: 4px solid #43a047;">
-    <span>Pagado al Contado</span>
-    <strong>$ ${totalContado.toFixed(2)}</strong>
-  </div>
-  <div class="resumen-item" style="border-left: 4px solid #2196f3;">
-    <span>Total Histórico Comprado</span>
-    <strong>$ ${totalGeneral.toFixed(2)}</strong>
-  </div>
-  <div class="resumen-item" style="background: ${saldo > 0 ? '#ffebee' : (saldo < 0 ? '#e8f5e9' : '#f8fafc')}; border: 1px solid ${saldo > 0 ? '#ffcdd2' : (saldo < 0 ? '#c8e6c9' : '#e2e8f0')};">
-    <span>Estado de Cuenta Corriente</span>
-    ${saldoHtml}
-  </div>
-`;
-
-      document
-        .querySelectorAll(".btn-ver-detalle")
-        .forEach((b) =>
-          b.addEventListener("click", () =>
-            verDetalleVenta(b.dataset.id)
-          )
-        );
+      document.querySelectorAll(".btn-ver-detalle").forEach((b) =>
+        b.addEventListener("click", () => verDetalleVenta(b.dataset.id))
+      );
     }
 
     modalHistorial.style.display = "flex";
   } catch (error) {
     console.error(error);
-    tablaHistorialBody.innerHTML =
-      "<tr><td colspan='5'>Error inesperado</td></tr>";
+    alert("Error cargando historial");
   }
 }
 
@@ -437,7 +454,7 @@ async function verDetalleVenta(ventaId) {
 
     if (!data.length) {
       tablaDetalleBody.innerHTML =
-        "<tr><td colspan='4'>Sin detalle disponible</td></tr>";
+        "<div style='text-align:center;'>Sin detalle disponible</div>";
     } else {
       data.forEach((item) => {
         total += Number(item.subtotal);
@@ -533,75 +550,35 @@ document
     modalCC.style.display = "flex";
   });
 
-async function cargarCuentaCorriente(clienteId) {
-  const dataSaldo = await ClientesAPI.getSaldo(clienteId, comercioId);
-  const saldo = Number(dataSaldo.saldo);
 
-  if (saldo > 0) {
-    ccSaldo.innerHTML = `DEUDA TOTAL: <span style="color: #e53935;">$ ${saldo.toFixed(2)}</span>`;
-  } else if (saldo < 0) {
-    ccSaldo.innerHTML = `SALDO A FAVOR: <span style="color: #43a047;">$ ${Math.abs(saldo).toFixed(2)}</span>`;
-  } else {
-    ccSaldo.innerHTML = `AL DÍA: <span style="color: #333;">$ 0.00</span>`;
-  }
+btnRegistrarPagoHistorial.addEventListener("click", () => {
+  ccMontoPago.value = "";
+  modalPago.style.display = "flex";
+});
 
-  const movimientos = await ClientesAPI.getCuentaCorriente(
-    clienteId,
-    comercioId,
-  );
-
-  tablaCC.innerHTML = "";
-
-  if (!movimientos || movimientos.length === 0) {
-    tablaCC.innerHTML = "<tr><td colspan='3'>No hay movimientos registrados</td></tr>";
-    return;
-  }
-
-  movimientos.forEach((m) => {
-    const isDeuda = m.tipo === "venta";
-    const amountStr = Number(m.monto).toFixed(2);
-    tablaCC.innerHTML += `
-      <tr>
-        <td>${formatearFecha(m.created_at)}</td>
-        <td>${isDeuda ? '<span style="color:#e53935; font-weight:bold;">Compra fiada</span>' : '<span style="color:#43a047; font-weight:bold;">Pago realizado</span>'}</td>
-        <td style="color: ${isDeuda ? '#e53935' : '#43a047'}">${isDeuda ? "+" : "-"} $ ${amountStr}</td>
-      </tr>
-    `;
-  });
-}
+btnCerrarModalPago.addEventListener("click", () => {
+  modalPago.style.display = "none";
+});
 
 ccRegistrarPago.addEventListener("click", async () => {
   const monto = Number(ccMontoPago.value);
-
   if (!monto || monto <= 0) {
     alert("Monto inválido");
     return;
   }
+  
+  if (!clienteActualHistorial) return;
 
   try {
-    await ClientesAPI.registrarPago(clienteActualCC, {
-      comercio_id: comercioId,
-      monto,
-    });
-  } catch (error) {
-    alert(error.message || "Error al registrar pago");
-    return;
-  }
-
-  ccMontoPago.value = "";
-
-  await cargarCuentaCorriente(clienteActualCC);
-  await verHistorial(clienteActualCC);
-  await cargarClientes();
-});
-
-btnCerrarCC.addEventListener("click", () => {
-  modalCC.style.display = "none";
-});
-
-window.addEventListener("click", (e) => {
-  if (e.target === modalCC) {
-    modalCC.style.display = "none";
+    await ClientesAPI.registrarPago(clienteActualHistorial, { comercio_id: comercioId, monto });
+    alert("Pago registrado con éxito");
+    ccMontoPago.value = "";
+    modalPago.style.display = "none";
+    // Refrescar historial
+    await verHistorial(clienteActualHistorial);
+    await cargarClientes();
+  } catch(e) {
+    alert("Error al registrar pago");
   }
 });
 

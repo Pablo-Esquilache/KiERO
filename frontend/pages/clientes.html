@@ -155,182 +155,84 @@
       </div>
     </div>
 
-    <!-- MODAL DETALLE VENTA (Formato Ticket) -->
-    <div id="app-modal-detalle" class="app-modal" style="z-index: 1050;">
-      <div class="app-modal-content app-modal-ticket">
-        <div class="app-modal-header">
-          <h2 class="app-subtitle">Detalle de Venta</h2>
-          <button
-            type="button"
-            class="app-close-detalle app-close"
-            style="
-              background-color: #e53935;
-              color: #fff;
-              border: none;
-              padding: 6px 14px;
-              border-radius: 6px;
-              cursor: pointer;
-              font-size: 14px;
-            "
-          >
-            Cerrar
-          </button>
-        </div>
-
-        <div class="app-ticket-body">
-          <!-- INFO GENERAL -->
-          <div class="v-ticket-info">
-            <p><strong>ID Venta:</strong> <span id="ticketIdDetalle"></span></p>
-            <p><strong>Fecha:</strong> <span id="ticketFechaDetalle"></span></p>
-            <p>
-              <strong>Método de pago:</strong>
-              <span id="ticketMetodoDetalle"></span>
-            </p>
-          </div>
-
-          <div class="app-ticket-tabla-container">
-            <table class="app-tabla">
-              <thead>
-                <tr>
-                  <th>Producto</th>
-                  <th>Cant.</th>
-                  <th>Precio U.</th>
-                  <th>Subtotal</th>
-                </tr>
-              </thead>
-              <tbody id="tablaDetalleBody"></tbody>
-            </table>
-          </div>
-
-          <div class="app-ticket-total">
-            Total: $<span id="detalleTotal"></span>
-          </div>
-
-          <button
-            id="btnDescargarDetalle"
-            class="app-btn-primary"
-            style="align-self: flex-start; margin-top: 10px"
-          >
-            Descargar en Excel
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- MODAL HISTORIAL -->
-    <div id="app-modal-historial" class="app-modal">
-      <div class="app-modal-content">
-        <div class="app-modal-header">
-          <h2 class="app-subtitle">Historial de Ventas</h2>
-          <button
-            type="button"
-            class="app-close-historial app-close"
-            style="
-              background-color: #e53935;
-              color: #fff;
-              border: none;
-              padding: 6px 14px;
-              border-radius: 6px;
-              cursor: pointer;
-              font-size: 14px;
-            "
-          >
-            Cerrar
-          </button>
-        </div>
-
-        <!-- CAJAS DE RESUMEN (REEMPLAZA A span totales) -->
-        <div id="resumenHistorial" class="resumen-container">
-          <!-- Se inyecta desde clientes.js -->
-        </div>
-
-        <button
-          id="btnCuentaCorriente"
-          class="app-btn-secondary"
-          style="align-self: flex-start; margin-bottom: 20px"
-        >
-          Ver Cuenta Corriente
-        </button>
-
-        <div class="app-tabla-container" style="max-height: 45vh">
-          <table class="app-tabla">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Método de Pago</th>
-                <th>Total Venta</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="tablaHistorialBody"></tbody>
-          </table>
-        </div>
-        <button
-          id="btnDescargarHistorial"
-          class="app-btn-primary"
-          style="align-self: flex-start; margin-top: 15px"
-        >
-          Descargar Resumen Ventas en Excel
-        </button>
-      </div>
-    </div>
-
-    <!-- MODAL CUENTA CORRIENTE -->
-    <div id="app-modal-cc" class="app-modal" style="z-index: 1050;">
-      <div class="app-modal-content">
-        <div class="app-modal-header">
-          <h2 class="app-subtitle">Cuenta Corriente</h2>
-          <button
-            type="button"
-            class="app-close-cc app-close"
-            style="
-              background-color: #e53935;
-              color: #fff;
-              border: none;
-              padding: 6px 14px;
-              border-radius: 6px;
-              cursor: pointer;
-              font-size: 14px;
-            "
-          >
-            Cerrar
-          </button>
-        </div>
-        <div class="cc-total" id="ccSaldo">Saldo: $0.00</div>
-
-        <div class="cc-registro">
-          <input
-            type="number"
-            id="ccMontoPago"
-            class="app-input"
-            placeholder="Monto a pagar..."
-            min="0"
-            step="0.01"
-            style="width: 200px"
-          />
-          <button id="ccRegistrarPago" class="app-btn-primary">
-            Registrar Pago
-          </button>
-        </div>
-
-        <div class="app-tabla-container" style="max-height: 40vh">
-          <table class="app-tabla">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Concepto</th>
-                <th>Monto</th>
-              </tr>
-            </thead>
-            <tbody id="tablaCuentaCorriente"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- SCRIPTS -->
+    
+    
     <script src="../js/libs/xlsx.full.min.js"></script>
     <script src="../js/auth-ui.js"></script>
+    
+    <!-- MODAL HISTORIAL (Z-INDEX 1000) -->
+    <div id="app-modal-historial" class="app-modal" style="z-index: 1000;">
+      <div class="app-modal-content" style="max-width: 900px;">
+        <div class="app-modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <h2 class="app-subtitle" style="margin:0;">Historial de Cliente</h2>
+          <div style="display: flex; gap: 10px;">
+            <button type="button" class="app-btn-primary" id="btnDescargarResumen">Descargar Resumen</button>
+            <button type="button" class="app-btn-secondary" id="btnRegistrarPagoHistorial" style="background-color: #e53935; color: white;">Registrar Pago</button>
+            <button type="button" class="app-close-historial app-close">Cerrar</button>
+          </div>
+        </div>
+
+        <div style="max-height: 400px; overflow-y: auto; margin-top: 15px; border: 1px solid #e2e8f0; border-radius: 8px;">
+          <table class="app-tabla">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Operación</th>
+                <th>Método</th>
+                <th>Total</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tablaHistorialBody">
+              <!-- JS Inyecta ventas y devoluciones acá -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="resumenHistorial" class="caja-grid" style="margin-top: 20px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;">
+          <!-- Tarjetas (Efectivo, Digital, Devoluciones, Total, CC) -->
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL REGISTRAR PAGO (Z-INDEX 1050) -->
+    <div id="app-modal-pago" class="app-modal" style="z-index: 1050; display: none;">
+      <div class="app-modal-content" style="max-width: 400px;">
+        <div class="app-modal-header">
+          <h2 class="app-subtitle">Registrar Pago de Deuda</h2>
+          <button type="button" class="app-close" id="btnCerrarModalPago">Cerrar</button>
+        </div>
+        <div class="app-form-group" style="margin-top: 20px;">
+          <label>Monto a Pagar</label>
+          <input type="number" id="ccMontoPago" class="app-input" placeholder="Ej: 5000" />
+        </div>
+        <button type="button" id="ccRegistrarPago" class="app-btn-primary" style="width: 100%; margin-top: 15px; font-size: 1.1em; padding: 12px;">CONFIRMAR PAGO</button>
+      </div>
+    </div>
+
+    <!-- MODAL DETALLE VENTA / TICKET (Z-INDEX 1100) -->
+    <div id="app-modal-detalle" class="app-modal" style="z-index: 1100; display: none;">
+      <div class="app-modal-content app-modal-ticket">
+        <div class="app-modal-header">
+          <h2 class="app-subtitle">Ticket</h2>
+          <button type="button" class="app-close-detalle app-close">Cerrar</button>
+        </div>
+        <div id="ticketExitoContenido" style="padding: 20px; max-height: 50vh; overflow-y: auto; font-family: monospace; font-size: 14px;">
+          <div style="margin-bottom: 5px;"><strong>ID Venta:</strong> <span id="ticketIdDetalle"></span></div>
+          <div style="margin-bottom: 5px;"><strong>Fecha:</strong> <span id="ticketFechaDetalle"></span></div>
+          <div style="margin-bottom: 5px;"><strong>Método de pago:</strong> <span id="ticketMetodoDetalle"></span></div>
+          <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
+          <div id="tablaDetalleBody">
+            <!-- Items injected by JS -->
+          </div>
+          <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
+          <div style="text-align: right; font-weight: bold; font-size: 1.2em; margin-top: 5px;">
+            Total: $<span id="detalleTotal"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script type="module" src="../js/clientes.js"></script>
     <script type="module" src="../js/logout.js"></script>
     <script type="module" src="../js/system.js"></script>
