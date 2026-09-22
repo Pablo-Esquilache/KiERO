@@ -522,15 +522,7 @@ window.addEventListener("click", (e) => {
   if (e.target === modalDetalle) modalDetalle.style.display = "none";
 });
 
-document
-  .getElementById("btnCuentaCorriente")
-  .addEventListener("click", async () => {
-    clienteActualCC = clienteActualHistorial;
 
-    await cargarCuentaCorriente(clienteActualCC);
-
-    modalCC.style.display = "flex";
-  });
 
 
 btnRegistrarPagoHistorial.addEventListener("click", () => {
