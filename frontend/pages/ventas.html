@@ -289,7 +289,7 @@
     <!-- MODAL BUSCAR PRODUCTO -->
     <!-- ========================= -->
     <div id="modalProductos" class="app-modal">
-      <div class="app-modal-content app-modal-productos">
+      <div class="app-modal-content app-modal-productos" style="max-width: 800px;">
         <div class="app-modal-header">
           <h2 class="app-subtitle">Seleccionar producto</h2>
           <button type="button" class="app-close" id="cerrarModalProductos">
@@ -306,7 +306,7 @@
           />
         </div>
 
-        <div class="app-tabla-container">
+        <div class="app-tabla-container" id="scrollProductosBuscador" style="max-height: 50vh; overflow-y: auto;">
           <table class="app-tabla">
             <thead>
               <tr>
@@ -438,7 +438,7 @@
             Cerrar
           </button>
         </div>
-        <div class="app-tabla-container">
+        <div class="app-tabla-container" id="scrollDevolucionesBuscador" style="max-height: 50vh; overflow-y: auto;">
           <table class="app-tabla">
             <thead>
               <tr>
@@ -456,7 +456,7 @@
 
 <!-- MODAL BUSCAR CLIENTE -->
     <div id="modalBuscarCliente" class="app-modal" style="z-index: 10000;">
-      <div class="app-modal-content">
+      <div class="app-modal-content" style="max-width: 800px;">
         <div class="app-modal-header">
           <h2 class="app-subtitle">Buscar Cliente</h2>
           <button type="button" class="app-close" id="cerrarModalBuscarCliente">Cerrar</button>
@@ -465,7 +465,7 @@
           <input type="text" id="inputBuscarClienteModal" class="app-input" placeholder="Buscar por nombre..." />
           <button type="button" id="btnNuevoClienteDesdeBuscador" class="app-btn-primary">Nuevo Cliente</button>
         </div>
-        <div class="app-tabla-container">
+        <div class="app-tabla-container" id="scrollClientesBuscador" style="max-height: 50vh; overflow-y: auto;">
           <table class="app-tabla">
             <thead><tr><th>Nombre</th><th>Teléfono</th></tr></thead>
             <tbody id="tablaClientesBuscadorBody"></tbody>

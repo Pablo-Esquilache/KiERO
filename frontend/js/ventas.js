@@ -1,3 +1,36 @@
+// PRODUCT LAZY LOAD STATE
+let prodVisibleCount = 20;
+let currentFilteredProductos = [];
+
+const renderProductosModalLazy = (append = false) => {
+  const tabla = document.getElementById("tablaProductosModalBody");
+  if (!tabla) return;
+  if (!append) {
+    tabla.innerHTML = "";
+  }
+  const limit = Math.min(prodVisibleCount, currentFilteredProductos.length);
+  const startIndex = append ? prodVisibleCount - 20 : 0;
+  for (let i = startIndex; i < limit; i++) {
+    const p = currentFilteredProductos[i];
+    const fila = document.createElement("tr");
+    fila.innerHTML = `<td>${p.nombre}</td><td>${p.stock}</td>`;
+    fila.style.cursor = "pointer";
+    fila.addEventListener("click", () => {
+      const tId = document.getElementById(window.targetProductInput || 'productoVenta');
+      const tName = document.getElementById(window.targetProductNameInput || 'productoVentaNombre');
+      if(tId) tId.value = p.id;
+      if(tName) tName.value = p.nombre;
+      
+      const isDev = window.targetProductInput === 'productoDevolucion';
+      const qtyInput = document.getElementById(isDev ? "cantidadDevolucion" : "cantidadVenta");
+      if (qtyInput) qtyInput.focus();
+      
+      const modalProductos = document.getElementById("modalProductos");
+      if(modalProductos) modalProductos.style.display = "none";
+    });
+    tabla.appendChild(fila);
+  }
+};
 // Global targets for Modals
 window.targetClientInput = 'clienteVenta';
 window.targetClientNameInput = 'clienteVentaNombre';
@@ -1202,578 +1235,10 @@ cerrarModalVerDevoluciones?.addEventListener("click", () => {
 
 async function cargarDevoluciones() {
   const devoluciones = await DevolucionesAPI.getAll(comercioId);
-
-  tablaDevolucionesBody.innerHTML = "";
-
-  devoluciones.forEach((d) => {
-    const fila = document.createElement("tr");
-
-    fila.innerHTML = `
-      <td>${formatearFecha(d.fecha)}</td>
-      <td>${d.cliente_nombre || "—"}</td>
-      <td>$${Number(d.total).toFixed(2)}</td>
-      <td>
-        <button class="btn-ver-ticket btn-ver-devolucion" data-id="${d.id}">
-  Ver
-</button>
-      </td>
-    `;
-
-    tablaDevolucionesBody.appendChild(fila);
-  });
-
-  activarBotonesVerDevolucion();
+  currentFilteredDevoluciones = devoluciones;
+  devVisibleCount = 20;
+  renderDevolucionesLazy(false);
 }
-
-function activarBotonesVerDevolucion() {
-  document.querySelectorAll(".btn-ver-devolucion").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const devolucionId = btn.dataset.id;
-
-      const devoluciones = await DevolucionesAPI.getAll(comercioId);
-      const devolucion = devoluciones.find((d) => d.id == devolucionId);
-
-      const detalles = await DevolucionesAPI.getDetalle(devolucionId);
-
-      document.getElementById("ticketDevId").textContent = devolucion.id;
-      document.getElementById("ticketDevFecha").textContent = formatearFecha(
-        devolucion.fecha,
-      );
-      document.getElementById("ticketDevCliente").textContent =
-        devolucion.cliente_nombre || "-";
-      document.getElementById("ticketDevTotal").textContent = Number(
-        devolucion.total,
-      ).toFixed(2);
-
-      const tbody = document.getElementById("ticketDevDetalleBody");
-      tbody.innerHTML = "";
-
-      detalles.forEach((d) => {
-        const fila = document.createElement("tr");
-        fila.innerHTML = `
-            <td>${d.producto_nombre}</td>
-            <td>${d.cantidad}</td>
-            <td>$${Number(d.subtotal).toFixed(2)}</td>
-          `;
-        tbody.appendChild(fila);
-      });
-
-      modalTicketDevolucion.style.display = "flex";
-    });
-  });
-}
-
-cerrarModalTicketDevolucion?.addEventListener("click", () => {
-  modalTicketDevolucion.style.display = "none";
-});
-
-// ==============================
-function formatearFecha(fechaISO) {
-  if (!fechaISO) return "—";
-
-  const fecha = new Date(fechaISO);
-
-  return fecha.toLocaleDateString("es-AR");
-}
-
-// ==============================
-document.addEventListener("DOMContentLoaded", async () => {
-  await cargarComercio();
-  if (comercioId) {
-    await cargarVentas();
-    await cargarProductos();
-    await cargarClientes();
-    await cargarMetodosYDescuentos();
-
-    // Show modal if redirected by F10
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get("openModal") === "true") {
-      window.history.replaceState({}, document.title, "ventas.html");
-      setTimeout(() => {
-        if (btnNuevaVenta) btnNuevaVenta.click();
-      }, 300);
-    }
-  } else {
-    console.error("No se pudo obtener comercioId en Ventas");
-  }
-});
-
-// ==============================
-// CREACIÓN RÁPIDA DE CLIENTE
-// ==============================
-const btnCrearClienteRapido = document.getElementById("btnCrearClienteRapido");
-const modalCrearClienteRapido = document.getElementById("modalCrearClienteRapido");
-const cerrarModalClienteRapido = document.getElementById("cerrarModalClienteRapido");
-const formClienteRapido = document.getElementById("formClienteRapido");
-
-// Elementos de localidad
-const SelectLocalidadRapido = document.getElementById("localidadClienteRapido");
-const btnNuevaLocalidadRapida = document.getElementById("btnNuevaLocalidadClienteRapido");
-const inputNuevaLocalidadRapida = document.getElementById("nuevaLocalidadClienteRapido");
-
-async function cargarLocalidadesRapido() {
-  try {
-    const localidades = await ClientesAPI.getLocalidades(comercioId);
-    SelectLocalidadRapido.innerHTML = '<option value="">Seleccionar localidad</option>';
-    localidades.forEach((loc) => {
-      if (loc) {
-        SelectLocalidadRapido.innerHTML += `<option value="${loc}">${loc}</option>`;
-      }
-    });
-  } catch (error) {
-    console.error("Error al cargar localidades", error);
-  }
-}
-
-if (btnNuevaLocalidadRapida) {
-  btnNuevaLocalidadRapida.addEventListener("click", () => {
-    if (inputNuevaLocalidadRapida.style.display === "none") {
-      inputNuevaLocalidadRapida.style.display = "block";
-      SelectLocalidadRapido.value = "";
-      SelectLocalidadRapido.disabled = true;
-      btnNuevaLocalidadRapida.textContent = "Cancelar";
-    } else {
-      inputNuevaLocalidadRapida.style.display = "none";
-      inputNuevaLocalidadRapida.value = "";
-      SelectLocalidadRapido.disabled = false;
-      btnNuevaLocalidadRapida.textContent = "Nueva";
-    }
-  });
-}
-
-if (btnCrearClienteRapido) {
-  btnCrearClienteRapido.addEventListener("click", async () => {
-    // Reset form
-    formClienteRapido.reset();
-    inputNuevaLocalidadRapida.style.display = "none";
-    inputNuevaLocalidadRapida.value = "";
-    SelectLocalidadRapido.disabled = false;
-    btnNuevaLocalidadRapida.textContent = "Nueva";
-
-    await cargarLocalidadesRapido();
-    modalCrearClienteRapido.style.display = "flex";
-  });
-}
-
-if (cerrarModalClienteRapido) {
-  cerrarModalClienteRapido.addEventListener("click", () => {
-    modalCrearClienteRapido.style.display = "none";
-  });
-}
-
-window.addEventListener("click", (e) => {
-  if (e.target === modalCrearClienteRapido) {
-    modalCrearClienteRapido.style.display = "none";
-  }
-});
-
-if (formClienteRapido) {
-  formClienteRapido.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    let localidadFinal = SelectLocalidadRapido.value;
-    if (inputNuevaLocalidadRapida.style.display === "block" && inputNuevaLocalidadRapida.value.trim() !== "") {
-      localidadFinal = inputNuevaLocalidadRapida.value.trim();
-    }
-
-    const data = {
-      nombre: document.getElementById("nombreClienteRapido").value.trim(),
-      telefono: document.getElementById("telefonoClienteRapido").value.trim(),
-      localidad: localidadFinal,
-      fecha_nacimiento: document.getElementById("fechaNacimientoClienteRapido").value,
-      genero: document.getElementById("generoClienteRapido").value,
-      email: document.getElementById("emailClienteRapido").value.trim(),
-      comentarios: document.getElementById("comentariosClienteRapido").value.trim(),
-      comercio_id: comercioId,
-    };
-
-    try {
-      const nuevoCliente = await ClientesAPI.create(data);
-      alert("Cliente guardado correctamente");
-      modalCrearClienteRapido.style.display = "none";
-      
-      const modalBuscar = document.getElementById("modalBuscarCliente");
-      if (modalBuscar && modalBuscar.style.display === "flex") {
-        allClientes = await ClientesAPI.getAll(comercioId);
-        currentFilteredClientes = allClientes;
-        modalVisibleCount = 20;
-        renderClientesBuscadorLazy(false);
-      } else {
-        const cVal = document.getElementById("clienteVenta");
-        const cNom = document.getElementById("clienteVentaNombre");
-        if (cVal) cVal.value = nuevoCliente.id;
-        if (cNom) cNom.value = nuevoCliente.nombre;
-      }
-    } catch (err) {
-      alert("Error guardando cliente rápido: " + (err.message || "Error interno"));
-    }
-  });
-}
-
-// ==============================
-// POS REFACTOR LOGIC
-// ==============================
-document.addEventListener("DOMContentLoaded", async () => {
-  const btnToggleVista = document.getElementById("btnToggleVista");
-  const posContainer = document.getElementById("pos-container");
-  const historyContainer = document.getElementById("history-container");
-  const title = document.querySelector(".app-title");
-  
-  if(btnToggleVista) {
-    btnToggleVista.addEventListener("click", () => {
-              if(posContainer.style.display === "none") {
-          posContainer.style.display = "grid";
-          historyContainer.style.display = "none";
-          btnToggleVista.textContent = "Ir al Historial de Ventas";
-          title.textContent = "Punto de Venta";
-        } else {
-          posContainer.style.display = "none";
-          historyContainer.style.display = "block";
-          btnToggleVista.textContent = "Ir a Punto de Venta";
-          title.textContent = "Historial de Ventas";
-        }
-    });
-  }
-
-  // Pre-load POS
-  const hoy = new Date().toLocaleDateString("sv-SE");
-  const fechaVenta = document.getElementById("fechaVenta");
-  if(fechaVenta) {
-    fechaVenta.value = hoy;
-    fechaVenta.readOnly = true;
-  }
-  
-  // Expose Clientes to Modal
-  const btnBuscarCliente = document.getElementById("btnBuscarCliente");
-
-  const autocompleteClientes = document.getElementById("autocompleteClientes");
-  const clienteVentaNombre = document.getElementById("clienteVentaNombre");
-  
-  if (clienteVentaNombre && autocompleteClientes) {
-    clienteVentaNombre.addEventListener("input", async (e) => {
-      const val = e.target.value.toLowerCase().trim();
-      if (!val) {
-        autocompleteClientes.style.display = "none";
-        return;
-      }
-      
-      // Fetch if empty
-      if (!allClientes || allClientes.length === 0) {
-        allClientes = await ClientesAPI.getAll(comercioId);
-      }
-      
-      const filtrados = allClientes.filter(c => c.nombre.toLowerCase().includes(val)).slice(0, 10);
-      
-      autocompleteClientes.innerHTML = "";
-      if (filtrados.length > 0) {
-        filtrados.forEach(c => {
-          const li = document.createElement("li");
-          li.textContent = c.nombre;
-          li.addEventListener("mousedown", (ev) => {
-            ev.preventDefault(); // Prevents blur
-            clienteVenta.value = c.id;
-            clienteVentaNombre.value = c.nombre;
-            autocompleteClientes.style.display = "none";
-          });
-          autocompleteClientes.appendChild(li);
-        });
-        autocompleteClientes.style.display = "block";
-      } else {
-        autocompleteClientes.style.display = "none";
-      }
-    });
-
-    clienteVentaNombre.addEventListener("blur", () => {
-      setTimeout(() => autocompleteClientes.style.display = "none", 150);
-    });
-    
-    // Remove the old click listener that opens the modal
-    // Actually, let's just make sure it doesn't open the modal if we click it.
-    // The previous listener was on clienteVentaNombre.
-  }
-
-  const modalBuscarCliente = document.getElementById("modalBuscarCliente");
-  const cerrarModalBuscarCliente = document.getElementById("cerrarModalBuscarCliente");
-  const tablaClientesBuscadorBody = document.getElementById("tablaClientesBuscadorBody");
-  const inputBuscarClienteModal = document.getElementById("inputBuscarClienteModal");
-  
-  const openClientModal = async () => {
-    allClientes = await ClientesAPI.getAll(comercioId);
-    currentFilteredClientes = allClientes;
-    modalVisibleCount = 20;
-    renderClientesBuscadorLazy(false);
-    modalBuscarCliente.style.display = "flex";
-    inputBuscarClienteModal.focus();
-  };
-
-  if(btnBuscarCliente) btnBuscarCliente.addEventListener("click", openClientModal);
-  if(clienteVentaNombre) // clienteVentaNombre.addEventListener("click", openClientModal);
-  
-  if(cerrarModalBuscarCliente) {
-    cerrarModalBuscarCliente.addEventListener("click", () => modalBuscarCliente.style.display = "none");
-  }
-
-  if(inputBuscarClienteModal) {
-    
-  const modalTablaContainer = document.querySelector("#modalBuscarCliente .v-tabla-container");
-  if (modalTablaContainer) {
-    modalTablaContainer.addEventListener("scroll", () => {
-      if (modalTablaContainer.scrollTop + modalTablaContainer.clientHeight >= modalTablaContainer.scrollHeight - 50) {
-        if (modalVisibleCount < currentFilteredClientes.length) {
-          modalVisibleCount += 20;
-          renderClientesBuscadorLazy(true);
-        }
-      }
-    });
-  }
-
-  inputBuscarClienteModal.addEventListener("input", (e) => {
-      const q = e.target.value.toLowerCase();
-      currentFilteredClientes = allClientes.filter(c => c.nombre.toLowerCase().includes(q));
-      modalVisibleCount = 20;
-      renderClientesBuscadorLazy(false);
-    });
-  }
-  
-  
-  
-  const btnNuevoClienteDesdeBuscador = document.getElementById("btnNuevoClienteDesdeBuscador");
-  if(btnNuevoClienteDesdeBuscador) {
-    btnNuevoClienteDesdeBuscador.addEventListener("click", () => {
-      // DO NOT HIDE modalBuscarCliente so it stays behind
-      document.getElementById("btnCrearClienteRapido").click();
-    });
-  }
-
-  // Hook original buttons that are no longer needed
-  
-
-});
-
-
-// Ticket Modal Listeners
-document.addEventListener("DOMContentLoaded", () => {
-  const btnAceptarTicketExito = document.getElementById("btnAceptarTicketExito");
-  const modalTicketExito = document.getElementById("modalTicketExito");
-  const btnImprimirTicketExito = document.getElementById("btnImprimirTicketExito");
-
-  if(btnAceptarTicketExito) {
-    btnAceptarTicketExito.addEventListener("click", () => {
-      modalTicketExito.style.display = "none";
-      // Actualizar listado de fondo
-      cargarVentas();
-    });
-  }
-
-  if(btnImprimirTicketExito) {
-    btnImprimirTicketExito.addEventListener("click", () => {
-      const contenido = document.getElementById("ticketExitoContenido").innerHTML;
-      const ventana = window.open('', '_blank', 'width=300,height=500');
-      ventana.document.write('<html><head><title>Imprimir Ticket</title></head><body style="font-family: monospace;">');
-      ventana.document.write(contenido);
-      ventana.document.write('</body></html>');
-      ventana.document.close();
-      ventana.onload = () => {
-        ventana.print();
-        ventana.close();
-      };
-    });
-  }
-
-  // History Filter and Volver Listeners
-  const btnVolverVentas = document.getElementById("btnVolverVentas");
-  const posContainer = document.getElementById("pos-container");
-  const historyContainer = document.getElementById("history-container");
-  const title = document.querySelector(".app-title");
-  
-  if (btnVolverVentas) {
-    btnVolverVentas.addEventListener("click", () => {
-      posContainer.style.display = "grid";
-      historyContainer.style.display = "none";
-      title.textContent = "Punto de Venta";
-    });
-  }
-
-  const filtroFechaHistorial = document.getElementById("filtroFechaHistorial");
-  if (filtroFechaHistorial) {
-    // Set default to today
-    const hoyLocal = new Date();
-    // Format YYYY-MM-DD
-    const tzoffset = hoyLocal.getTimezoneOffset() * 60000;
-    const localISOTime = (new Date(Date.now() - tzoffset)).toISOString().slice(0, 10);
-    filtroFechaHistorial.value = localISOTime;
-
-    filtroFechaHistorial.addEventListener("change", (e) => {
-      const selectedDate = e.target.value; // YYYY-MM-DD
-      if (!selectedDate) {
-        renderVentasPrincipal(ventasCacheModal); // all
-        return;
-      }
-      
-      const filtered = ventasCacheModal.filter(v => {
-        if (!v.fecha) return false;
-        return v.fecha.startsWith(selectedDate); // Assumes v.fecha is ISO format from db
-      });
-      
-      ventasCachePrincipal = filtered;
-      renderVentasPrincipal(filtered);
-    });
-  }
-});
-
-// ==============================
-// AUTOCOMPLETE PRODUCTOS
-// ==============================
-document.addEventListener("DOMContentLoaded", () => {
-  const productoVentaNombre = document.getElementById("productoVentaNombre");
-  const productoVentaId = document.getElementById("productoVenta");
-  const autocompleteProductos = document.getElementById("autocompleteProductos");
-
-  if (productoVentaNombre && autocompleteProductos) {
-    productoVentaNombre.addEventListener("input", (e) => {
-      const val = e.target.value.toLowerCase().trim();
-      if (!val) {
-        autocompleteProductos.style.display = "none";
-        productoVentaId.value = "";
-        return;
-      }
-      
-      const filtrados = (typeof productosCache !== 'undefined' ? productosCache : []).filter(p => p.nombre.toLowerCase().includes(val) || (p.codigo_barras && p.codigo_barras.toLowerCase().includes(val))).slice(0, 10);
-      
-      autocompleteProductos.innerHTML = "";
-      if (filtrados.length > 0) {
-        filtrados.forEach(p => {
-          const li = document.createElement("li");
-          li.innerHTML = `${p.nombre} - $${Number(p.precio).toFixed(2)}`;
-          li.addEventListener("mousedown", (ev) => {
-            ev.preventDefault(); // Prevents blur
-            productoVentaId.value = p.id;
-            productoVentaNombre.value = p.nombre;
-            autocompleteProductos.style.display = "none";
-            // Auto focus cantidad
-            const cant = document.getElementById("cantidadVenta");
-            if (cant) cant.focus();
-          });
-          autocompleteProductos.appendChild(li);
-        });
-        autocompleteProductos.style.display = "block";
-      } else {
-        autocompleteProductos.style.display = "none";
-      }
-    });
-
-    productoVentaNombre.addEventListener("blur", () => {
-      setTimeout(() => autocompleteProductos.style.display = "none", 150);
-    });
-  }
-});
-
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    if (typeof allClientes !== 'undefined' && allClientes) {
-      const cf = allClientes.find(c => c.nombre && c.nombre.toLowerCase().includes('consumidor'));
-      if (cf) {
-        const inputId = document.getElementById("clienteVenta");
-        const inputNombre = document.getElementById("clienteVentaNombre");
-        if (inputId && inputNombre && !inputId.value) {
-          inputId.value = cf.id;
-          inputNombre.value = cf.nombre;
-        }
-      }
-    }
-  }, 1500); // 1.5s delay to ensure everything loaded
-});
-
-// ==========================================
-// NUEVA LÓGICA DEVOLUCIONES LIBRES
-// ==========================================
-const btnCrearDevolucionLeft = document.getElementById("btnCrearDevolucionLeft");
-const clienteDevolucionNombre = document.getElementById("clienteDevolucionNombre");
-const autocompleteClientesDevolucion = document.getElementById("autocompleteClientesDevolucion");
-const productoDevolucionNombre = document.getElementById("productoDevolucionNombre");
-const autocompleteProductosDevolucion = document.getElementById("autocompleteProductosDevolucion");
-const metodoPagoDevolucion = document.getElementById("metodoPagoDevolucion");
-
-// Open modal from new left button
-btnCrearDevolucionLeft?.addEventListener("click", () => {
-  carritoDevolucion = [];
-  renderCarritoDevolucion();
-  
-  if (clienteDevolucion) clienteDevolucion.value = "";
-  if (clienteDevolucionNombre) clienteDevolucionNombre.value = "";
-  if (productoDevolucion) productoDevolucion.value = "";
-  if (productoDevolucionNombre) productoDevolucionNombre.value = "";
-  if (cantidadDevolucion) cantidadDevolucion.value = "";
-
-  const modalDev = document.getElementById("modalDevolucion");
-  if (modalDev) modalDev.style.display = "flex";
-});
-
-// Autocomplete Clientes Devolucion
-clienteDevolucionNombre?.addEventListener("input", (e) => {
-  const q = e.target.value.toLowerCase();
-  autocompleteClientesDevolucion.innerHTML = "";
-  if (!q) {
-    autocompleteClientesDevolucion.style.display = "none";
-    clienteDevolucion.value = "";
-    return;
-  }
-  const filtrados = allClientes.filter(c => c.nombre.toLowerCase().includes(q) || c.documento.includes(q));
-  if (filtrados.length === 0) {
-    autocompleteClientesDevolucion.style.display = "none";
-    return;
-  }
-  filtrados.forEach(c => {
-    const li = document.createElement("li");
-    li.textContent = `${c.nombre} (${c.documento})`;
-    li.addEventListener("click", () => {
-      clienteDevolucion.value = c.id;
-      clienteDevolucionNombre.value = c.nombre;
-      autocompleteClientesDevolucion.style.display = "none";
-    });
-    autocompleteClientesDevolucion.appendChild(li);
-  });
-  autocompleteClientesDevolucion.style.display = "block";
-});
-
-// Autocomplete Productos Devolucion
-productoDevolucionNombre?.addEventListener("input", (e) => {
-  const q = e.target.value.toLowerCase();
-  autocompleteProductosDevolucion.innerHTML = "";
-  if (!q) {
-    autocompleteProductosDevolucion.style.display = "none";
-    productoDevolucion.value = "";
-    return;
-  }
-  const filtrados = productosCache.filter(p => p.nombre.toLowerCase().includes(q) || p.codigo_barras?.includes(q));
-  if (filtrados.length === 0) {
-    autocompleteProductosDevolucion.style.display = "none";
-    return;
-  }
-  filtrados.forEach(p => {
-    const li = document.createElement("li");
-    li.textContent = `${p.nombre} - $${Number(p.precio).toFixed(2)}`;
-    li.addEventListener("click", () => {
-      productoDevolucion.value = p.id;
-      productoDevolucionNombre.value = p.nombre;
-      autocompleteProductosDevolucion.style.display = "none";
-      // Auto-set cantidad to 1
-      if(cantidadDevolucion) cantidadDevolucion.value = 1;
-    });
-    autocompleteProductosDevolucion.appendChild(li);
-  });
-  autocompleteProductosDevolucion.style.display = "block";
-});
-
-// Hide autocompletes on click outside
-document.addEventListener("click", (e) => {
-  if (e.target !== clienteDevolucionNombre) {
-    if(autocompleteClientesDevolucion) autocompleteClientesDevolucion.style.display = "none";
-  }
-  if (e.target !== productoDevolucionNombre) {
-    if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.style.display = "none";
-  }
-});
 
 // Add to cart modified for free products (we don't check venta_id anymore)
 const btnAgregarDevolucionNuevo = document.getElementById("btnAgregarDevolucion");
@@ -1879,4 +1344,45 @@ document.getElementById("btnBuscarProducto")?.addEventListener("click", () => {
   window.targetProductInput = 'productoVenta';
   window.targetProductNameInput = 'productoVentaNombre';
   // modal open logic is elsewhere, this just sets targets
+});
+
+// ===================================
+// BIND SCROLL EVENTS FOR LAZY LOAD
+// ===================================
+document.addEventListener("DOMContentLoaded", () => {
+  const scrollCli = document.getElementById("scrollClientesBuscador");
+  if(scrollCli) {
+    scrollCli.addEventListener("scroll", () => {
+      if (scrollCli.scrollTop + scrollCli.clientHeight >= scrollCli.scrollHeight - 50) {
+        if (modalVisibleCount < currentFilteredClientes.length) {
+          modalVisibleCount += 20;
+          renderClientesBuscadorLazy(true);
+        }
+      }
+    });
+  }
+  
+  const scrollProd = document.getElementById("scrollProductosBuscador");
+  if(scrollProd) {
+    scrollProd.addEventListener("scroll", () => {
+      if (scrollProd.scrollTop + scrollProd.clientHeight >= scrollProd.scrollHeight - 50) {
+        if (prodVisibleCount < currentFilteredProductos.length) {
+          prodVisibleCount += 20;
+          renderProductosModalLazy(true);
+        }
+      }
+    });
+  }
+  
+  const scrollDev = document.getElementById("scrollDevolucionesBuscador");
+  if(scrollDev) {
+    scrollDev.addEventListener("scroll", () => {
+      if (scrollDev.scrollTop + scrollDev.clientHeight >= scrollDev.scrollHeight - 50) {
+        if (devVisibleCount < currentFilteredDevoluciones.length) {
+          devVisibleCount += 20;
+          renderDevolucionesLazy(true);
+        }
+      }
+    });
+  }
 });

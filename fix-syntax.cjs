@@ -1,14 +1,9 @@
 const fs = require('fs');
-let js = fs.readFileSync('frontend/js/clientes.js', 'utf8');
 
-const errorBlock = `}>
-        <td>\${m.tipo}</td>
-        <td>\${m.tipo === "venta" ? "+" : "-"}$\${Number(m.monto).toFixed(2)}</td>
-      </tr>
-    \`;
-  });
-}`;
+let js = fs.readFileSync('frontend/js/ventas.js', 'utf8');
 
-js = js.replace(errorBlock, '}');
-fs.writeFileSync('frontend/js/clientes.js', js);
+const regex = /renderDevolucionesLazy\(false\);\n\}\);/g;
+js = js.replace(regex, `renderDevolucionesLazy(false);\n}`);
+
+fs.writeFileSync('frontend/js/ventas.js', js);
 console.log('Fixed syntax error');
