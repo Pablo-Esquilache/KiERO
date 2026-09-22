@@ -11,9 +11,9 @@ export const getCajaHoy = async (req, res) => {
     const { rows } = await pool.query(
       `SELECT * FROM cajas 
        WHERE comercio_id = $1 
-       AND (estado = 'abierta' OR fecha = CURRENT_DATE)
+       AND (estado = 'abierta' OR fecha = COALESCE($2::date, CURRENT_DATE))
        ORDER BY fecha DESC LIMIT 1`,
-      [comercioId],
+      [comercioId, req.query.fecha || null],
     );
 
     res.json(rows[0] || null);
