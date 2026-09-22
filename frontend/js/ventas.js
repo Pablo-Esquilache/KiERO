@@ -1,3 +1,50 @@
+import {
+  VentasAPI,
+  ComercioAPI,
+  ClientesAPI,
+  ProductosAPI,
+  DevolucionesAPI,
+  CajasAPI,
+} from "./api.js";
+
+
+// DEVOLUCIONES LAZY LOAD STATE
+let devVisibleCount = 20;
+let currentFilteredDevoluciones = [];
+
+const renderDevolucionesLazy = (append = false) => {
+  const tablaDevolucionesBody = document.getElementById("tablaDevolucionesBody");
+  if (!tablaDevolucionesBody) return;
+  
+  if (!append) {
+    tablaDevolucionesBody.innerHTML = "";
+  }
+  
+  const limit = Math.min(devVisibleCount, currentFilteredDevoluciones.length);
+  const startIndex = append ? devVisibleCount - 20 : 0;
+  
+  for (let i = startIndex; i < limit; i++) {
+    const d = currentFilteredDevoluciones[i];
+    const fila = document.createElement("tr");
+    fila.innerHTML = `
+      <td>${formatearFecha(d.fecha)}</td>
+      <td>${d.cliente_nombre || "Consumidor Final"}</td>
+      <td>$${Number(d.total).toFixed(2)}</td>
+      <td>
+        <button class="btn-ver-ticket btn-ver-devolucion" data-id="${d.id}">Ver</button>
+      </td>
+    `;
+    tablaDevolucionesBody.appendChild(fila);
+  }
+  
+  // Re-bind click events for newly rendered buttons
+  document.querySelectorAll(".btn-ver-devolucion").forEach((b) =>
+    b.addEventListener("click", () => verDetalleVenta(b.dataset.id))
+  );
+};
+
+
+
 // PRODUCT LAZY LOAD STATE
 let prodVisibleCount = 20;
 let currentFilteredProductos = [];
@@ -37,14 +84,7 @@ window.targetClientNameInput = 'clienteVentaNombre';
 window.targetProductInput = 'productoVenta';
 window.targetProductNameInput = 'productoVentaNombre';
 
-import {
-  VentasAPI,
-  ComercioAPI,
-  ClientesAPI,
-  ProductosAPI,
-  DevolucionesAPI,
-  CajasAPI,
-} from "./api.js";
+
 
 // ==============================
 // SESIÓN / COMERCIO
@@ -1279,6 +1319,107 @@ btnAgregarDevolucionNuevo?.addEventListener("click", () => {
 });
 
 // Submit Formulario Modificado
+
+// ==========================================
+// NUEVA LÓGICA DEVOLUCIONES LIBRES (RESTORED)
+// ==========================================
+const btnCrearDevolucionLeft = document.getElementById("btnCrearDevolucionLeft");
+const clienteDevolucionNombre = document.getElementById("clienteDevolucionNombre");
+const autocompleteClientesDevolucion = document.getElementById("autocompleteClientesDevolucion");
+const productoDevolucionNombre = document.getElementById("productoDevolucionNombre");
+const autocompleteProductosDevolucion = document.getElementById("autocompleteProductosDevolucion");
+const metodoPagoDevolucion = document.getElementById("metodoPagoDevolucion");
+
+btnCrearDevolucionLeft?.addEventListener("click", () => {
+  carritoDevolucion = [];
+  renderCarritoDevolucion();
+  
+  if (clienteDevolucion) clienteDevolucion.value = "";
+  if (clienteDevolucionNombre) clienteDevolucionNombre.value = "";
+  if (productoDevolucion) productoDevolucion.value = "";
+  if (productoDevolucionNombre) productoDevolucionNombre.value = "";
+  if (cantidadDevolucion) cantidadDevolucion.value = "";
+
+  const modalDev = document.getElementById("modalDevolucion");
+  if (modalDev) modalDev.style.display = "flex";
+});
+
+// Autocomplete Clientes Devolucion
+clienteDevolucionNombre?.addEventListener("input", async (e) => {
+  const q = e.target.value.toLowerCase().trim();
+  if(autocompleteClientesDevolucion) autocompleteClientesDevolucion.innerHTML = "";
+  if (!q) {
+    if(autocompleteClientesDevolucion) autocompleteClientesDevolucion.style.display = "none";
+    if(clienteDevolucion) clienteDevolucion.value = "";
+    return;
+  }
+  
+  if (!allClientes || allClientes.length === 0) {
+    // We need to fetch!
+    allClientes = await ClientesAPI.getAll(comercioId);
+  }
+  
+  const filtrados = allClientes.filter(c => c.nombre.toLowerCase().includes(q) || c.documento?.includes(q)).slice(0, 10);
+  if (filtrados.length === 0) {
+    if(autocompleteClientesDevolucion) autocompleteClientesDevolucion.style.display = "none";
+    return;
+  }
+  filtrados.forEach(c => {
+    const li = document.createElement("li");
+    li.textContent = `${c.nombre} (${c.documento || '-'})`;
+    li.addEventListener("mousedown", (ev) => {
+      ev.preventDefault();
+      if(clienteDevolucion) clienteDevolucion.value = c.id;
+      if(clienteDevolucionNombre) clienteDevolucionNombre.value = c.nombre;
+      if(autocompleteClientesDevolucion) autocompleteClientesDevolucion.style.display = "none";
+    });
+    if(autocompleteClientesDevolucion) autocompleteClientesDevolucion.appendChild(li);
+  });
+  if(autocompleteClientesDevolucion) autocompleteClientesDevolucion.style.display = "block";
+});
+
+clienteDevolucionNombre?.addEventListener("blur", () => {
+  setTimeout(() => {
+    if (autocompleteClientesDevolucion) autocompleteClientesDevolucion.style.display = "none";
+  }, 150);
+});
+
+// Autocomplete Productos Devolucion
+productoDevolucionNombre?.addEventListener("input", (e) => {
+  const q = e.target.value.toLowerCase().trim();
+  if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.innerHTML = "";
+  if (!q) {
+    if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.style.display = "none";
+    if(productoDevolucion) productoDevolucion.value = "";
+    return;
+  }
+  const filtrados = productosCache.filter(p => p.nombre.toLowerCase().includes(q) || p.codigo_barras?.includes(q)).slice(0, 10);
+  if (filtrados.length === 0) {
+    if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.style.display = "none";
+    return;
+  }
+  filtrados.forEach(p => {
+    const li = document.createElement("li");
+    li.textContent = `${p.nombre} - $${Number(p.precio).toFixed(2)}`;
+    li.addEventListener("mousedown", (ev) => {
+      ev.preventDefault();
+      if(productoDevolucion) productoDevolucion.value = p.id;
+      if(productoDevolucionNombre) productoDevolucionNombre.value = p.nombre;
+      if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.style.display = "none";
+      if(cantidadDevolucion) cantidadDevolucion.focus();
+    });
+    if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.appendChild(li);
+  });
+  if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.style.display = "block";
+});
+
+productoDevolucionNombre?.addEventListener("blur", () => {
+  setTimeout(() => {
+    if (autocompleteProductosDevolucion) autocompleteProductosDevolucion.style.display = "none";
+  }, 150);
+});
+
+
 const formDevolucionNuevo = document.getElementById("formDevolucion");
 formDevolucionNuevo?.addEventListener("submit", async (e) => {
   e.preventDefault();
