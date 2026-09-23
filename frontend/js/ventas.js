@@ -1601,7 +1601,7 @@ clienteDevolucionNombre?.addEventListener("input", debounce(async (e) => {
     if(autocompleteClientesDevolucion) autocompleteClientesDevolucion.appendChild(li);
   });
   if(autocompleteClientesDevolucion) autocompleteClientesDevolucion.style.display = "block";
-});
+}, 300);
 
 clienteDevolucionNombre?.addEventListener("blur", () => {
   setTimeout(() => {
@@ -1639,7 +1639,7 @@ productoDevolucionNombre?.addEventListener("input", debounce(async (e) => {
     if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.appendChild(li);
   });
   if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.style.display = "block";
-});
+}, 300);
 
 productoDevolucionNombre?.addEventListener("blur", () => {
   setTimeout(() => {
