@@ -1,3 +1,4 @@
+import { toastError, toastOk, toastWarning } from "./utils/toast.js";
 import {
   VentasAPI,
   ComercioAPI,
@@ -565,7 +566,7 @@ function procesarAgregarProducto(productoId, cantidadAgregada) {
   const nuevaCantidadTotal = cantidadEnCarrito + cantidadAgregada;
 
   if (nuevaCantidadTotal > stockDisponible) {
-    alert(`Stock insuficiente. Disponible en total: ${stockDisponible}`);
+    toastInfo(`Stock insuficiente. Disponible en total: ${stockDisponible}`);
     return;
   }
 
@@ -613,7 +614,7 @@ if (barcodeVenta) {
       const producto = productosCache.find((p) => p.codigo_barras && p.codigo_barras.trim() === code);
       
       if (!producto) {
-        alert("Producto no encontrado con ese código.");
+        toastWarning("Producto no encontrado con ese código.");
         barcodeVenta.value = "";
         return;
       }
@@ -678,7 +679,7 @@ function renderCarrito() {
         const nuevaCantidadTotal = cantidadOtros + nuevaCant;
         
         if (!ventaEnEdicionId && nuevaCantidadTotal > stockDisponible) {
-          alert(`Stock insuficiente. Disponible en total: ${stockDisponible}`);
+          toastInfo(`Stock insuficiente. Disponible en total: ${stockDisponible}`);
           nuevaCant = Math.max(1, stockDisponible - cantidadOtros);
           e.target.value = nuevaCant;
         }
@@ -715,7 +716,7 @@ if (formVenta) {
     e.preventDefault();
 
     if (carrito.length === 0) {
-      alert("Debe agregar al menos un producto.");
+      toastWarning("Debe agregar al menos un producto.");
       return;
     }
 
@@ -768,7 +769,7 @@ if (formVenta) {
         modalTicketExito.style.display = "flex";
       }
     } catch (err) {
-      alert(err.message || "Error guardando venta");
+      toastError(err.message || "Error guardando venta");
       return;
     }
 
@@ -957,7 +958,7 @@ function activarBotonesEliminar() {
         await VentasAPI.delete(btn.dataset.id, comercioId);
         cargarVentas();
       } catch (err) {
-        alert("Error eliminando venta");
+        toastError("Error eliminando venta");
       }
     });
   });
@@ -1285,7 +1286,7 @@ function activarAgregarProductoDevolucion() {
       if (!cantidad || cantidad <= 0) return;
 
       if (cantidad > max) {
-        alert("Cantidad mayor a la vendida");
+        toastWarning("Cantidad mayor a la vendida");
         return;
       }
 
@@ -1337,7 +1338,7 @@ function renderCarritoDevolucion() {
 
 btnConfirmarDevolucion?.addEventListener("click", async () => {
   if (carritoDevolucion.length === 0) {
-    alert("Debe agregar al menos un producto.");
+    toastWarning("Debe agregar al menos un producto.");
     return;
   }
 
@@ -1353,9 +1354,9 @@ btnConfirmarDevolucion?.addEventListener("click", async () => {
 
   try {
     const res = await DevolucionesAPI.create(payload);
-    alert("Devolución registrada correctamente");
+    toastInfo("Devolución registrada correctamente");
   } catch (err) {
-    alert("Error al guardar devolución");
+    toastInfo("Error al guardar devolución");
     return;
   }
 
@@ -1397,11 +1398,11 @@ btnAgregarDevolucionNuevo?.addEventListener("click", () => {
   const cant = Number(cantidadDevolucion?.value);
   
   if (!prodId) {
-    alert("Seleccioná un producto de la lista");
+    toastInfo("Seleccioná un producto de la lista");
     return;
   }
   if (!cant || cant <= 0) {
-    alert("Ingresá una cantidad válida");
+    toastInfo("Ingresá una cantidad válida");
     return;
   }
   
@@ -1529,7 +1530,7 @@ if (formCliente) {
       modalClienteRapido.style.display = "none";
       formCliente.reset();
     } catch (err) {
-      alert(err.message || "Error creando cliente");
+      toastError(err.message || "Error creando cliente");
     } finally {
       if(btn) {
         btn.textContent = oldText;
@@ -1646,7 +1647,7 @@ formDevolucionNuevo?.addEventListener("submit", async (e) => {
   e.preventDefault();
   
   if (carritoDevolucion.length === 0) {
-    alert("El carrito de devolución está vacío");
+    toastInfo("El carrito de devolución está vacío");
     return;
   }
   
@@ -1664,7 +1665,7 @@ formDevolucionNuevo?.addEventListener("submit", async (e) => {
   try {
     const data = await DevolucionesAPI.create(JSON.stringify(payload));
     
-    alert("Devolución generada con éxito");
+    toastInfo("Devolución generada con éxito");
     carritoDevolucion = [];
     renderCarritoDevolucion();
     
@@ -1674,7 +1675,7 @@ formDevolucionNuevo?.addEventListener("submit", async (e) => {
     document.getElementById("modalDevolucion").style.display = "none";
   } catch (error) {
     console.error(error);
-    alert(error.message);
+    toastError(error.message);
   }
 });
 
