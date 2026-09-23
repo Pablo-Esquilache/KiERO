@@ -8,6 +8,13 @@ import {
 } from "./api.js";
 
 
+
+window.ensureProductosLoaded = async () => {
+  if (!productosCache || productosCache.length === 0) {
+    productosCache = await ProductosAPI.getAll(comercioId);
+  }
+};
+
 // DEVOLUCIONES LAZY LOAD STATE
 let devVisibleCount = 20;
 let currentFilteredDevoluciones = [];
@@ -1383,7 +1390,7 @@ clienteDevolucionNombre?.addEventListener("blur", () => {
 });
 
 // Autocomplete Productos Devolucion
-productoDevolucionNombre?.addEventListener("input", (e) => {
+productoDevolucionNombre?.addEventListener("input", async (e) => {
   const q = e.target.value.toLowerCase().trim();
   if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.innerHTML = "";
   if (!q) {
@@ -1391,6 +1398,9 @@ productoDevolucionNombre?.addEventListener("input", (e) => {
     if(productoDevolucion) productoDevolucion.value = "";
     return;
   }
+  
+  await window.ensureProductosLoaded();
+  
   const filtrados = productosCache.filter(p => p.nombre.toLowerCase().includes(q) || p.codigo_barras?.includes(q)).slice(0, 10);
   if (filtrados.length === 0) {
     if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.style.display = "none";
@@ -1398,7 +1408,7 @@ productoDevolucionNombre?.addEventListener("input", (e) => {
   }
   filtrados.forEach(p => {
     const li = document.createElement("li");
-    li.textContent = `${p.nombre} - $${Number(p.precio).toFixed(2)}`;
+    li.textContent = `${p.nombre} - ${Number(p.precio).toFixed(2)}`;
     li.addEventListener("mousedown", (ev) => {
       ev.preventDefault();
       if(productoDevolucion) productoDevolucion.value = p.id;
@@ -1475,10 +1485,18 @@ document.getElementById("btnBuscarProductoDev")?.addEventListener("click", () =>
 });
 
 // Update the main POS button to set targets
-document.getElementById("btnBuscarProducto")?.addEventListener("click", () => {
+document.getElementById("btnBuscarProducto")?.addEventListener("click", async () => {
   window.targetProductInput = 'productoVenta';
   window.targetProductNameInput = 'productoVentaNombre';
-  // modal open logic is elsewhere, this just sets targets
+  await window.ensureProductosLoaded();
+  if (typeof renderProductosModal === 'function') {
+    renderProductosModal(productosCache);
+  }
+  const m = document.getElementById("modalProductos");
+  if(m) {
+    m.style.display = "flex";
+    document.getElementById("buscarProductoModal")?.focus();
+  }
 });
 
 // ===================================
