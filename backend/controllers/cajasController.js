@@ -39,7 +39,8 @@ export const abrirCaja = async (req, res) => {
     res.json(rows[0]);
   } catch (err) {
       console.error("Error abriendo caja:", err);
-      res.status(500).json({ error: "Error abriendo caja" });
+      // TEMPORAL: Enviamos el error real al frontend para ver qu est fallando en Supabase
+      res.status(500).json({ error: "Error abriendo caja: " + err.message });
     }
 };
 
