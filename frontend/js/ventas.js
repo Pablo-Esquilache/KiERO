@@ -1538,6 +1538,15 @@ window.openClientModal = async () => {
   currentFilteredClientes = allClientes;
   modalVisibleCount = 20;
   if(typeof renderClientesBuscadorLazy === 'function') renderClientesBuscadorLazy(false);
+  const btnNuevo = document.getElementById("btnNuevoClienteDesdeBuscador");
+  if (btnNuevo) {
+    if (window.targetClientInput === 'clienteDevolucion') {
+      btnNuevo.style.setProperty('display', 'none', 'important');
+    } else {
+      btnNuevo.style.setProperty('display', 'inline-block', 'important');
+    }
+  }
+
   const m = document.getElementById("modalBuscarCliente");
   if(m) {
     m.style.display = "flex";
