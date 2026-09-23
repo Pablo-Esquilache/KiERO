@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const token = JSON.parse(localStorage.getItem("token") || '"{}"');
   const session = JSON.parse(localStorage.getItem("session") || "{}");
+  const token = session.token;
 
   if (session.role !== "admin") {
     alert("Acceso denegado. Redirigiendo...");
