@@ -15,6 +15,17 @@ window.ensureProductosLoaded = async () => {
   }
 };
 
+
+window.renderProductosModal = function(lista) {
+  if (typeof currentFilteredProductos !== 'undefined') {
+    currentFilteredProductos = lista;
+    prodVisibleCount = 20;
+    if (typeof renderProductosModalLazy === 'function') {
+      renderProductosModalLazy(false);
+    }
+  }
+};
+
 // DEVOLUCIONES LAZY LOAD STATE
 let devVisibleCount = 20;
 let currentFilteredDevoluciones = [];
@@ -978,542 +989,7 @@ window.addEventListener("click", (e) => {
   }
 });
 
-function renderProductosModal(lista) {
-  tablaProductosModalBody.innerHTML = "";
-
-  lista.forEach((p) => {
-    if (p.stock > 0) {
-      const fila = document.createElement("tr");
-
-      fila.innerHTML = `
-        <td>${p.nombre}</td>
-        <td>${p.stock}</td>
-      `;
-
-      fila.style.cursor = "pointer";
-
-      fila.addEventListener("click", () => {
-          const tId = document.getElementById(window.targetProductInput || 'productoVenta');
-          const tName = document.getElementById(window.targetProductNameInput || 'productoVentaNombre');
-          
-          if(tId) tId.value = p.id;
-          if(tName) tName.value = p.nombre;
-          
-          // Focus the quantity input based on which module we are in
-          const isDev = window.targetProductInput === 'productoDevolucion';
-          const qtyInput = document.getElementById(isDev ? "cantidadDevolucion" : "cantidadVenta");
-          if (qtyInput) qtyInput.focus();
-          
-          modalProductos.style.display = "none";
-      });
-
-      tablaProductosModalBody.appendChild(fila);
-    }
-  });
-}
-
-buscarProductoModal?.addEventListener("input", () => {
-  const texto = buscarProductoModal.value.toLowerCase();
-
-  const filtrados = productosCache.filter((p) => p.nombre.toLowerCase().includes(texto) || (p.codigo_barras && p.codigo_barras.includes(texto)));
-
-  renderProductosModal(filtrados);
-});
-
-btnDevolucion?.addEventListener("click", async () => {
-  // 🔹 Reset completo
-  carritoDevolucion = [];
-  ventaSeleccionadaDevolucion = null;
-
-  carritoDevolucionBody.innerHTML = "";
-  tablaDetalleVentaBody.innerHTML = "";
-  tablaVentasClienteBody.innerHTML = "";
-  actualizarTotalDevolucion();
-
-  await cargarClientesDevolucion();
-
-  clienteDevolucion.value = "";
-
-  modalDevolucion.style.display = "flex";
-});
-
-cerrarModalDevolucion?.addEventListener("click", () => {
-  modalDevolucion.style.display = "none";
-});
-
-cerrarModalProductosDevolucion?.addEventListener("click", () => {
-  modalProductosDevolucion.style.display = "none";
-});
-
-window.addEventListener("click", (e) => {
-  if (e.target === modalDevolucion) {
-    modalDevolucion.style.display = "none";
-  }
-  if (e.target === modalProductosDevolucion) {
-    modalProductosDevolucion.style.display = "none";
-  }
-});
-
-async function cargarClientesDevolucion() {
-  const clientes = await ClientesAPI.getAll(comercioId);
-
-  clienteDevolucion.innerHTML = `<option value="">Seleccionar cliente</option>`;
-
-  clientes.forEach((c) => {
-    clienteDevolucion.innerHTML += `<option value="${c.id}">${c.nombre}</option>`;
-  });
-}
-
-btnBuscarVentasCliente?.addEventListener("click", async () => {
-  const clienteId = clienteDevolucion.value;
-  if (!clienteId) return;
-
-  const ventas = await VentasAPI.getAll(comercioId);
-
-  const ventasCliente = ventas.filter((v) => v.cliente_id == clienteId);
-
-  renderVentasCliente(ventasCliente);
-});
-
-function renderVentasCliente(lista) {
-  tablaVentasClienteBody.innerHTML = "";
-
-  if (!lista.length) {
-    tablaVentasClienteBody.innerHTML = `<tr><td colspan="4">No hay ventas para este cliente</td></tr>`;
-    return;
-  }
-
-  lista.forEach((v) => {
-    const fila = document.createElement("tr");
-
-    fila.innerHTML = `
-      <td>${formatearFecha(v.fecha)}</td>
-      <td>$${Number(v.total).toFixed(2)}</td>
-      <td>
-        <button class="btn-primario btn-seleccionar-venta"
-          data-id="${v.id}"
-          data-cliente="${v.cliente_id}">
-          Seleccionar
-        </button>
-      </td>
-    `;
-
-    tablaVentasClienteBody.appendChild(fila);
-  });
-
-  activarSeleccionVenta();
-}
-
-function activarSeleccionVenta() {
-  document.querySelectorAll(".btn-seleccionar-venta").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      ventaSeleccionadaDevolucion = {
-        venta_id: btn.dataset.id,
-        cliente_id: btn.dataset.cliente,
-      };
-
-      await cargarDetalleVentaParaDevolucion(btn.dataset.id);
-
-      modalProductosDevolucion.style.display = "flex";
-    });
-  });
-}
-
-async function cargarDetalleVentaParaDevolucion(ventaId) {
-  const detalles = await VentasAPI.getDetalle(ventaId);
-
-  tablaDetalleVentaBody.innerHTML = "";
-  carritoDevolucion = [];
-  actualizarTotalDevolucion();
-
-  detalles.forEach((d) => {
-    const fila = document.createElement("tr");
-
-    fila.innerHTML = `
-      <td>${d.producto_nombre}</td>
-      <td>${d.cantidad}</td>
-      <td>$${Number(d.precio_unitario).toFixed(2)}</td>
-      <td>
-        <input type="number"
-          min="1"
-          max="${d.cantidad}"
-          value="1"
-          style="width:90px; text-align:center"
-          class="app-input"
-          id="dev-${d.producto_id}">
-      </td>
-      <td>
-        <button class="btn-primario btn-agregar-dev"
-          data-id="${d.producto_id}"
-          data-nombre="${d.producto_nombre}"
-          data-precio="${d.precio_unitario}"
-          data-max="${d.cantidad}">
-          Agregar
-        </button>
-      </td>
-    `;
-
-    tablaDetalleVentaBody.appendChild(fila);
-  });
-
-  activarAgregarProductoDevolucion();
-}
-
-function actualizarTotalDevolucion() {
-  const total = carritoDevolucion.reduce((acc, item) => acc + item.subtotal, 0);
-
-  totalDevolucionSpan.textContent = total.toFixed(2);
-}
-
-function activarAgregarProductoDevolucion() {
-  document.querySelectorAll(".btn-agregar-dev").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const productoId = btn.dataset.id;
-      const nombre = btn.dataset.nombre;
-      const precio = Number(btn.dataset.precio);
-      const max = Number(btn.dataset.max);
-
-      const inputCantidad = document.getElementById(`dev-${productoId}`);
-
-      const cantidad = Number(inputCantidad.value);
-
-      if (!cantidad || cantidad <= 0) return;
-
-      if (cantidad > max) {
-        alert("Cantidad mayor a la vendida");
-        return;
-      }
-
-      const subtotal = precio * cantidad;
-
-      carritoDevolucion.push({
-        producto_id: productoId,
-        nombre,
-        cantidad,
-        precio_unitario: precio,
-        subtotal,
-      });
-
-      renderCarritoDevolucion();
-    });
-  });
-}
-
-function renderCarritoDevolucion() {
-  carritoDevolucionBody.innerHTML = "";
-
-  carritoDevolucion.forEach((item, index) => {
-    const fila = document.createElement("tr");
-
-    fila.innerHTML = `
-      <td>${item.nombre}</td>
-      <td>${item.cantidad}</td>
-      <td>$${item.subtotal.toFixed(2)}</td>
-      <td>
-        <button class="btn-eliminar-item"
-          data-index="${index}">
-          🗑
-        </button>
-      </td>
-    `;
-
-    carritoDevolucionBody.appendChild(fila);
-  });
-
-  document.querySelectorAll(".btn-eliminar-item").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      carritoDevolucion.splice(btn.dataset.index, 1);
-      renderCarritoDevolucion();
-    });
-  });
-
-  actualizarTotalDevolucion();
-}
-
-btnConfirmarDevolucion?.addEventListener("click", async () => {
-  if (carritoDevolucion.length === 0) {
-    alert("Debe agregar al menos un producto.");
-    return;
-  }
-
-  const total = carritoDevolucion.reduce((acc, item) => acc + item.subtotal, 0);
-
-  const payload = {
-    venta_id: ventaSeleccionadaDevolucion.venta_id,
-    cliente_id: ventaSeleccionadaDevolucion.cliente_id,
-    comercio_id: comercioId,
-    total,
-    items: carritoDevolucion,
-  };
-
-  try {
-    const res = await DevolucionesAPI.create(payload);
-    alert("Devolución registrada correctamente");
-  } catch (err) {
-    alert("Error al guardar devolución");
-    return;
-  }
-
-  // 🔄 limpiar estado
-  carritoDevolucion = [];
-  ventaSeleccionadaDevolucion = null;
-
-  carritoDevolucionBody.innerHTML = "";
-  tablaDetalleVentaBody.innerHTML = "";
-  totalDevolucionSpan.textContent = "0.00";
-
-  modalProductosDevolucion.style.display = "none";
-  modalDevolucion.style.display = "none";
-
-  await cargarVentas();
-});
-
-const btnVerDevolucionesLeft = document.getElementById("btnVerDevolucionesLeft");
-btnVerDevolucionesLeft?.addEventListener("click", async () => {
-  await cargarDevoluciones();
-  modalVerDevoluciones.style.display = "flex";
-});
-
-cerrarModalVerDevoluciones?.addEventListener("click", () => {
-  modalVerDevoluciones.style.display = "none";
-});
-
-async function cargarDevoluciones() {
-  const devoluciones = await DevolucionesAPI.getAll(comercioId);
-  currentFilteredDevoluciones = devoluciones;
-  devVisibleCount = 20;
-  renderDevolucionesLazy(false);
-}
-
-// Add to cart modified for free products (we don't check venta_id anymore)
-const btnAgregarDevolucionNuevo = document.getElementById("btnAgregarDevolucion");
-btnAgregarDevolucionNuevo?.addEventListener("click", () => {
-  const prodId = productoDevolucion?.value;
-  const cant = Number(cantidadDevolucion?.value);
-  
-  if (!prodId) {
-    alert("Seleccioná un producto de la lista");
-    return;
-  }
-  if (!cant || cant <= 0) {
-    alert("Ingresá una cantidad válida");
-    return;
-  }
-  
-  const prodObj = productosCache.find(p => p.id == prodId);
-  if (!prodObj) return;
-
-  const ex = carritoDevolucion.find(i => i.producto_id == prodId);
-  if (ex) {
-    ex.cantidad += cant;
-    ex.subtotal = ex.cantidad * Number(prodObj.precio);
-  } else {
-    carritoDevolucion.push({
-      producto_id: prodId,
-      nombre: prodObj.nombre,
-      cantidad: cant,
-      precio_unitario: Number(prodObj.precio),
-      subtotal: cant * Number(prodObj.precio)
-    });
-  }
-  
-  renderCarritoDevolucion();
-  productoDevolucion.value = "";
-  productoDevolucionNombre.value = "";
-  cantidadDevolucion.value = "";
-});
-
-// Submit Formulario Modificado
-
-// ==========================================
-// NUEVA LÓGICA DEVOLUCIONES LIBRES (RESTORED)
-// ==========================================
-const btnCrearDevolucionLeft = document.getElementById("btnCrearDevolucionLeft");
-const clienteDevolucionNombre = document.getElementById("clienteDevolucionNombre");
-const autocompleteClientesDevolucion = document.getElementById("autocompleteClientesDevolucion");
-const productoDevolucionNombre = document.getElementById("productoDevolucionNombre");
-const autocompleteProductosDevolucion = document.getElementById("autocompleteProductosDevolucion");
-const metodoPagoDevolucion = document.getElementById("metodoPagoDevolucion");
-
-btnCrearDevolucionLeft?.addEventListener("click", () => {
-  carritoDevolucion = [];
-  renderCarritoDevolucion();
-  
-  if (clienteDevolucion) clienteDevolucion.value = "";
-  if (clienteDevolucionNombre) clienteDevolucionNombre.value = "";
-  if (productoDevolucion) productoDevolucion.value = "";
-  if (productoDevolucionNombre) productoDevolucionNombre.value = "";
-  if (cantidadDevolucion) cantidadDevolucion.value = "";
-
-  const modalDev = document.getElementById("modalDevolucion");
-  if (modalDev) modalDev.style.display = "flex";
-});
-
-// Autocomplete Clientes Devolucion
-clienteDevolucionNombre?.addEventListener("input", async (e) => {
-  const q = e.target.value.toLowerCase().trim();
-  if(autocompleteClientesDevolucion) autocompleteClientesDevolucion.innerHTML = "";
-  if (!q) {
-    if(autocompleteClientesDevolucion) autocompleteClientesDevolucion.style.display = "none";
-    if(clienteDevolucion) clienteDevolucion.value = "";
-    return;
-  }
-  
-  if (!allClientes || allClientes.length === 0) {
-    // We need to fetch!
-    allClientes = await ClientesAPI.getAll(comercioId);
-  }
-  
-  const filtrados = allClientes.filter(c => c.nombre.toLowerCase().includes(q) || c.documento?.includes(q)).slice(0, 10);
-  if (filtrados.length === 0) {
-    if(autocompleteClientesDevolucion) autocompleteClientesDevolucion.style.display = "none";
-    return;
-  }
-  filtrados.forEach(c => {
-    const li = document.createElement("li");
-    li.textContent = c.documento ? `${c.nombre} (${c.documento})` : c.nombre;
-    li.addEventListener("mousedown", (ev) => {
-      ev.preventDefault();
-      if(clienteDevolucion) clienteDevolucion.value = c.id;
-      if(clienteDevolucionNombre) clienteDevolucionNombre.value = c.nombre;
-      if(autocompleteClientesDevolucion) autocompleteClientesDevolucion.style.display = "none";
-    });
-    if(autocompleteClientesDevolucion) autocompleteClientesDevolucion.appendChild(li);
-  });
-  if(autocompleteClientesDevolucion) autocompleteClientesDevolucion.style.display = "block";
-});
-
-clienteDevolucionNombre?.addEventListener("blur", () => {
-  setTimeout(() => {
-    if (autocompleteClientesDevolucion) autocompleteClientesDevolucion.style.display = "none";
-  }, 150);
-});
-
-// Autocomplete Productos Devolucion
-productoDevolucionNombre?.addEventListener("input", async (e) => {
-  const q = e.target.value.toLowerCase().trim();
-  if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.innerHTML = "";
-  if (!q) {
-    if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.style.display = "none";
-    if(productoDevolucion) productoDevolucion.value = "";
-    return;
-  }
-  
-  await window.ensureProductosLoaded();
-  
-  const filtrados = productosCache.filter(p => p.nombre.toLowerCase().includes(q) || p.codigo_barras?.includes(q)).slice(0, 10);
-  if (filtrados.length === 0) {
-    if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.style.display = "none";
-    return;
-  }
-  filtrados.forEach(p => {
-    const li = document.createElement("li");
-    li.textContent = `${p.nombre} - ${Number(p.precio).toFixed(2)}`;
-    li.addEventListener("mousedown", (ev) => {
-      ev.preventDefault();
-      if(productoDevolucion) productoDevolucion.value = p.id;
-      if(productoDevolucionNombre) productoDevolucionNombre.value = p.nombre;
-      if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.style.display = "none";
-      if(cantidadDevolucion) cantidadDevolucion.focus();
-    });
-    if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.appendChild(li);
-  });
-  if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.style.display = "block";
-});
-
-productoDevolucionNombre?.addEventListener("blur", () => {
-  setTimeout(() => {
-    if (autocompleteProductosDevolucion) autocompleteProductosDevolucion.style.display = "none";
-  }, 150);
-});
-
-
-const formDevolucionNuevo = document.getElementById("formDevolucion");
-formDevolucionNuevo?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  
-  if (carritoDevolucion.length === 0) {
-    alert("El carrito de devolución está vacío");
-    return;
-  }
-  
-  const cliId = document.getElementById("clienteDevolucion")?.value || null;
-  const metPago = document.getElementById("metodoPagoDevolucion")?.value || "Efectivo";
-  
-  const payload = {
-    comercio_id: comercioId,
-    cliente_id: cliId, // Puede ser null, el backend lo aceptará si quitamos el constraint
-    venta_id: null, // Ya no lo usamos en debolucion libre
-    metodo_pago: metPago,
-    items: carritoDevolucion
-  };
-  
-  try {
-    const data = await DevolucionesAPI.create(JSON.stringify(payload));
-    
-    alert("Devolución generada con éxito");
-    carritoDevolucion = [];
-    renderCarritoDevolucion();
-    
-    if (clienteDevolucion) clienteDevolucion.value = "";
-    if (clienteDevolucionNombre) clienteDevolucionNombre.value = "";
-    
-    document.getElementById("modalDevolucion").style.display = "none";
-  } catch (error) {
-    console.error(error);
-    alert(error.message);
-  }
-});
-
-// ==========================================
-// LUPITAS EN DEVOLUCIONES
-// ==========================================
-document.getElementById("btnBuscarClienteDev")?.addEventListener("click", () => {
-  window.targetClientInput = 'clienteDevolucion';
-  window.targetClientNameInput = 'clienteDevolucionNombre';
-  if(typeof window.openClientModal === 'function') window.openClientModal();
-});
-
-document.getElementById("btnBuscarProductoDev")?.addEventListener("click", () => {
-  window.targetProductInput = 'productoDevolucion';
-  window.targetProductNameInput = 'productoDevolucionNombre';
-  const m = document.getElementById("modalProductos");
-  if(m) {
-    m.style.display = "flex";
-    document.getElementById("buscarProductoModal")?.focus();
-  }
-});
-
-// Update the main POS button to set targets
-document.getElementById("btnBuscarProducto")?.addEventListener("click", async () => {
-  window.targetProductInput = 'productoVenta';
-  window.targetProductNameInput = 'productoVentaNombre';
-  await window.ensureProductosLoaded();
-  if (typeof renderProductosModal === 'function') {
-    renderProductosModal(productosCache);
-  }
-  const m = document.getElementById("modalProductos");
-  if(m) {
-    m.style.display = "flex";
-    document.getElementById("buscarProductoModal")?.focus();
-  }
-});
-
-// ===================================
-// BIND SCROLL EVENTS FOR LAZY LOAD
-// ===================================
-document.addEventListener("DOMContentLoaded", () => {
-  const scrollCli = document.getElementById("scrollClientesBuscador");
-  if(scrollCli) {
-    scrollCli.addEventListener("scroll", () => {
-      if (scrollCli.scrollTop + scrollCli.clientHeight >= scrollCli.scrollHeight - 50) {
-        if (modalVisibleCount < currentFilteredClientes.length) {
-          modalVisibleCount += 20;
-          renderClientesBuscadorLazy(true);
-        }
-      }
-    });
-  }
+// function renderProductosModal removed to use global version
   
   const scrollProd = document.getElementById("scrollProductosBuscador");
   if(scrollProd) {
@@ -1538,7 +1014,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
-});
 
 const cerrarModalBuscarCliente = document.getElementById("cerrarModalBuscarCliente");
 cerrarModalBuscarCliente?.addEventListener("click", () => {
@@ -1547,6 +1022,45 @@ cerrarModalBuscarCliente?.addEventListener("click", () => {
 });
 
 // ==========================================
+
+// ==========================================
+// LUPITAS EN DEVOLUCIONES
+// ==========================================
+document.getElementById("btnBuscarClienteDev")?.addEventListener("click", () => {
+  window.targetClientInput = 'clienteDevolucion';
+  window.targetClientNameInput = 'clienteDevolucionNombre';
+  if(typeof window.openClientModal === 'function') window.openClientModal();
+});
+
+document.getElementById("btnBuscarProductoDev")?.addEventListener("click", async () => {
+  window.targetProductInput = 'productoDevolucion';
+  window.targetProductNameInput = 'productoDevolucionNombre';
+  if(typeof window.ensureProductosLoaded === 'function') await window.ensureProductosLoaded();
+  if (typeof window.renderProductosModal === 'function') {
+    window.renderProductosModal(productosCache);
+  }
+  const m = document.getElementById("modalProductos");
+  if(m) {
+    m.style.display = "flex";
+    document.getElementById("buscarProductoModal")?.focus();
+  }
+});
+
+
+document.getElementById("btnBuscarProducto")?.addEventListener("click", async () => {
+  window.targetProductInput = 'productoVenta';
+  window.targetProductNameInput = 'productoVentaNombre';
+  if(typeof window.ensureProductosLoaded === 'function') await window.ensureProductosLoaded();
+  if (typeof window.renderProductosModal === 'function') {
+    window.renderProductosModal(productosCache);
+  }
+  const m = document.getElementById("modalProductos");
+  if(m) {
+    m.style.display = "flex";
+    document.getElementById("buscarProductoModal")?.focus();
+  }
+});
+
 // CLIENT LOGIC (RESTORED)
 // ==========================================
 window.openClientModal = async () => {
@@ -1587,4 +1101,12 @@ document.getElementById("inputBuscarClienteModal")?.addEventListener("input", (e
 
 document.getElementById("btnNuevoClienteDesdeBuscador")?.addEventListener("click", () => {
   document.getElementById("btnCrearClienteRapido")?.click();
+});
+
+document.getElementById("buscarProductoModal")?.addEventListener("input", (e) => {
+  const texto = e.target.value.toLowerCase();
+  const filtrados = productosCache.filter((p) => p.nombre.toLowerCase().includes(texto) || (p.codigo_barras && p.codigo_barras.includes(texto)));
+  if(typeof window.renderProductosModal === 'function') {
+    window.renderProductosModal(filtrados);
+  }
 });

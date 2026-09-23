@@ -4,7 +4,7 @@ import db from "../db.js";
    POST registrar devolución (POSTGRESQL)
 ===================================================== */
 export const registrarDevolucion = async (req, res) => {
-  const { venta_id, cliente_id, comercio_id, items, metodo_pago } = req.body;
+  const { venta_id, cliente_id, comercio_id, items } = req.body;
 
   if (!comercio_id)
     return res.status(400).json({ error: "comercio_id requerido" });
@@ -18,7 +18,7 @@ export const registrarDevolucion = async (req, res) => {
     await client.query("BEGIN");
 
     let totalDevolucion = 0;
-    const metodoPagoFinal = metodo_pago || "Efectivo";
+    
 
     // Si viene venta_id (Devolución vinculada, modelo antiguo)
     if (venta_id) {
@@ -65,9 +65,9 @@ export const registrarDevolucion = async (req, res) => {
 
     // 3. Insert cabecera
     const devolucionInsert = await client.query(
-      `INSERT INTO devoluciones (venta_id, cliente_id, total, comercio_id, fecha, metodo_pago)
-       VALUES ($1, $2, $3, $4, NOW(), $5) RETURNING *`,
-      [venta_id || null, cliente_id || null, totalDevolucion, comercio_id, metodoPagoFinal]
+      `INSERT INTO devoluciones (venta_id, cliente_id, total, comercio_id, fecha)
+       VALUES ($1, $2, $3, $4, NOW()) RETURNING *`,
+      [venta_id || null, cliente_id || null, totalDevolucion, comercio_id]
     );
     const devolucion = devolucionInsert.rows[0];
 
@@ -84,13 +84,7 @@ export const registrarDevolucion = async (req, res) => {
       );
     }
 
-    // 5. Si fue en cuenta corriente, abonar saldo compensatorio como "pago"
-    if (metodoPagoFinal === 'Cuenta Corriente' && cliente_id) {
-      await client.query(
-        "INSERT INTO cuenta_corriente_movimientos (cliente_id, comercio_id, tipo, monto, devolucion_id) VALUES ($1, $2, 'pago', $3, $4)",
-        [cliente_id, comercio_id, totalDevolucion, devolucion.id]
-      );
-    }
+    // 5. Compensacion de CC removida por requerimiento de Devolucion Libre sin metodo de pago
 
     await client.query("COMMIT");
     res.status(201).json({ success: true, devolucion_id: devolucion.id });
