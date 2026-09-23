@@ -331,7 +331,7 @@
           </button>
         </div>
 
-        <form id="formDevolucion" style="display: flex; flex-direction: column; gap: 10px;">
+        <form id="formDevolucion" style="display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0;">
           <div class="app-form-group" style="margin-bottom: 0;">
             <label>Cliente (Opcional - Consumidor Final si se omite)</label>
             <input type="hidden" id="clienteDevolucion">
@@ -382,7 +382,7 @@
             </div>
           </div>
 
-          <div class="app-tabla-container" style="max-height: 400px; min-height: 0; margin-top: 10px;">
+          <div class="app-tabla-container" style="flex: 1; min-height: 0; margin-top: 10px; overflow-y: auto;">
             <table class="app-tabla">
               <thead>
                 <tr>
@@ -396,7 +396,7 @@
             </table>
           </div>
 
-          <div class="app-resumen" style="display: flex; justify-content: space-between; align-items: center; position: sticky; bottom: -20px; background: white; padding: 15px 0 0 0; margin-top: 15px; border-top: 1px solid #e2e8f0; z-index: 10;">
+          <div class="app-resumen" style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 0 0 0; margin-top: 10px; border-top: 1px solid #e2e8f0; flex-shrink: 0;">
             <div class="app-total-final" style="color: #f59e0b; font-size: 1.2rem; font-weight: bold; margin: 0;">
               Total: $<span id="totalDevolucion">0.00</span>
             </div>
