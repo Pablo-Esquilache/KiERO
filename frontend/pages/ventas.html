@@ -332,8 +332,8 @@
         </div>
 
         <form id="formDevolucion" style="display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0;">
-          <div class="app-form-group" style="margin-bottom: 0;">
-            <label>Cliente (Opcional - Consumidor Final si se omite)</label>
+          <div class="app-form-group" style="margin-bottom: 0; flex: none;">
+              <label>Cliente (Opcional - Consumidor Final si se omite)</label>
             <input type="hidden" id="clienteDevolucion">
             <div style="display: flex; gap: 8px;">
               <div style="position: relative; flex: 1;">
@@ -344,8 +344,8 @@
             </div>
           </div>
 
-          <div class="app-form-group" style="margin-bottom: 0;">
-            <label>Producto a devolver</label>
+          <div class="app-form-group" style="margin-bottom: 0; flex: none;">
+              <label>Producto a devolver</label>
             <div style="display: flex; gap: 8px;">
               <div style="position: relative; flex: 1;">
                 <input type="hidden" id="productoDevolucion">
@@ -356,7 +356,7 @@
             </div>
           </div>
           
-          <div style="display: flex; gap: 10px;">
+          <div style="display: flex; gap: 10px; flex: none;">
             <div class="app-form-group" style="margin-bottom: 0; flex: 1;">
               <label>Cantidad</label>
               <input
