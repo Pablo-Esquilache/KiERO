@@ -240,19 +240,18 @@ document.addEventListener("DOMContentLoaded", async () => {
                 
                 if (btnToggleVista) {
                   btnToggleVista.addEventListener("click", () => {
-                    const pos = document.getElementById("pos-container");
-                    const hist = document.getElementById("history-container");
-                    if (pos.style.display !== "none") {
-                      pos.style.display = "none";
-                      hist.style.display = "block";
-                      btnToggleVista.textContent = "Volver a Punto de Venta";
-                      if(typeof cargarVentas === "function") cargarVentas();
-                    } else {
-                      hist.style.display = "none";
-                      pos.style.display = "grid";
-                      btnToggleVista.textContent = "Historial de Ventas";
-                    }
-                  });
+    const pos = document.getElementById("pos-container");
+    const hist = document.getElementById("history-container");
+    pos.style.display = "none";
+    hist.style.display = "block";
+    if(typeof cargarVentas === "function") cargarVentas();
+    
+    // Configurar la fecha en el filtro historial
+    const fHist = document.getElementById("filtroFechaHistorial");
+    if(fHist && !fHist.value) {
+      fHist.value = new Date().toLocaleDateString("sv-SE");
+    }
+  });
                 }
                 
                 if(typeof cargarClientes === "function") cargarClientes();
@@ -1475,7 +1474,12 @@ if (formClienteRapido) {
       const p = {
         comercio_id: comercioId,
         nombre: document.getElementById("nombreClienteRapido").value.trim(),
-        documento: document.getElementById("docClienteRapido").value.trim()
+        documento: document.getElementById("docClienteRapido").value.trim(),
+        telefono: document.getElementById("telClienteRapido").value.trim(),
+        email: document.getElementById("emailClienteRapido").value.trim(),
+        domicilio: document.getElementById("domClienteRapido").value.trim(),
+        genero: document.getElementById("generoClienteRapido").value,
+        comentarios: document.getElementById("comentariosClienteRapido").value.trim()
       };
       const res = await ClientesAPI.create(p);
       
@@ -1773,3 +1777,34 @@ document.getElementById("inputBuscarClienteModal")?.addEventListener("input", (e
 document.getElementById("btnNuevoClienteDesdeBuscador")?.addEventListener("click", () => {
   document.getElementById("btnCrearClienteRapido")?.click();
 });
+
+
+// ==========================================
+// FIX HISTORIAL DE VENTAS LOGIC
+// ==========================================
+const btnVolverVentas = document.getElementById("btnVolverVentas");
+if(btnVolverVentas) {
+  btnVolverVentas.addEventListener("click", () => {
+    document.getElementById("pos-container").style.display = "grid";
+    document.getElementById("history-container").style.display = "none";
+  });
+}
+
+const filtroFechaHistorial = document.getElementById("filtroFechaHistorial");
+if(filtroFechaHistorial) {
+  filtroFechaHistorial.addEventListener("change", () => {
+    if(!filtroFechaHistorial.value) {
+      // mostrar todo
+      ventasCachePrincipal = ventasCacheModal;
+      renderVentasPrincipal(ventasCachePrincipal);
+      return;
+    }
+    const seleccion = filtroFechaHistorial.value; // YYYY-MM-DD
+    const filtradas = ventasCacheModal.filter((v) => {
+      if(!v.fecha) return false;
+      return v.fecha.startsWith(seleccion);
+    });
+    ventasCachePrincipal = filtradas;
+    renderVentasPrincipal(filtradas);
+  });
+}

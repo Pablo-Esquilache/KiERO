@@ -466,26 +466,63 @@
     </div>
 
     
-    <!-- MODAL CREAR CLIENTE RAPIDO -->
+    
+    <!-- MODAL CREAR CLIENTE COMPLETO -->
     <div id="modalClienteRapido" class="app-modal" style="z-index: 15000;">
-      <div class="app-modal-content" style="max-width: 400px; padding: 20px;">
+      <div class="app-modal-content" style="max-width: 600px; padding: 20px;">
         <div class="app-modal-header">
-          <h2 class="app-subtitle">Crear Cliente</h2>
+          <h2 class="app-subtitle">Nuevo Cliente</h2>
           <button type="button" class="app-close" id="cerrarModalClienteRapido">Cerrar</button>
         </div>
         <form id="formClienteRapido" style="display: flex; flex-direction: column; gap: 15px;">
-          <div class="app-form-group" style="margin-bottom:0;">
-            <label>Nombre</label>
-            <input type="text" id="nombreClienteRapido" class="app-input" required autocomplete="off">
+          <div style="display: flex; gap: 10px;">
+            <div class="app-form-group" style="margin-bottom:0; flex: 1;">
+              <label>Nombre</label>
+              <input type="text" id="nombreClienteRapido" class="app-input" required autocomplete="off">
+            </div>
+            <div class="app-form-group" style="margin-bottom:0; flex: 1;">
+              <label>Documento/CUIT</label>
+              <input type="text" id="docClienteRapido" class="app-input" autocomplete="off">
+            </div>
           </div>
-          <div class="app-form-group" style="margin-bottom:0;">
-            <label>Documento/CUIT</label>
-            <input type="text" id="docClienteRapido" class="app-input" autocomplete="off">
+          
+          <div style="display: flex; gap: 10px;">
+            <div class="app-form-group" style="margin-bottom:0; flex: 1;">
+              <label>Teléfono</label>
+              <input type="text" id="telClienteRapido" class="app-input" autocomplete="off">
+            </div>
+            <div class="app-form-group" style="margin-bottom:0; flex: 1;">
+              <label>Email</label>
+              <input type="email" id="emailClienteRapido" class="app-input" autocomplete="off">
+            </div>
           </div>
-          <button type="submit" class="app-btn-primary" id="btnGuardarClienteRapido">Guardar Cliente</button>
+          
+          <div style="display: flex; gap: 10px;">
+            <div class="app-form-group" style="margin-bottom:0; flex: 1;">
+              <label>Domicilio</label>
+              <input type="text" id="domClienteRapido" class="app-input" autocomplete="off">
+            </div>
+            <div class="app-form-group" style="margin-bottom:0; flex: 1;">
+              <label>Género</label>
+              <select id="generoClienteRapido" class="app-input">
+                <option value="">Seleccionar</option>
+                <option value="Femenino">Femenino</option>
+                <option value="Masculino">Masculino</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="app-form-group" style="margin-bottom:0;">
+            <label>Comentarios</label>
+            <input type="text" id="comentariosClienteRapido" class="app-input" autocomplete="off">
+          </div>
+          
+          <button type="submit" class="app-btn-primary" id="btnGuardarClienteRapido" style="margin-top: 10px;">Guardar Cliente</button>
         </form>
       </div>
     </div>
+
     <!-- SCRIPTS -->
     <!-- ========================= -->
     <script src="../js/auth-ui.js"></script>
