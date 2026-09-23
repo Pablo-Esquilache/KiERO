@@ -27,6 +27,7 @@ export const setConfig = async (req, res) => {
   try {
     const comercioId = req.user?.comercio_id || 1;
     const { api_token, sync_enabled, api_url } = req.body;
+  const comercio_id = req.user.comercio_id;
 
     await pool.query(
       `UPDATE configuracion_sync 

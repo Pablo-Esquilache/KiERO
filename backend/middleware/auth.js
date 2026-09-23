@@ -13,11 +13,18 @@ export async function authenticate(req, res, next) {
   try {
     const payload = jwt.verify(token, SECRET);
     
-    // Optimizacin Claude: El JWT es stateless.
+    // Optimizacion Claude: El JWT es stateless.
     // Confiamos en el payload sin hacer round-trip a la DB por cada request.
     req.user = payload;
     next();
   } catch (err) {
-    return res.status(401).json({ error: "Token invǭlido o expirado" });
+    return res.status(401).json({ error: "Token invlido o expirado" });
   }
+}
+
+export function requireAdmin(req, res, next) {
+  if (!req.user || req.user.role !== "admin") {
+    return res.status(403).json({ error: "Requiere rol de administrador" });
+  }
+  next();
 }

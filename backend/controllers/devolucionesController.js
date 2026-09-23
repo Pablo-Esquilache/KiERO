@@ -4,7 +4,8 @@ import db from "../db.js";
    POST registrar devolución (POSTGRESQL)
 ===================================================== */
 export const registrarDevolucion = async (req, res) => {
-  const { venta_id, cliente_id, comercio_id, items } = req.body;
+  const { venta_id, cliente_id,  items } = req.body;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id)
     return res.status(400).json({ error: "comercio_id requerido" });
@@ -65,7 +66,7 @@ export const registrarDevolucion = async (req, res) => {
 
     // 3. Insert cabecera
     const devolucionInsert = await client.query(
-      `INSERT INTO devoluciones (venta_id, cliente_id, total, comercio_id, fecha)
+      `INSERT INTO devoluciones (venta_id, cliente_id, total,  fecha)
        VALUES ($1, $2, $3, $4, NOW()) RETURNING *`,
       [venta_id || null, cliente_id || null, totalDevolucion, comercio_id]
     );
@@ -100,7 +101,7 @@ export const registrarDevolucion = async (req, res) => {
    GET devoluciones por comercio
 ===================================================== */
 export const getDevoluciones = async (req, res) => {
-  const { comercio_id } = req.query;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id)
     return res.status(400).json({ error: "comercio_id requerido" });

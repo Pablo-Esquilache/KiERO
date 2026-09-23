@@ -4,7 +4,7 @@ import pool from "../db.js";
  * GET - Obtener caja del día actual
  */
 export const getCajaHoy = async (req, res) => {
-  const { comercioId } = req.params;
+  const comercioId = req.user.comercio_id;
 
   try {
     // Modificado para traer la caja de hoy, o una caja anterior que siga abierta
@@ -27,7 +27,8 @@ export const getCajaHoy = async (req, res) => {
  * POST - Abrir caja
  */
 export const abrirCaja = async (req, res) => {
-  const { comercio_id, saldo_inicial, fecha } = req.body;
+  const {  saldo_inicial, fecha } = req.body;
+  const comercio_id = req.user.comercio_id;
 
   try {
     const { rows } = await pool.query(
@@ -49,8 +50,8 @@ export const abrirCaja = async (req, res) => {
  */
 export const cerrarCaja = async (req, res) => {
   const { id } = req.params;
-  const { total_ventas, total_gastos, total_devoluciones, total_resultado, total_cuenta_corriente } =
-    req.body;
+  const { total_ventas, total_gastos, total_devoluciones, total_resultado, total_cuenta_corriente } = req.body;
+  const comercio_id = req.user.comercio_id;
 
   try {
     const { rows } = await pool.query(
@@ -78,7 +79,7 @@ export const cerrarCaja = async (req, res) => {
  * GET - Movimientos del día para caja
  */
 export const getMovimientosDia = async (req, res) => {
-  const { comercioId } = req.params;
+  const comercioId = req.user.comercio_id;
 
   try {
     const cajaQuery = await pool.query(
@@ -208,7 +209,7 @@ export const getMovimientosDia = async (req, res) => {
  * GET - Historial de cajas
  */
 export const getHistorial = async (req, res) => {
-  const { comercioId } = req.params;
+  const comercioId = req.user.comercio_id;
 
   try {
     const { rows } = await pool.query(

@@ -2,7 +2,8 @@ import pool from "../db.js";
 
 // Obtener turnos
 export const getTurnos = async (req, res) => {
-  const { comercio_id, fecha } = req.query;
+  const { fecha  } = req.query;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) return res.status(400).json({ error: "comercio_id requerido" });
 
@@ -32,7 +33,8 @@ export const getTurnos = async (req, res) => {
 
 // Crear turno
 export const createTurno = async (req, res) => {
-  const { comercio_id, cliente_id, fecha, hora, servicio_motivo } = req.body;
+  const {  cliente_id, fecha, hora, servicio_motivo } = req.body;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) return res.status(400).json({ error: "comercio_id requerido" });
 
@@ -52,9 +54,10 @@ export const createTurno = async (req, res) => {
 // Actualizar turno general
 export const updateTurno = async (req, res) => {
   const { id } = req.params;
-  const { comercio_id, cliente_id, fecha, hora, servicio_motivo, estado } = req.body;
+  const {  cliente_id, fecha, hora, servicio_motivo, estado } = req.body;
+  const comercio_id = req.user.comercio_id;
   // If comercio_id is in query for PUT requests
-  const cid = comercio_id || req.query.comercio_id;
+  const cid = req.user.comercio_id;
 
   if (!cid) return res.status(400).json({ error: "comercio_id requerido" });
 
@@ -84,7 +87,7 @@ export const updateTurno = async (req, res) => {
 // Eliminar turno
 export const deleteTurno = async (req, res) => {
   const { id } = req.params;
-  const cid = req.query.comercio_id || req.body.comercio_id;
+  const cid = req.user.comercio_id;
 
   if (!cid) return res.status(400).json({ error: "comercio_id requerido" });
 

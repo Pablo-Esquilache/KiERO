@@ -4,7 +4,7 @@ import db from "../db.js";
 // GET - CLIENTES POR COMERCIO
 // ==========================
 export const getClientes = async (req, res) => {
-  const { comercio_id } = req.query;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {
     return res.status(400).json({ error: "comercio_id requerido" });
@@ -49,9 +49,9 @@ export const createCliente = async (req, res) => {
     telefono,
     email,
     localidad,
-    comentarios,
-    comercio_id,
+    comentarios, 
   } = req.body;
+  const comercio_id = req.user.comercio_id;
 
   if (!nombre || !comercio_id) {
     return res.status(400).json({ error: "Datos obligatorios faltantes" });
@@ -73,8 +73,7 @@ export const createCliente = async (req, res) => {
       telefono || "",
       email || "",
       localidad || "",
-      comentarios || "",
-      comercio_id,
+      comentarios || "", 
     ]);
 
     res.status(201).json(rows[0]);
@@ -96,9 +95,9 @@ export const updateCliente = async (req, res) => {
     telefono,
     email,
     localidad,
-    comentarios,
-    comercio_id,
+    comentarios, 
   } = req.body;
+  const comercio_id = req.user.comercio_id;
 
   if (!id || !comercio_id) {
     return res.status(400).json({ error: "Datos obligatorios faltantes" });
@@ -127,8 +126,7 @@ export const updateCliente = async (req, res) => {
       email || "",
       localidad || "",
       comentarios || "",
-      id,
-      comercio_id,
+      id, 
     ]);
 
     if (!rows[0]) {
@@ -146,7 +144,7 @@ export const updateCliente = async (req, res) => {
 // LOCALIDADES
 // ==========================
 export const getLocalidades = async (req, res) => {
-  const { comercio_id } = req.query;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {
     return res.status(400).json({ error: "comercio_id requerido" });
@@ -174,7 +172,7 @@ export const getLocalidades = async (req, res) => {
 
 export const getSaldoCliente = async (req, res) => {
   const { id } = req.params;
-  const { comercio_id } = req.query;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {
     return res.status(400).json({ error: "comercio_id requerido" });
@@ -205,7 +203,7 @@ export const getSaldoCliente = async (req, res) => {
 
 export const getCuentaCorriente = async (req, res) => {
   const { id } = req.params;
-  const { comercio_id } = req.query;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {
     return res.status(400).json({ error: "comercio_id requerido" });
@@ -232,7 +230,8 @@ export const getCuentaCorriente = async (req, res) => {
 
 export const registrarPagoCliente = async (req, res) => {
   const { id } = req.params;
-  const { comercio_id, monto } = req.body;
+  const {  monto } = req.body;
+  const comercio_id = req.user.comercio_id;
 
   if (!monto || monto <= 0)
     return res.status(400).json({ error: "Monto inválido" });
@@ -244,11 +243,11 @@ export const registrarPagoCliente = async (req, res) => {
     const { rows } = await db.query(
       `
       INSERT INTO cuenta_corriente_movimientos
-      (cliente_id, comercio_id, tipo, monto)
+      (cliente_id,  tipo, monto)
       VALUES ($1,$2,'pago',$3)
       RETURNING *
       `,
-      [id, comercio_id, monto],
+      [id,  monto],
     );
 
     res.status(201).json(rows[0]);

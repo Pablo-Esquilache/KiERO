@@ -1,12 +1,28 @@
 import express from "express";
 import pool from "../db.js";
 import bcrypt from "bcryptjs";
+import { requireAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// GET all users by comercioId
-router.get("/:comercioId", async (req, res) => {
-  const { comercioId } = req.params;
+// GET all users by comercioId (Solamente el propio comercio_id)
+router.get("/", requireAdmin, async (req, res) => {
+  const comercioId = req.user.comercio_id;
+  try {
+    const result = await pool.query(
+      "SELECT id, usuario, role, comercio_id, created_at, last_login FROM usuarios WHERE comercio_id = $1 ORDER BY id ASC",
+      [comercioId]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error al obtener usuarios:", error);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+});
+
+// GET compatible con params anterior (por si el frontend lo manda)
+router.get("/:comercioId", requireAdmin, async (req, res) => {
+  const comercioId = req.user.comercio_id; // Forzado
   try {
     const result = await pool.query(
       "SELECT id, usuario, role, comercio_id, created_at, last_login FROM usuarios WHERE comercio_id = $1 ORDER BY id ASC",
@@ -20,14 +36,16 @@ router.get("/:comercioId", async (req, res) => {
 });
 
 // POST create new user
-router.post("/", async (req, res) => {
-  const { usuario, password, role = "user", comercio_id } = req.body;
-  if (!usuario || !password || !comercio_id) {
+router.post("/", requireAdmin, async (req, res) => {
+  const { usuario, password, role = "user" } = req.body;
+  const comercio_id = req.user.comercio_id; // Forzado
+  
+  if (!usuario || !password) {
     return res.status(400).json({ error: "Datos incompletos" });
   }
 
   try {
-    // Check if user exists
+    // Check if user exists (globalmente o por comercio)
     const existing = await pool.query("SELECT id FROM usuarios WHERE usuario = $1", [usuario]);
     if (existing.rows.length > 0) {
       return res.status(400).json({ error: "El usuario ya existe" });
@@ -48,9 +66,10 @@ router.post("/", async (req, res) => {
 });
 
 // PUT update user (password, role, etc)
-router.put("/:id", async (req, res) => {
+router.put("/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { usuario, password, role } = req.body;
+  const comercioId = req.user.comercio_id; // Forzado
 
   try {
     const updates = [];
@@ -80,10 +99,13 @@ router.put("/:id", async (req, res) => {
     }
 
     values.push(id);
-    const query = `UPDATE usuarios SET ${updates.join(", ")} WHERE id = $${queryIndex} RETURNING id, usuario, role`;
+    values.push(comercioId);
+    
+    // Validamos ID y Comercio
+    const query = `UPDATE usuarios SET ${updates.join(", ")} WHERE id = $${queryIndex} AND comercio_id = $${queryIndex + 1} RETURNING id, usuario, role`;
     
     const result = await pool.query(query, values);
-    if (result.rows.length === 0) return res.status(404).json({ error: "Usuario no encontrado" });
+    if (result.rows.length === 0) return res.status(404).json({ error: "Usuario no encontrado o no pertenece a tu comercio" });
     
     res.json(result.rows[0]);
   } catch (error) {
@@ -93,11 +115,13 @@ router.put("/:id", async (req, res) => {
 });
 
 // DELETE user
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
+  const comercioId = req.user.comercio_id; // Forzado
+  
   try {
-    const result = await pool.query("DELETE FROM usuarios WHERE id = $1 RETURNING id", [id]);
-    if (result.rows.length === 0) return res.status(404).json({ error: "Usuario no encontrado" });
+    const result = await pool.query("DELETE FROM usuarios WHERE id = $1 AND comercio_id = $2 RETURNING id", [id, comercioId]);
+    if (result.rows.length === 0) return res.status(404).json({ error: "Usuario no encontrado o no pertenece a tu comercio" });
     res.json({ message: "Usuario eliminado" });
   } catch (error) {
     console.error("Error al eliminar usuario:", error);

@@ -4,7 +4,7 @@ import db from "../db.js";
    GET - PRODUCTOS POR COMERCIO
    ========================== */
 export const getProductos = async (req, res) => {
-  const { comercio_id } = req.query;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {
     return res.status(400).json({ error: "comercio_id requerido" });
@@ -32,7 +32,7 @@ export const getProductos = async (req, res) => {
    GET - LISTA DE CATEGORÍAS POR COMERCIO
    ========================== */
 export const getCategorias = async (req, res) => {
-  const { comercio_id } = req.query;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {
     return res.status(400).json({ error: "comercio_id requerido" });
@@ -64,7 +64,7 @@ export const getCategorias = async (req, res) => {
    ========================== */
 export const getProductoById = async (req, res) => {
   const { id } = req.params;
-  const { comercio_id } = req.query;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {
     return res.status(400).json({ error: "comercio_id requerido" });
@@ -91,7 +91,8 @@ export const getProductoById = async (req, res) => {
    POST - CREAR PRODUCTO
    ========================== */
 export const createProducto = async (req, res) => {
-  const { nombre, categoria, precio, stock, comercio_id, codigo_barras } = req.body;
+  const { nombre, categoria, precio, stock,  codigo_barras } = req.body;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {
     return res.status(400).json({ error: "comercio_id requerido" });
@@ -100,7 +101,7 @@ export const createProducto = async (req, res) => {
   try {
     const query = `
       INSERT INTO productos
-      (nombre, categoria, precio, stock, comercio_id, codigo_barras)
+      (nombre, categoria, precio, stock,  codigo_barras)
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `;
@@ -109,8 +110,7 @@ export const createProducto = async (req, res) => {
       nombre,
       categoria || null,
       precio,
-      stock ?? 0,
-      comercio_id,
+      stock ?? 0, 
       codigo_barras || null,
     ]);
 
@@ -166,7 +166,8 @@ export const createProducto = async (req, res) => {
    ========================== */
 export const updateProducto = async (req, res) => {
   const { id } = req.params;
-  const { nombre, categoria, precio, stock, comercio_id, codigo_barras } = req.body;
+  const { nombre, categoria, precio, stock,  codigo_barras } = req.body;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {
     return res.status(400).json({ error: "comercio_id requerido" });
@@ -189,8 +190,7 @@ export const updateProducto = async (req, res) => {
       categoria || null,
       precio,
       stock,
-      id,
-      comercio_id,
+      id, 
       codigo_barras || null,
     ]);
 
@@ -254,7 +254,8 @@ export const updateProducto = async (req, res) => {
    POST - IMPORTAR DESDE EXCEL
    ========================== */
 export const importarProductos = async (req, res) => {
-  const { comercio_id, productos } = req.body;
+  const {  productos } = req.body;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id)
     return res.status(400).json({ error: "comercio_id requerido" });

@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 
-const SECRET = process.env.JWT_SECRET || "clave_super_secreta_local"; // después la podés mover a .env
+const SECRET = process.env.JWT_SECRET || "clave_super_secreta_local"; // despuǸs la podǸs mover a .env
 
 // ================= LOGIN =================
 export const login = async (req, res) => {
@@ -20,21 +20,21 @@ export const login = async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(401).json({ error: "Credenciales inválidas" });
+      return res.status(401).json({ error: "Credenciales invǭlidas" });
     }
 
     const user = result.rows[0];
 
-    // Comparar contraseña
+    // Comparar contrasea
     const passwordValida = await bcrypt.compare(password, user.password);
     if (!passwordValida) {
-      return res.status(401).json({ error: "Credenciales inválidas" });
+      return res.status(401).json({ error: "Credenciales invǭlidas" });
     }
 
-    // Revisar sesión activa
+    // Revisar sesin activa
     if (user.active_session) {
       return res.status(403).json({
-        error: "Usuario ya tiene sesión activa en otro dispositivo",
+        error: "Usuario ya tiene sesin activa en otro dispositivo",
       });
     }
 
@@ -46,7 +46,7 @@ export const login = async (req, res) => {
       { expiresIn: "8h", issuer: "kiero-pos", audience: "kiero-web" }
     );
 
-    // Guardar sesión
+    // Guardar sesin
     await pool.query(
       `UPDATE usuarios 
        SET active_session = $1, last_login = NOW() 
@@ -80,7 +80,7 @@ export const logout = async (req, res) => {
       [session_token]
     );
 
-    res.json({ message: "Sesión cerrada" });
+    res.json({ message: "Sesin cerrada" });
   } catch (err) {
     console.error("Error en logout:", err);
     res.status(500).json({ error: "Error interno" });

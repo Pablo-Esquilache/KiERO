@@ -4,7 +4,8 @@ import db from "../db.js";
    Ventas vs gastos + ticket promedio
 ===================================================== */
 export const getVentasGastosTiempo = async (req, res) => {
-  const { comercio_id, agrupacion = "dia", desde, hasta } = req.query;
+  const { agrupacion = "dia", desde, hasta  } = req.query;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {
     return res.status(400).json({ error: "comercio_id requerido" });
@@ -76,7 +77,8 @@ export const getVentasGastosTiempo = async (req, res) => {
    Top 10 productos vendidos
 ===================================================== */
 export const getTopProductos = async (req, res) => {
-  const { comercio_id, desde, hasta, limit = 10 } = req.query;
+  const { desde, hasta, limit = 10  } = req.query;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {
     return res.status(400).json({ error: "comercio_id requerido" });
@@ -118,7 +120,8 @@ export const getTopProductos = async (req, res) => {
    Categorías vendidas
 ===================================================== */
 export const getCategoriasVendidas = async (req, res) => {
-  const { comercio_id, desde, hasta } = req.query;
+  const { desde, hasta  } = req.query;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {
     return res.status(400).json({ error: "comercio_id requerido" });
@@ -173,7 +176,8 @@ export const getCategoriasVendidas = async (req, res) => {
    Edad promedio por grupo etario y género
 ===================================================== */
 export const getEdadEtarioGenero = async (req, res) => {
-  const { comercio_id, desde, hasta } = req.query;
+  const { desde, hasta  } = req.query;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {
     return res.status(400).json({ error: "comercio_id requerido" });
@@ -233,7 +237,8 @@ export const getEdadEtarioGenero = async (req, res) => {
    Métodos de pago
 ===================================================== */
 export const getMetodosPago = async (req, res) => {
-  const { comercio_id, desde, hasta } = req.query;
+  const { desde, hasta  } = req.query;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {
     return res.status(400).json({ error: "comercio_id requerido" });
@@ -287,7 +292,8 @@ export const getMetodosPago = async (req, res) => {
    Gastos por descripción y tipo
 ===================================================== */
 export const getGastosDescripcionTipo = async (req, res) => {
-  const { comercio_id, desde, hasta } = req.query;
+  const { desde, hasta  } = req.query;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {
     return res.status(400).json({ error: "comercio_id requerido" });
@@ -326,7 +332,8 @@ export const getGastosDescripcionTipo = async (req, res) => {
    Ventas por localidad
 ===================================================== */
 export const getVentasPorLocalidad = async (req, res) => {
-  const { comercio_id, desde, hasta } = req.query;
+  const { desde, hasta  } = req.query;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {
     return res.status(400).json({ error: "comercio_id requerido" });
@@ -367,7 +374,8 @@ export const getVentasPorLocalidad = async (req, res) => {
    Top 10 clientes por frecuencia + ticket promedio
 ===================================================== */
 export const getTopClientes = async (req, res) => {
-  const { comercio_id, desde, hasta, limit = 10 } = req.query;
+  const { desde, hasta, limit = 10  } = req.query;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {
     return res.status(400).json({ error: "comercio_id requerido" });

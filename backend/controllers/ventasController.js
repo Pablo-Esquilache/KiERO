@@ -4,7 +4,7 @@ import db from "../db.js";
    GET ventas (tickets) por comercio
 ===================================================== */
 export const getVentas = async (req, res) => {
-  const { comercio_id } = req.query;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id)
     return res.status(400).json({ error: "comercio_id requerido" });
@@ -34,15 +34,16 @@ export const getVentas = async (req, res) => {
 ===================================================== */
 export const getVentaById = async (req, res) => {
   const { id } = req.params;
+  const comercioId = req.user.comercio_id;
 
   try {
     const { rows } = await db.query(
       `
       SELECT *
       FROM ventas
-      WHERE id = $1
+      WHERE id = $1 AND comercio_id = $2
       `,
-      [id],
+      [id, comercioId],
     );
 
     if (!rows.length)
@@ -87,10 +88,10 @@ export const createVenta = async (req, res) => {
       fecha,
       cliente_id,
       metodo_pago,
-      descuento_porcentaje = 0,
-      comercio_id,
+      descuento_porcentaje = 0, 
       items,
     } = req.body;
+  const comercio_id = req.user.comercio_id;
   // Si la fecha enviada es "hoy", le inyectamos la hora actual exacta.
   // Esto evita que PostgreSQL la guarde como 00:00:00 (lo cual la deja fuera del horario de la Caja actual).
   const hoyStr = new Date().toLocaleDateString("sv-SE");
@@ -150,8 +151,7 @@ RETURNING *
         total_bruto,
         descuento_monto,
         descuento,
-        total,
-        comercio_id,
+        total, 
         (fecha && fecha.length === 10) ? fecha + "T12:00:00Z" : (fecha || null)
       ],
     );
@@ -192,10 +192,10 @@ RETURNING *
       await client.query(
         `
     INSERT INTO cuenta_corriente_movimientos
-    (cliente_id, comercio_id, tipo, monto, venta_id)
+    (cliente_id,  tipo, monto, venta_id)
     VALUES ($1,$2,'venta',$3,$4)
     `,
-        [cliente_id, comercio_id, total, venta.id],
+        [cliente_id,  total, venta.id],
       );
     }
 
@@ -219,10 +219,10 @@ export const updateVenta = async (req, res) => {
     fecha,
     cliente_id,
     metodo_pago,
-    descuento_porcentaje = 0,
-    comercio_id,
+    descuento_porcentaje = 0, 
     items,
   } = req.body;
+  const comercio_id = req.user.comercio_id;
   // Si la fecha enviada es "hoy", le inyectamos la hora actual exacta.
   // Esto evita que PostgreSQL la guarde como 00:00:00 (lo cual la deja fuera del horario de la Caja actual).
   const hoyStr = new Date().toLocaleDateString("sv-SE");
@@ -319,8 +319,7 @@ export const updateVenta = async (req, res) => {
         descuento_monto,
         descuento,
         total,
-        id,
-        comercio_id,
+        id, 
       ],
     );
 
@@ -363,7 +362,7 @@ export const updateVenta = async (req, res) => {
 ===================================================== */
 export const deleteVenta = async (req, res) => {
   const { id } = req.params;
-  const { comercio_id } = req.query;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id)
     return res.status(400).json({ error: "comercio_id requerido" });

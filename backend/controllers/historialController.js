@@ -5,7 +5,7 @@ import db from "../db.js";
 // =======================================================
 export const getHistorialCliente = async (req, res) => {
   const { id } = req.params;
-  const { comercio_id } = req.query;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {
     return res.status(400).json({ error: "comercio_id requerido" });

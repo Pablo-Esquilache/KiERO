@@ -5,7 +5,8 @@ import XLSX from "xlsx";
    GET - EXPORTAR TABLA A EXCEL
    ========================== */
 export const exportarExcel = async (req, res) => {
-  const { tabla, comercio_id } = req.query;
+  const { tabla } = req.query;
+  const comercio_id = req.user.comercio_id;
   if (!comercio_id) return res.status(400).json({ error: "comercio_id requerido" });
 
   if (!tabla) return res.status(400).json({ error: "tabla requerida" });
@@ -54,11 +55,11 @@ export const exportarExcel = async (req, res) => {
    GET - EXPORTAR BACKUP SQL
    ========================== */
 export const exportarBackupSQL = async (req, res) => {
-  const { comercio_id } = req.query;
+  const comercio_id = req.user.comercio_id;
   if (!comercio_id) return res.status(400).json({ error: "comercio_id requerido" });
 
   try {
-    const tablas = ["clientes", "productos", "gastos", "ventas", "ventas_detalle", "devoluciones", "devoluciones_detalle", "cajas", "cuenta_corriente_movimientos", "turnos", "configuracion_sync", "usuarios"];
+    const tablas = ["clientes", "productos", "gastos", "ventas", "ventas_detalle", "devoluciones", "devoluciones_detalle", "cajas", "cuenta_corriente_movimientos", "turnos", "configuracion_sync"];
     let sqlDump = `-- Backup generado automáticamente\n-- Fecha: ${new Date().toISOString()}\n-- Comercio ID: ${comercio_id}\n\n`;
 
     for (const tabla of tablas) {

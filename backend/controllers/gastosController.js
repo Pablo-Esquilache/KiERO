@@ -4,7 +4,7 @@ import db from "../db.js";
    GET - GASTOS POR COMERCIO
    ========================== */
 export const getGastos = async (req, res) => {
-  const { comercio_id } = req.query;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {
     return res.status(400).json({ error: "comercio_id requerido" });
@@ -32,7 +32,8 @@ export const getGastos = async (req, res) => {
    POST - CREAR GASTO
    ========================== */
 export const createGasto = async (req, res) => {
-  let { fecha, descripcion, tipo, importe, comercio_id } = req.body;
+  let { fecha, descripcion, tipo, importe } = req.body;
+  const comercio_id = req.user.comercio_id;
   
   // Si la fecha es igual a hoy, le anexamos la hora actual para que ingrese correctamente a la caja abierta de hoy.
   const hoyStr = new Date().toLocaleDateString("sv-SE"); // YYYY-MM-DD local
@@ -67,7 +68,8 @@ export const createGasto = async (req, res) => {
    ========================== */
 export const updateGasto = async (req, res) => {
   const { id } = req.params;
-  let { fecha, descripcion, tipo, importe, comercio_id } = req.body;
+  let { fecha, descripcion, tipo, importe } = req.body;
+  const comercio_id = req.user.comercio_id;
   
   const hoyStr = new Date().toLocaleDateString("sv-SE");
   if (fecha === hoyStr) {
@@ -109,7 +111,7 @@ export const updateGasto = async (req, res) => {
    ========================== */
 export const deleteGasto = async (req, res) => {
   const { id } = req.params;
-  const { comercio_id } = req.query;
+  const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {
     return res.status(400).json({ error: "comercio_id requerido" });
