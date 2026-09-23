@@ -28,7 +28,9 @@ export const getCajaHoy = async (req, res) => {
 export const abrirCaja = async (req, res) => {
   const {  saldo_inicial, fecha } = req.body;
   try {
-    const comercio_id = req.user?.comercio_id;
+    // FORZAMOS A 1 SI O SI ACA MISMO PARA DEBUG
+    const comercio_id = req.user?.comercio_id || 1; 
+    
     const { rows } = await pool.query(
       `INSERT INTO cajas (comercio_id, fecha, saldo_inicial)
        VALUES ($1, COALESCE($3, CURRENT_DATE), $2)
@@ -39,8 +41,7 @@ export const abrirCaja = async (req, res) => {
     res.json(rows[0]);
   } catch (err) {
       console.error("Error abriendo caja:", err);
-      // TEMPORAL: Enviamos el error real al frontend para ver qu est fallando en Supabase
-      res.status(500).json({ error: "Error abriendo caja: " + err.message });
+      res.status(500).json({ error: "Error abriendo caja: " + err.message + " | ID usado: " + (req.user?.comercio_id || 1) + " | Token: " + JSON.stringify(req.user) });
     }
 };
 
