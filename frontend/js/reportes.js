@@ -560,21 +560,7 @@ async function cargarGastosDescripcionTipo() {
 }
 
 function renderGastosDescripcionTipo(data) {
-  const descripciones = [...new Set(data.map((d) => d.descripcion))];
-
-  const fijos = descripciones.map((desc) => {
-    const r = data.find((d) => d.descripcion === desc && d.tipo === "fijo");
-    return r ? Number(r.importe) : 0;
-  });
-
-  const variables = descripciones.map((desc) => {
-    const r = data.find((d) => d.descripcion === desc && d.tipo === "variable");
-    return r ? Number(r.importe) : 0;
-  });
-
-  const ctx = document
-    .getElementById("graficoGastosDescripcionTipo")
-    .getContext("2d");
+  const ctx = document.getElementById("graficoGastosDescripcionTipo").getContext("2d");
 
   if (graficoGastosDescripcionTipo) graficoGastosDescripcionTipo.destroy();
 
@@ -583,57 +569,55 @@ function renderGastosDescripcionTipo(data) {
     return;
   }
 
+  const descripciones = [...new Set(data.map((d) => d.descripcion))];
+  const tipos = [...new Set(data.map((d) => d.tipo || "Sin tipo"))];
+
+  const datasets = tipos.map((tipo, index) => {
+    const valores = descripciones.map((desc) => {
+      const r = data.find((d) => d.descripcion === desc && (d.tipo || "Sin tipo") === tipo);
+      return r ? Number(r.importe) : 0;
+    });
+
+    return {
+      label: tipo,
+      data: valores,
+      backgroundColor: paletaColores[index % paletaColores.length],
+    };
+  });
+
   const gastoTop = data.reduce((a, b) =>
     Number(a.importe) > Number(b.importe) ? a : b
   );
 
   setDescripcion(
     ".app-gastos",
-    `Este gráfico muestra la distribución de los gastos según su descripción y tipo. 
-   El gasto más alto corresponde a "${gastoTop.descripcion}", de tipo ${
-      gastoTop.tipo
-    }, 
-   con un importe total de ${formatoPesos.format(gastoTop.importe)}.`
+    `Este gráfico muestra la distribución de los gastos según su descripción y tipo. El gasto más alto corresponde a "${gastoTop.descripcion}", de tipo ${gastoTop.tipo}, con un importe total de ${formatoPesos.format(gastoTop.importe)}.`
   );
 
   graficoGastosDescripcionTipo = new Chart(ctx, {
     type: "bar",
     data: {
       labels: descripciones,
-      datasets: [
-        {
-          label: "Gastos fijos",
-          data: fijos,
-          backgroundColor: paletaColores[0],
-        },
-        {
-          label: "Gastos variables",
-          data: variables,
-          backgroundColor: paletaColores[1],
-        },
-      ],
+      datasets: datasets,
     },
     options: {
       responsive: true,
       interaction: { mode: "index", intersect: false },
       plugins: {
         legend: { display: true },
-
         tooltip: {
           callbacks: {
             label: (context) =>
-              `${context.dataset.label}: ${formatoPesos.format(
-                context.parsed.y
-              )}`,
+              `${context.dataset.label}: ${formatoPesos.format(context.parsed.y)}`,
           },
         },
-
         datalabels: {
           display: true,
           color: "#1e293b",
           anchor: "end",
           align: "top",
-          formatter: (value) => formatoPesos.format(value),
+          formatter: (value) =>
+            value > 0 ? formatoPesos.format(value) : "",
         },
       },
       scales: {
