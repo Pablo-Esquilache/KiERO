@@ -154,7 +154,8 @@ RETURNING *
         total_bruto,
         descuento_monto,
         descuento,
-        total, 
+        total,
+        comercio_id,
         (fecha && fecha.length === 10) ? fecha + "T12:00:00Z" : (fecha || null)
       ],
     );
@@ -449,3 +450,4 @@ export const deleteVenta = async (req, res) => {
     client.release();
   }
 };
+

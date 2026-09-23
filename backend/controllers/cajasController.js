@@ -4,9 +4,8 @@ import pool from "../db.js";
  * GET - Obtener caja del día actual
  */
 export const getCajaHoy = async (req, res) => {
-  const comercioId = req.user.comercio_id;
-
   try {
+    const comercioId = req.user?.comercio_id;
     // Modificado para traer la caja de hoy, o una caja anterior que siga abierta
     const { rows } = await pool.query(
       `SELECT * FROM cajas 
@@ -28,9 +27,8 @@ export const getCajaHoy = async (req, res) => {
  */
 export const abrirCaja = async (req, res) => {
   const {  saldo_inicial, fecha } = req.body;
-  const comercio_id = req.user.comercio_id;
-
   try {
+    const comercio_id = req.user?.comercio_id;
     const { rows } = await pool.query(
       `INSERT INTO cajas (comercio_id, fecha, saldo_inicial)
        VALUES ($1, COALESCE($3, CURRENT_DATE), $2)
@@ -51,9 +49,8 @@ export const abrirCaja = async (req, res) => {
 export const cerrarCaja = async (req, res) => {
   const { id } = req.params;
   const { total_ventas, total_gastos, total_devoluciones, total_resultado, total_cuenta_corriente } = req.body;
-  const comercio_id = req.user.comercio_id;
-
   try {
+    const comercio_id = req.user?.comercio_id;
     const { rows } = await pool.query(
       `UPDATE cajas
        SET estado = 'cerrada',
@@ -79,9 +76,8 @@ export const cerrarCaja = async (req, res) => {
  * GET - Movimientos del día para caja
  */
 export const getMovimientosDia = async (req, res) => {
-  const comercioId = req.user.comercio_id;
-
   try {
+    const comercioId = req.user?.comercio_id;
     const cajaQuery = await pool.query(
       `SELECT hora_apertura, hora_cierre FROM cajas 
        WHERE comercio_id = $1 
@@ -209,9 +205,8 @@ export const getMovimientosDia = async (req, res) => {
  * GET - Historial de cajas
  */
 export const getHistorial = async (req, res) => {
-  const comercioId = req.user.comercio_id;
-
   try {
+    const comercioId = req.user?.comercio_id;
     const { rows } = await pool.query(
       `SELECT * FROM cajas 
        WHERE comercio_id = $1 
@@ -225,3 +220,4 @@ export const getHistorial = async (req, res) => {
     res.status(500).json({ error: "Error obteniendo historial" });
   }
 };
+
