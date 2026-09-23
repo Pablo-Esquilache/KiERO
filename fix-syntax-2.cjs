@@ -11,5 +11,5 @@ js = js.replace(/function formatFechaInput\(fechaString\) \{[\s\S]*?\}-\$\{mm\}-
   if (!fechaString) return "";
   return fechaString.substring(0, 10);`);
 
-// the remaining braces should be fine if there was an extra `}` 
-// wait, the previous code had `\`; \n }` at the end
+fs.writeFileSync('frontend/js/gastos.js', js);
+console.log('Fixed syntax issues.');
