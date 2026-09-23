@@ -199,7 +199,7 @@ RETURNING *
         `
     INSERT INTO cuenta_corriente_movimientos
     (cliente_id,  tipo, monto, venta_id)
-    VALUES ($1,$2,'venta',$3,$4)
+    VALUES ($1, 'venta', $2, $3)
     `,
         [cliente_id,  total, venta.id],
       );
