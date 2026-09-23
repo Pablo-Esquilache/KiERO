@@ -1461,11 +1461,7 @@ formDevolucionNuevo?.addEventListener("submit", async (e) => {
 document.getElementById("btnBuscarClienteDev")?.addEventListener("click", () => {
   window.targetClientInput = 'clienteDevolucion';
   window.targetClientNameInput = 'clienteDevolucionNombre';
-  const m = document.getElementById("modalBuscarCliente");
-  if(m) {
-    m.style.display = "flex";
-    document.getElementById("inputBuscarClienteModal")?.focus();
-  }
+  if(typeof window.openClientModal === 'function') window.openClientModal();
 });
 
 document.getElementById("btnBuscarProductoDev")?.addEventListener("click", () => {
