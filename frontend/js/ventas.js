@@ -1559,9 +1559,17 @@ document.getElementById("btnBuscarClienteDev")?.addEventListener("click", () => 
   if(typeof window.openClientModal === 'function') window.openClientModal();
 });
 
-document.getElementById("btnBuscarProductoDev")?.addEventListener("click", () => {
+document.getElementById("btnBuscarProductoDev")?.addEventListener("click", async () => {
   window.targetProductInput = 'productoDevolucion';
   window.targetProductNameInput = 'productoDevolucionNombre';
+  
+  if(typeof window.ensureProductosLoaded === 'function') {
+    await window.ensureProductosLoaded();
+  }
+  if(typeof window.renderProductosModal === 'function') {
+    window.renderProductosModal(productosCache);
+  }
+  
   const m = document.getElementById("modalProductos");
   if(m) {
     m.style.display = "flex";
