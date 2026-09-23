@@ -83,7 +83,7 @@ export const getVentaDetalle = async (req, res) => {
    POST crear venta
 ===================================================== */
 export const createVenta = async (req, res) => {
-  const {
+  let {
       fecha,
       cliente_id,
       metodo_pago,
@@ -91,6 +91,13 @@ export const createVenta = async (req, res) => {
       comercio_id,
       items,
     } = req.body;
+  // Si la fecha enviada es "hoy", le inyectamos la hora actual exacta.
+  // Esto evita que PostgreSQL la guarde como 00:00:00 (lo cual la deja fuera del horario de la Caja actual).
+  const hoyStr = new Date().toLocaleDateString("sv-SE");
+  if (fecha === hoyStr) {
+    fecha = new Date().toISOString();
+  }
+
 
   const descuento = Number(descuento_porcentaje) || 0;
 
@@ -208,7 +215,7 @@ RETURNING *
 ===================================================== */
 export const updateVenta = async (req, res) => {
   const { id } = req.params;
-  const {
+  let {
     fecha,
     cliente_id,
     metodo_pago,
@@ -216,6 +223,13 @@ export const updateVenta = async (req, res) => {
     comercio_id,
     items,
   } = req.body;
+  // Si la fecha enviada es "hoy", le inyectamos la hora actual exacta.
+  // Esto evita que PostgreSQL la guarde como 00:00:00 (lo cual la deja fuera del horario de la Caja actual).
+  const hoyStr = new Date().toLocaleDateString("sv-SE");
+  if (fecha === hoyStr) {
+    fecha = new Date().toISOString();
+  }
+
 
   const descuento = Number(descuento_porcentaje) || 0;
 
