@@ -331,8 +331,8 @@
           </button>
         </div>
 
-        <form id="formDevolucion" class="app-form-venta" style="justify-content: flex-start; gap: 20px;">
-          <div class="app-form-group">
+        <form id="formDevolucion" style="display: flex; flex-direction: column; gap: 10px;">
+          <div class="app-form-group" style="margin-bottom: 0;">
             <label>Cliente (Opcional - Consumidor Final si se omite)</label>
             <input type="hidden" id="clienteDevolucion">
             <div style="display: flex; gap: 8px;">
@@ -344,20 +344,20 @@
             </div>
           </div>
 
-          <div class="app-form-group" style="display: flex; gap: 15px;">
-            <div style="flex: 3;">
-              <label>Producto a devolver</label>
-              <div style="display: flex; gap: 8px;">
-                <div style="position: relative; flex: 1;">
-                  <input type="hidden" id="productoDevolucion">
-                  <input type="text" id="productoDevolucionNombre" class="app-input" style="width: 100%; height: 38px;" placeholder="Buscar producto..." autocomplete="off">
-                  <ul id="autocompleteProductosDevolucion" class="app-autocomplete-list" style="display:none; width: 100%;"></ul>
-                </div>
-                <button type="button" id="btnBuscarProductoDev" class="app-btn-secondary" style="padding: 0 15px; height: 38px;" title="Búsqueda Avanzada">🔍</button>
+          <div class="app-form-group" style="margin-bottom: 0;">
+            <label>Producto a devolver</label>
+            <div style="display: flex; gap: 8px;">
+              <div style="position: relative; flex: 1;">
+                <input type="hidden" id="productoDevolucion">
+                <input type="text" id="productoDevolucionNombre" class="app-input" style="width: 100%; height: 38px;" placeholder="Buscar producto..." autocomplete="off">
+                <ul id="autocompleteProductosDevolucion" class="app-autocomplete-list" style="display:none; width: 100%;"></ul>
               </div>
+              <button type="button" id="btnBuscarProductoDev" class="app-btn-secondary" style="padding: 0 15px; height: 38px;" title="Búsqueda Avanzada">🔍</button>
             </div>
-            
-            <div style="flex: 1;">
+          </div>
+          
+          <div style="display: flex; gap: 10px;">
+            <div class="app-form-group" style="margin-bottom: 0; flex: 1;">
               <label>Cantidad</label>
               <input
                 type="number"
@@ -368,7 +368,8 @@
                 style="height: 38px;"
               />
             </div>
-            <div style="flex: 1; display: flex; align-items: flex-end;">
+            
+            <div class="app-form-group" style="margin-bottom: 0; flex: 1; display: flex; align-items: flex-end;">
               <button
                 type="button"
                 id="btnAgregarDevolucion"
@@ -380,9 +381,7 @@
             </div>
           </div>
 
-          
-
-          <div class="app-tabla-container" style="max-height: 350px; min-height: 0; margin-top: 15px;">
+          <div class="app-tabla-container" style="max-height: 400px; min-height: 0; margin-top: 10px;">
             <table class="app-tabla">
               <thead>
                 <tr>
