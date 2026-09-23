@@ -449,43 +449,42 @@
     
     
     <!-- MODAL CREAR CLIENTE COMPLETO -->
-    <div id="modalClienteRapido" class="app-modal" style="z-index: 15000;">
-      <div class="app-modal-content" style="max-width: 600px; padding: 20px;">
+      <div id="modalClienteRapido" class="app-modal" style="z-index: 15000;">
+
+      <div class="app-modal-content">
         <div class="app-modal-header">
-          <h2 class="app-subtitle">Nuevo Cliente</h2>
+          <h2 class="app-subtitle">Nuevo cliente</h2>
           <button type="button" class="app-close" id="cerrarModalClienteRapido">Cerrar</button>
         </div>
-        <form id="formClienteRapido" style="display: flex; flex-direction: column; gap: 15px;">
-          <div style="display: flex; gap: 10px;">
-            <div class="app-form-group" style="margin-bottom:0; flex: 1;">
+
+        <form id="formCliente" class="app-form-venta">
+          <div class="app-form-row">
+            <div
+              class="app-form-group"
+              id="fila-id-cliente"
+              style="display: none"
+            >
+              <label>ID (generado)</label>
+              <input type="text" id="idCliente" class="app-input" readonly />
+            </div>
+
+            <div class="app-form-group">
               <label>Nombre</label>
-              <input type="text" id="nombreClienteRapido" class="app-input" required autocomplete="off">
+              <input type="text" id="nombre" class="app-input" required />
             </div>
-            <div class="app-form-group" style="margin-bottom:0; flex: 1;">
-              <label>Documento/CUIT</label>
-              <input type="text" id="docClienteRapido" class="app-input" autocomplete="off">
+
+            <div class="app-form-group app-col">
+              <label>Fecha de nacimiento</label>
+              <input
+                type="date"
+                id="fechaNacimiento"
+                class="app-input"
+                required
+              />
             </div>
-          </div>
-          
-          <div style="display: flex; gap: 10px;">
-            <div class="app-form-group" style="margin-bottom:0; flex: 1;">
-              <label>Teléfono</label>
-              <input type="text" id="telClienteRapido" class="app-input" autocomplete="off">
-            </div>
-            <div class="app-form-group" style="margin-bottom:0; flex: 1;">
-              <label>Email</label>
-              <input type="email" id="emailClienteRapido" class="app-input" autocomplete="off">
-            </div>
-          </div>
-          
-          <div style="display: flex; gap: 10px;">
-            <div class="app-form-group" style="margin-bottom:0; flex: 1;">
-              <label>Domicilio</label>
-              <input type="text" id="domClienteRapido" class="app-input" autocomplete="off">
-            </div>
-            <div class="app-form-group" style="margin-bottom:0; flex: 1;">
+            <div class="app-form-group app-col">
               <label>Género</label>
-              <select id="generoClienteRapido" class="app-input">
+              <select id="genero" class="app-input">
                 <option value="">Seleccionar</option>
                 <option value="Femenino">Femenino</option>
                 <option value="Masculino">Masculino</option>
@@ -493,16 +492,43 @@
               </select>
             </div>
           </div>
-          
-          <div class="app-form-group" style="margin-bottom:0;">
-            <label>Comentarios</label>
-            <input type="text" id="comentariosClienteRapido" class="app-input" autocomplete="off">
+
+          <div class="app-form-row">
+            <div class="app-form-group">
+              <label>Teléfono</label>
+              <input type="text" id="telefono" class="app-input" />
+            </div>
+
+            <div class="app-form-group">
+              <label>Email</label>
+              <input type="email" id="email" class="app-input" />
+            </div>
+            <div class="app-form-group">
+              <label>Localidad</label>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <select id="localidad" class="app-input" style="flex: 1;">
+                  <option value="">Seleccionar localidad</option>
+                </select>
+                <input type="text" id="nuevaLocalidad" class="app-input" placeholder="Escribí nueva localidad" style="display: none; flex: 1;" />
+                <button type="button" id="btnNuevaLocalidad" class="app-btn-secondary" style="flex-shrink: 0;">Nueva</button>
+              </div>
+            </div>
           </div>
-          
-          <button type="submit" class="app-btn-primary" id="btnGuardarClienteRapido" style="margin-top: 10px;">Guardar Cliente</button>
+
+          <div class="app-form-row">
+            <div class="app-form-group">
+              <label>Comentarios</label>
+              <textarea id="comentarios" class="app-input" rows="2"></textarea>
+            </div>
+          </div>
+
+          <button type="submit" class="app-btn-primary app-btn-guardar">
+            Guardar cliente
+          </button>
         </form>
+        </div>
+
       </div>
-    </div>
 
     <!-- SCRIPTS -->
     <!-- ========================= -->

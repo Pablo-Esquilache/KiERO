@@ -1432,343 +1432,119 @@ btnAgregarDevolucionNuevo?.addEventListener("click", () => {
 
 
 // ==========================================
-// CREAR CLIENTE RAPIDO
-// ==========================================
-const btnCrearClienteRapido = document.getElementById("btnCrearClienteRapido");
-const modalClienteRapido = document.getElementById("modalClienteRapido");
-const cerrarModalClienteRapido = document.getElementById("cerrarModalClienteRapido");
-const formClienteRapido = document.getElementById("formClienteRapido");
+  // CREAR CLIENTE (COPIA EXACTA DE CLIENTES)
+  // ==========================================
+  const btnCrearClienteRapido = document.getElementById("btnCrearClienteRapido");
+  const modalClienteRapido = document.getElementById("modalClienteRapido");
+  const cerrarModalClienteRapido = document.getElementById("cerrarModalClienteRapido");
+  const formCliente = document.getElementById("formCliente");
 
-if (btnCrearClienteRapido) {
-  btnCrearClienteRapido.addEventListener("click", () => {
-    if (modalClienteRapido) {
-      modalClienteRapido.style.display = "flex";
-      document.getElementById("nombreClienteRapido").focus();
-    }
-  });
-}
+  const btnNuevaLocalidad = document.getElementById("btnNuevaLocalidad");
+  const campoLocalidad = document.getElementById("localidad");
+  const campoNuevaLocalidad = document.getElementById("nuevaLocalidad");
 
-if (cerrarModalClienteRapido) {
-  cerrarModalClienteRapido.addEventListener("click", () => {
-    if (modalClienteRapido) modalClienteRapido.style.display = "none";
-  });
-}
-
-if (formClienteRapido) {
-  formClienteRapido.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById("btnGuardarClienteRapido");
-    const oldText = btn.textContent;
-    btn.textContent = "Guardando...";
-    btn.disabled = true;
-
-    try {
-      const p = {
-        comercio_id: comercioId,
-        nombre: document.getElementById("nombreClienteRapido").value.trim(),
-        documento: document.getElementById("docClienteRapido").value.trim(),
-        telefono: document.getElementById("telClienteRapido").value.trim(),
-        email: document.getElementById("emailClienteRapido").value.trim(),
-        domicilio: document.getElementById("domClienteRapido").value.trim(),
-        genero: document.getElementById("generoClienteRapido").value,
-        comentarios: document.getElementById("comentariosClienteRapido").value.trim()
-      };
-      const res = await ClientesAPI.create(p);
-      
-      // Select the newly created client
-      const clienteVenta = document.getElementById("clienteVenta");
-      const clienteVentaNombre = document.getElementById("clienteVentaNombre");
-      if(clienteVenta) clienteVenta.value = res.id;
-      if(clienteVentaNombre) clienteVentaNombre.value = res.nombre;
-      
-      // Update local cache
-      allClientes.push(res);
-      currentFilteredClientes = allClientes;
-      
-      modalClienteRapido.style.display = "none";
-      formClienteRapido.reset();
-    } catch(err) {
-      alert("Error al crear cliente.");
-      console.error(err);
-    } finally {
-      btn.textContent = oldText;
-      btn.disabled = false;
-    }
-  });
-}
-
-// NUEVA LÓGICA DEVOLUCIONES LIBRES (RESTORED)
-// ==========================================
-const btnCrearDevolucionLeft = document.getElementById("btnCrearDevolucionLeft");
-const clienteDevolucionNombre = document.getElementById("clienteDevolucionNombre");
-const autocompleteClientesDevolucion = document.getElementById("autocompleteClientesDevolucion");
-const productoDevolucionNombre = document.getElementById("productoDevolucionNombre");
-const autocompleteProductosDevolucion = document.getElementById("autocompleteProductosDevolucion");
-const metodoPagoDevolucion = document.getElementById("metodoPagoDevolucion");
-
-btnCrearDevolucionLeft?.addEventListener("click", () => {
-  carritoDevolucion = [];
-  renderCarritoDevolucion();
-  
-  if (clienteDevolucion) clienteDevolucion.value = "";
-  if (clienteDevolucionNombre) clienteDevolucionNombre.value = "";
-  if (productoDevolucion) productoDevolucion.value = "";
-  if (productoDevolucionNombre) productoDevolucionNombre.value = "";
-  if (cantidadDevolucion) cantidadDevolucion.value = "";
-
-  const modalDev = document.getElementById("modalDevolucion");
-  if (modalDev) modalDev.style.display = "flex";
-});
-
-// Autocomplete Clientes Devolucion
-clienteDevolucionNombre?.addEventListener("input", async (e) => {
-  const q = e.target.value.toLowerCase().trim();
-  if(autocompleteClientesDevolucion) autocompleteClientesDevolucion.innerHTML = "";
-  if (!q) {
-    if(autocompleteClientesDevolucion) autocompleteClientesDevolucion.style.display = "none";
-    if(clienteDevolucion) clienteDevolucion.value = "";
-    return;
-  }
-  
-  if (!allClientes || allClientes.length === 0) {
-    // We need to fetch!
-    allClientes = await ClientesAPI.getAll(comercioId);
-  }
-  
-  const filtrados = allClientes.filter(c => c.nombre.toLowerCase().includes(q) || c.documento?.includes(q)).slice(0, 10);
-  if (filtrados.length === 0) {
-    if(autocompleteClientesDevolucion) autocompleteClientesDevolucion.style.display = "none";
-    return;
-  }
-  filtrados.forEach(c => {
-    const li = document.createElement("li");
-    li.textContent = c.documento ? `${c.nombre} (${c.documento})` : c.nombre;
-    li.addEventListener("mousedown", (ev) => {
-      ev.preventDefault();
-      if(clienteDevolucion) clienteDevolucion.value = c.id;
-      if(clienteDevolucionNombre) clienteDevolucionNombre.value = c.nombre;
-      if(autocompleteClientesDevolucion) autocompleteClientesDevolucion.style.display = "none";
-    });
-    if(autocompleteClientesDevolucion) autocompleteClientesDevolucion.appendChild(li);
-  });
-  if(autocompleteClientesDevolucion) autocompleteClientesDevolucion.style.display = "block";
-});
-
-clienteDevolucionNombre?.addEventListener("blur", () => {
-  setTimeout(() => {
-    if (autocompleteClientesDevolucion) autocompleteClientesDevolucion.style.display = "none";
-  }, 150);
-});
-
-// Autocomplete Productos Devolucion
-productoDevolucionNombre?.addEventListener("input", async (e) => {
-  const q = e.target.value.toLowerCase().trim();
-  if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.innerHTML = "";
-  if (!q) {
-    if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.style.display = "none";
-    if(productoDevolucion) productoDevolucion.value = "";
-    return;
-  }
-  
-  await window.ensureProductosLoaded();
-  
-  const filtrados = productosCache.filter(p => p.nombre.toLowerCase().includes(q) || p.codigo_barras?.includes(q)).slice(0, 10);
-  if (filtrados.length === 0) {
-    if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.style.display = "none";
-    return;
-  }
-  filtrados.forEach(p => {
-    const li = document.createElement("li");
-    li.textContent = `${p.nombre} - ${Number(p.precio).toFixed(2)}`;
-    li.addEventListener("mousedown", (ev) => {
-      ev.preventDefault();
-      if(productoDevolucion) productoDevolucion.value = p.id;
-      if(productoDevolucionNombre) productoDevolucionNombre.value = p.nombre;
-      if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.style.display = "none";
-      if(cantidadDevolucion) cantidadDevolucion.focus();
-    });
-    if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.appendChild(li);
-  });
-  if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.style.display = "block";
-});
-
-productoDevolucionNombre?.addEventListener("blur", () => {
-  setTimeout(() => {
-    if (autocompleteProductosDevolucion) autocompleteProductosDevolucion.style.display = "none";
-  }, 150);
-});
-
-
-const formDevolucionNuevo = document.getElementById("formDevolucion");
-formDevolucionNuevo?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  
-  if (carritoDevolucion.length === 0) {
-    alert("El carrito de devolución está vacío");
-    return;
-  }
-  
-  const cliId = document.getElementById("clienteDevolucion")?.value || null;
-  // metPago removed
-  
-  const payload = {
-    comercio_id: comercioId,
-    cliente_id: cliId, // Puede ser null, el backend lo aceptará si quitamos el constraint
-    venta_id: null, // Ya no lo usamos en debolucion libre
-    
-    items: carritoDevolucion
-  };
-  
-  try {
-    const data = await DevolucionesAPI.create(JSON.stringify(payload));
-    
-    alert("Devolución generada con éxito");
-    carritoDevolucion = [];
-    renderCarritoDevolucion();
-    
-    if (clienteDevolucion) clienteDevolucion.value = "";
-    if (clienteDevolucionNombre) clienteDevolucionNombre.value = "";
-    
-    document.getElementById("modalDevolucion").style.display = "none";
-  } catch (error) {
-    console.error(error);
-    alert(error.message);
-  }
-});
-
-// ==========================================
-// LUPITAS EN DEVOLUCIONES
-// ==========================================
-document.getElementById("btnBuscarClienteDev")?.addEventListener("click", () => {
-  window.targetClientInput = 'clienteDevolucion';
-  window.targetClientNameInput = 'clienteDevolucionNombre';
-  if(typeof window.openClientModal === 'function') window.openClientModal();
-});
-
-document.getElementById("btnBuscarProductoDev")?.addEventListener("click", async () => {
-  window.targetProductInput = 'productoDevolucion';
-  window.targetProductNameInput = 'productoDevolucionNombre';
-  
-  if(typeof window.ensureProductosLoaded === 'function') {
-    await window.ensureProductosLoaded();
-  }
-  if(typeof window.renderProductosModal === 'function') {
-    window.renderProductosModal(productosCache);
-  }
-  
-  const m = document.getElementById("modalProductos");
-  if(m) {
-    m.style.display = "flex";
-    document.getElementById("buscarProductoModal")?.focus();
-  }
-});
-
-// Update the main POS button to set targets
-document.getElementById("btnBuscarProducto")?.addEventListener("click", async () => {
-  window.targetProductInput = 'productoVenta';
-  window.targetProductNameInput = 'productoVentaNombre';
-  await window.ensureProductosLoaded();
-  if (typeof renderProductosModal === 'function') {
-    window.renderProductosModal(productosCache);
-  }
-  const m = document.getElementById("modalProductos");
-  if(m) {
-    m.style.display = "flex";
-    document.getElementById("buscarProductoModal")?.focus();
-  }
-});
-
-// ===================================
-// BIND SCROLL EVENTS FOR LAZY LOAD
-// ===================================
-document.addEventListener("DOMContentLoaded", () => {
-  const scrollCli = document.getElementById("scrollClientesBuscador");
-  if(scrollCli) {
-    scrollCli.addEventListener("scroll", () => {
-      if (scrollCli.scrollTop + scrollCli.clientHeight >= scrollCli.scrollHeight - 50) {
-        if (modalVisibleCount < currentFilteredClientes.length) {
-          modalVisibleCount += 20;
-          renderClientesBuscadorLazy(true);
-        }
-      }
-    });
-  }
-  
-  const scrollProd = document.getElementById("scrollProductosBuscador");
-  if(scrollProd) {
-    scrollProd.addEventListener("scroll", () => {
-      if (scrollProd.scrollTop + scrollProd.clientHeight >= scrollProd.scrollHeight - 50) {
-        if (prodVisibleCount < currentFilteredProductos.length) {
-          prodVisibleCount += 20;
-          renderProductosModalLazy(true);
-        }
-      }
-    });
-  }
-  
-  const scrollDev = document.getElementById("scrollDevolucionesBuscador");
-  if(scrollDev) {
-    scrollDev.addEventListener("scroll", () => {
-      if (scrollDev.scrollTop + scrollDev.clientHeight >= scrollDev.scrollHeight - 50) {
-        if (devVisibleCount < currentFilteredDevoluciones.length) {
-          devVisibleCount += 20;
-          renderDevolucionesLazy(true);
-        }
-      }
-    });
-  }
-});
-
-const cerrarModalBuscarCliente = document.getElementById("cerrarModalBuscarCliente");
-cerrarModalBuscarCliente?.addEventListener("click", () => {
-  const m = document.getElementById("modalBuscarCliente");
-  if (m) m.style.display = "none";
-});
-
-// ==========================================
-// CLIENT LOGIC (RESTORED)
-// ==========================================
-window.openClientModal = async () => {
-  if (!allClientes || allClientes.length === 0) {
-    allClientes = await ClientesAPI.getAll(comercioId);
-  }
-  currentFilteredClientes = allClientes;
-  modalVisibleCount = 20;
-  if(typeof renderClientesBuscadorLazy === 'function') renderClientesBuscadorLazy(false);
-  
-
-  const btnNuevo = document.getElementById("btnNuevoClienteDesdeBuscador");
-  if (btnNuevo) {
-    if (window.targetClientInput === 'clienteDevolucion') {
-      btnNuevo.style.setProperty('display', 'none', 'important');
+  function mostrarInputNuevaLocalidad(mostrar) {
+    if (!campoNuevaLocalidad || !campoLocalidad) return;
+    if (mostrar) {
+      campoNuevaLocalidad.style.display = "block";
+      campoLocalidad.style.display = "none";
     } else {
-      btnNuevo.style.setProperty('display', 'inline-block', 'important');
+      campoNuevaLocalidad.style.display = "none";
+      campoLocalidad.style.display = "inline-block";
+      campoNuevaLocalidad.value = "";
     }
   }
 
-  const m = document.getElementById("modalBuscarCliente");
-  if(m) {
-    m.style.display = "flex";
-    document.getElementById("inputBuscarClienteModal")?.focus();
+  if (btnNuevaLocalidad) {
+    btnNuevaLocalidad.addEventListener("click", () => mostrarInputNuevaLocalidad(true));
   }
-};
 
-document.getElementById("btnBuscarCliente")?.addEventListener("click", () => {
-  window.targetClientInput = 'clienteVenta';
-  window.targetClientNameInput = 'clienteVentaNombre';
-  openClientModal();
-});
+  // Cargar localidades al abrir o al iniciar
+  async function cargarLocalidadesVentas() {
+    if (!campoLocalidad) return;
+    try {
+      const localidades = await ClientesAPI.getLocalidades(comercioId);
+      campoLocalidad.innerHTML = `<option value="">Seleccionar localidad</option>`;
+      localidades.forEach((loc) => {
+        campoLocalidad.innerHTML += `<option value="${loc}">${loc}</option>`;
+      });
+    } catch (e) {
+      console.error("Error cargando localidades", e);
+    }
+  }
 
-document.getElementById("inputBuscarClienteModal")?.addEventListener("input", (e) => {
-  const q = e.target.value.toLowerCase().trim();
-  currentFilteredClientes = allClientes.filter(c => c.nombre.toLowerCase().includes(q) || (c.documento && c.documento.includes(q)));
-  modalVisibleCount = 20;
-  if(typeof renderClientesBuscadorLazy === 'function') renderClientesBuscadorLazy(false);
-});
+  if (btnCrearClienteRapido) {
+    btnCrearClienteRapido.addEventListener("click", () => {
+      if (modalClienteRapido) {
+        document.getElementById("formCliente")?.reset();
+        mostrarInputNuevaLocalidad(false);
+        cargarLocalidadesVentas();
+        modalClienteRapido.style.display = "flex";
+        setTimeout(() => document.getElementById("nombre")?.focus(), 100);
+      }
+    });
+  }
 
-document.getElementById("btnNuevoClienteDesdeBuscador")?.addEventListener("click", () => {
-  document.getElementById("btnCrearClienteRapido")?.click();
-});
+  if (cerrarModalClienteRapido) {
+    cerrarModalClienteRapido.addEventListener("click", () => {
+      if (modalClienteRapido) modalClienteRapido.style.display = "none";
+    });
+  }
+
+  if (formCliente) {
+    formCliente.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = formCliente.querySelector('button[type="submit"]');
+      const oldText = btn ? btn.textContent : "Guardar";
+      if(btn) {
+        btn.textContent = "Guardando...";
+        btn.disabled = true;
+      }
+
+      try {
+        const localidadFinal = campoNuevaLocalidad?.value.trim() || campoLocalidad?.value || "";
+
+        const p = {
+          comercio_id: comercioId,
+          nombre: document.getElementById("nombre")?.value.trim() || "",
+          fecha_nacimiento: document.getElementById("fechaNacimiento")?.value || null,
+          genero: document.getElementById("genero")?.value || "",
+          telefono: document.getElementById("telefono")?.value.trim() || "",
+          email: document.getElementById("email")?.value.trim() || "",
+          localidad: localidadFinal,
+          comentarios: document.getElementById("comentarios")?.value.trim() || ""
+        };
+        
+        const res = await ClientesAPI.create(p);
+        
+        // Select the newly created client
+        const clienteVenta = document.getElementById("clienteVenta");
+        const clienteVentaNombre = document.getElementById("clienteVentaNombre");
+        if(clienteVenta) clienteVenta.value = res.id;
+        if(clienteVentaNombre) clienteVentaNombre.value = res.nombre;
+        
+        // Update local cache
+        if (typeof allClientes !== 'undefined') {
+          allClientes.push(res);
+          currentFilteredClientes = allClientes;
+        }
+        
+        modalClienteRapido.style.display = "none";
+        formCliente.reset();
+      } catch (err) {
+        alert(err.message || "Error creando cliente");
+      } finally {
+        if(btn) {
+          btn.textContent = oldText;
+          btn.disabled = false;
+        }
+      }
+    });
+  }
+
+  document.getElementById("btnNuevoClienteDesdeBuscador")?.addEventListener("click", () => {
+    document.getElementById("btnCrearClienteRapido")?.click();
+  });
 
 
 // ==========================================
