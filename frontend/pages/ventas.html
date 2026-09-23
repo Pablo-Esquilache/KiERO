@@ -246,45 +246,26 @@
     <!-- ====================================================== -->
     <!-- MODAL: TICKET -->
     <!-- ====================================================== -->
-    <div id="modalTicket" class="app-modal">
-      <div class="app-modal-content app-modal-ticket">
-        <div class="app-modal-header">
-          <h2 class="app-subtitle">Ticket</h2>
-          <button type="button" class="app-close" id="cerrarModalTicket">
-            Cerrar
-          </button>
+    <!-- ====================================================== -->
+    <!-- MODAL TICKET (HISTORIAL) -->
+    <!-- ====================================================== -->
+    <div id="modalTicket" class="app-modal" style="z-index: 11000;">
+      <div class="app-modal-content" style="max-width: 400px; padding: 0;">
+        <div style="padding: 15px; border-bottom: 1px dashed #ccc; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border-radius: 8px 8px 0 0;">
+          <h2 style="margin: 0; font-size: 1.2rem; color: #1e293b;">Detalle de Venta</h2>
+          <button type="button" id="btnImprimirTicketHistorial" class="app-btn-secondary" style="padding: 5px 10px; font-size: 0.9em;">🖨️ Imprimir</button>
+        </div>
+        
+        <div id="ticketHistorialContenido" style="padding: 20px; max-height: 50vh; overflow-y: auto; font-family: monospace; font-size: 14px;">
+          <!-- JS Inyecta el texto aqui -->
         </div>
 
-        <div class="app-ticket-body">
-          <!-- INFO GENERAL -->
-          <div class="v-ticket-info">
-            <p><strong>ID:</strong> <span id="ticketId"></span></p>
-            <p><strong>Fecha:</strong> <span id="ticketFecha"></span></p>
-            <p><strong>Cliente:</strong> <span id="ticketCliente"></span></p>
-            <p><strong>Método:</strong> <span id="ticketMetodo"></span></p>
-          </div>
-
-          <!-- DETALLE -->
-          <div class="app-ticket-tabla-container">
-            <table class="app-tabla">
-              <thead>
-                <tr>
-                  <th>Producto</th>
-                  <th>Cant.</th>
-                  <th>Subtotal</th>
-                </tr>
-              </thead>
-              <tbody id="ticketDetalleBody"></tbody>
-            </table>
-          </div>
-
-          <!-- TOTAL -->
-          <div class="app-ticket-total">
-            Total: $<span id="ticketTotal"></span>
-          </div>
+        <div style="padding: 15px; text-align: center; border-top: 1px dashed #ccc; background: #f8fafc; border-radius: 0 0 8px 8px;">
+          <button type="button" id="cerrarModalTicket" class="app-btn-primary" style="width: 100%; padding: 12px; font-size: 1.1em; background-color: #64748b; border: none;">Cerrar Ticket</button>
         </div>
       </div>
     </div>
+    
     <!-- ========================= -->
     <!-- MODAL BUSCAR PRODUCTO -->
     <!-- ========================= -->

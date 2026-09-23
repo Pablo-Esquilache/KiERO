@@ -1013,53 +1013,45 @@ function activarBotonesEditar() {
 
 // ==============================
 function activarBotonesVerTicket() {
-  document.querySelectorAll(".btn-ver-ticket:not(.btn-ver-devolucion)").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      try {
-        const ventaId = btn.dataset.id;
+    document.querySelectorAll(".btn-ver-ticket:not(.btn-ver-devolucion)").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        try {
+          const ventaId = btn.dataset.id;
+          const venta = ventasCacheModal.find((v) => v.id == ventaId) || ventasCachePrincipal.find((v) => v.id == ventaId);
+          if (!venta) return;
+  
+          const detalles = await VentasAPI.getDetalle(ventaId);
+          
+          let itemsHtml = "";
+          for(let item of detalles) {
+              itemsHtml += `<div style="display:flex; justify-content:space-between;"><span>${item.cantidad}x ${item.producto_nombre || "Producto"}</span><span>${Number(item.subtotal).toFixed(2)}</span></div>`;
+          }
+          
+          let descHtml = "";
+          if (Number(venta.descuento_monto) > 0) {
+            descHtml = `<div style="display:flex; justify-content:space-between; color: #e63946;"><span>Descuento (${venta.descuento_porcentaje}%)</span><span>-${Number(venta.descuento_monto).toFixed(2)}</span></div>`;
+          }
 
-        const venta =
-          ventasCacheModal.find((v) => v.id == ventaId) ||
-          ventasCachePrincipal.find((v) => v.id == ventaId);
-
-        if (!venta) return;
-
-        const detalles = await VentasAPI.getDetalle(ventaId);
-
-        // Rellenar datos generales
-        document.getElementById("ticketId").textContent = venta.id;
-        document.getElementById("ticketFecha").textContent = formatearFecha(
-          venta.fecha,
-        );
-        document.getElementById("ticketCliente").textContent =
-          venta.cliente_nombre || "-";
-        document.getElementById("ticketMetodo").textContent = venta.metodo_pago;
-        document.getElementById("ticketTotal").textContent = Number(
-          venta.total,
-        ).toFixed(2);
-
-        // Rellenar detalle
-        const tbody = document.getElementById("ticketDetalleBody");
-        tbody.innerHTML = "";
-
-        detalles.forEach((d) => {
-          const fila = document.createElement("tr");
-          fila.innerHTML = `
-            <td>${d.producto_nombre}</td>
-            <td>${d.cantidad}</td>
-            <td>$${Number(d.subtotal).toFixed(2)}</td>
+          const ticketHTML = `
+            <div style="margin-bottom: 5px;"><strong>ID Venta:</strong> ${venta.id}</div>
+            <div style="margin-bottom: 5px;"><strong>Fecha:</strong> ${formatearFecha(venta.fecha)}</div>
+            <div style="margin-bottom: 5px;"><strong>Cliente:</strong> ${venta.cliente_nombre || "Consumidor Final"}</div>
+            <div style="margin-bottom: 5px;"><strong>Método de pago:</strong> ${venta.metodo_pago}</div>
+            <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
+            ${itemsHtml}
+            ${descHtml ? `<div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>${descHtml}` : ""}
+            <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
+            <div style="text-align: right; font-weight: bold; font-size: 1.2em; margin-top: 5px;">Total: ${Number(venta.total).toFixed(2)}</div>
           `;
-          tbody.appendChild(fila);
-        });
 
-        // Mostrar modal
-        document.getElementById("modalTicket").style.display = "flex";
-      } catch (error) {
-        console.error("Error obteniendo ticket:", error);
-      }
+          document.getElementById("ticketHistorialContenido").innerHTML = ticketHTML;
+          document.getElementById("modalTicket").style.display = "flex";
+        } catch (error) {
+          console.error("Error obteniendo ticket:", error);
+        }
+      });
     });
-  });
-}
+  }
 
 const modalTicket = document.getElementById("modalTicket");
 const cerrarModalTicket = document.getElementById("cerrarModalTicket");
@@ -1808,3 +1800,126 @@ if(filtroFechaHistorial) {
     renderVentasPrincipal(filtradas);
   });
 }
+
+// ==========================================
+// AUTOCOMPLETE CLIENTES VENTA
+// ==========================================
+const clienteVentaNombreV = document.getElementById("clienteVentaNombre");
+const autocompleteClientesV = document.getElementById("autocompleteClientes");
+const clienteVentaV = document.getElementById("clienteVenta");
+
+clienteVentaNombreV?.addEventListener("input", async (e) => {
+  const q = e.target.value.toLowerCase().trim();
+  if(autocompleteClientesV) autocompleteClientesV.innerHTML = "";
+  if (!q) {
+    if(autocompleteClientesV) autocompleteClientesV.style.display = "none";
+    if(clienteVentaV) clienteVentaV.value = "";
+    
+    // Si se borra, volver a consumidor final por defecto
+    const cf = allClientes.find(c => c.nombre && c.nombre.toLowerCase().includes('consumidor'));
+    if (cf && clienteVentaV) {
+      clienteVentaV.value = cf.id;
+    }
+    return;
+  }
+  
+  if (!allClientes || allClientes.length === 0) {
+    allClientes = await ClientesAPI.getAll(comercioId);
+  }
+  
+  const filtrados = allClientes.filter(c => c.nombre.toLowerCase().includes(q) || c.documento?.includes(q)).slice(0, 10);
+  if (filtrados.length === 0) {
+    if(autocompleteClientesV) autocompleteClientesV.style.display = "none";
+    return;
+  }
+  filtrados.forEach(c => {
+    const li = document.createElement("li");
+    li.textContent = `${c.nombre} ${c.documento ? '('+c.documento+')' : ''}`;
+    li.addEventListener("mousedown", (ev) => {
+      ev.preventDefault();
+      if(clienteVentaV) clienteVentaV.value = c.id;
+      if(clienteVentaNombreV) clienteVentaNombreV.value = c.nombre;
+      if(autocompleteClientesV) autocompleteClientesV.style.display = "none";
+    });
+    if(autocompleteClientesV) autocompleteClientesV.appendChild(li);
+  });
+  if(autocompleteClientesV) autocompleteClientesV.style.display = "block";
+});
+
+clienteVentaNombreV?.addEventListener("blur", () => {
+  setTimeout(() => {
+    if (autocompleteClientesV) autocompleteClientesV.style.display = "none";
+    // Si quedo vacio, consumidor final
+    if (!clienteVentaNombreV.value.trim()) {
+      const cf = allClientes.find(c => c.nombre && c.nombre.toLowerCase().includes('consumidor'));
+      if (cf && clienteVentaV && clienteVentaNombreV) {
+        clienteVentaV.value = cf.id;
+        clienteVentaNombreV.value = cf.nombre;
+      }
+    }
+  }, 150);
+});
+
+// ==========================================
+// AUTOCOMPLETE PRODUCTOS VENTA
+// ==========================================
+const productoVentaNombreV = document.getElementById("productoVentaNombre");
+const autocompleteProductosV = document.getElementById("autocompleteProductos");
+const productoVentaV = document.getElementById("productoVenta");
+const cantidadVentaV = document.getElementById("cantidadVenta");
+
+productoVentaNombreV?.addEventListener("input", async (e) => {
+  const q = e.target.value.toLowerCase().trim();
+  if(autocompleteProductosV) autocompleteProductosV.innerHTML = "";
+  if (!q) {
+    if(autocompleteProductosV) autocompleteProductosV.style.display = "none";
+    if(productoVentaV) productoVentaV.value = "";
+    return;
+  }
+  
+  if (!productosCache || productosCache.length === 0) {
+    productosCache = await ProductosAPI.getAll(comercioId);
+  }
+  
+  const filtrados = productosCache.filter(p => p.nombre.toLowerCase().includes(q) || p.codigo_barras?.includes(q)).slice(0, 10);
+  if (filtrados.length === 0) {
+    if(autocompleteProductosV) autocompleteProductosV.style.display = "none";
+    return;
+  }
+  filtrados.forEach(p => {
+    const li = document.createElement("li");
+    li.textContent = `${p.nombre} - $${Number(p.precio_venta || p.precio).toFixed(2)}`;
+    li.addEventListener("mousedown", (ev) => {
+      ev.preventDefault();
+      if(productoVentaV) productoVentaV.value = p.id;
+      if(productoVentaNombreV) productoVentaNombreV.value = p.nombre;
+      if(autocompleteProductosV) autocompleteProductosV.style.display = "none";
+      if(cantidadVentaV) cantidadVentaV.focus();
+    });
+    if(autocompleteProductosV) autocompleteProductosV.appendChild(li);
+  });
+  if(autocompleteProductosV) autocompleteProductosV.style.display = "block";
+});
+
+productoVentaNombreV?.addEventListener("blur", () => {
+  setTimeout(() => {
+    if (autocompleteProductosV) autocompleteProductosV.style.display = "none";
+  }, 150);
+});
+
+  const btnImprimirTicketHistorial = document.getElementById("btnImprimirTicketHistorial");
+  if(btnImprimirTicketHistorial) {
+    btnImprimirTicketHistorial.addEventListener("click", () => {
+      const contenido = document.getElementById("ticketHistorialContenido")?.innerHTML || "";
+      const ventana = window.open('', '_blank', 'width=300,height=500');
+      ventana.document.write('<html><head><title>Imprimir Ticket</title></head><body style="font-family: monospace;">');
+      ventana.document.write('<h3 style="text-align:center;">Comprobante de Venta</h3>');
+      ventana.document.write(contenido);
+      ventana.document.write('</body></html>');
+      ventana.document.close();
+      ventana.onload = () => {
+        ventana.print();
+        ventana.close();
+      };
+    });
+  }
