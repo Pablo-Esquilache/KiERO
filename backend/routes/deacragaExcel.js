@@ -1,5 +1,5 @@
 import express from "express";
-import { exportarExcel } from "../controllers/exportarController.js";
+import { exportarExcel, exportarBackupSQL } from "../controllers/exportarController.js";
 
 const router = express.Router();
 
@@ -7,5 +7,7 @@ const router = express.Router();
    GET - EXPORTAR TABLA A EXCEL
    ========================== */
 router.get("/", exportarExcel);
+
+router.get("/sql", exportarBackupSQL);
 
 export default router;
