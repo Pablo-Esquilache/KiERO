@@ -21,6 +21,7 @@ import syncConfigRoutes from "./routes/syncConfigRoutes.js";
 import backupRoutes from "./routes/backupRoutes.js";
 import ajustesRoutes from "./routes/ajustes.js";
 import turnosRoutes from "./routes/turnos.js";
+import { authenticate } from "./middleware/auth.js";
 
 dotenv.config();
 
@@ -39,9 +40,13 @@ app.use(express.json());
 /* ===== RUTAS API ===== */
 // En Netlify, la URL base de la función suele ser /.netlify/functions/api
 // Pero por comodidad, a veces se usa el enrutador normal y Netlify hace el rewrite
-const router = express.Router();
+// Rutas PUBLICAS (Login/Logout)
+app.use("/api/auth", authRouter);
 
-router.use("/auth", authRouter);
+// Rutas PRIVADAS (Requieren Token)
+const router = express.Router();
+router.use(authenticate);
+
 router.use("/usuarios", usuariosRouter);
 router.use("/ventas", ventasRouter);
 router.use("/productos", productosRouter);
@@ -59,7 +64,7 @@ router.use("/backup", backupRoutes);
 router.use("/ajustes", ajustesRoutes);
 router.use("/turnos", turnosRoutes);
 
-// Acoplamos las rutas a /api
+// Acoplamos las rutas privadas a /api
 app.use("/api", router);
 
 // Exportamos la app pura de Express (sin app.listen) para serverless-http
