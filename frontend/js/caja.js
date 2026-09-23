@@ -107,7 +107,7 @@ async function obtenerCaja() {
     estadoCajaSpan.textContent = "Cerrada (Podés reabrirla)";
     bloqueApertura.style.display = "flex";
     bloqueResumen.style.display = "none";
-    btnAbrirCaja.textContent = "Reabrir Caja";
+    btnAbrirCaja.textContent = "Abrir Nueva Caja";
   }
 }
 

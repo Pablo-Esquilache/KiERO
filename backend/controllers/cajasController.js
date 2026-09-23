@@ -12,7 +12,7 @@ export const getCajaHoy = async (req, res) => {
       `SELECT * FROM cajas 
        WHERE comercio_id = $1 
        AND (estado = 'abierta' OR fecha = COALESCE($2::date, CURRENT_DATE))
-       ORDER BY fecha DESC LIMIT 1`,
+       ORDER BY hora_apertura DESC LIMIT 1`,
       [comercioId, req.query.fecha || null],
     );
 
@@ -39,23 +39,9 @@ export const abrirCaja = async (req, res) => {
 
     res.json(rows[0]);
   } catch (err) {
-    if (err.code === "23505") {
-      try {
-         const reabrir = await pool.query(
-           "UPDATE cajas SET estado = 'abierta', hora_cierre = NULL WHERE comercio_id = $1 AND fecha = COALESCE($2::date, CURRENT_DATE) RETURNING *",
-           [comercio_id, (fecha && fecha.length === 10) ? fecha : null]
-         );
-         if (reabrir.rowCount > 0) {
-           return res.json(reabrir.rows[0]);
-         }
-      } catch (e) {
-         console.error("Error reabriendo:", e);
-      }
-      return res.status(400).json({ error: "La caja ya existe y no se pudo reabrir." });
+      console.error("Error abriendo caja:", err);
+      res.status(500).json({ error: "Error abriendo caja" });
     }
-    console.error("Error abriendo caja:", err);
-    res.status(500).json({ error: "Error abriendo caja" });
-  }
 };
 
 /**
