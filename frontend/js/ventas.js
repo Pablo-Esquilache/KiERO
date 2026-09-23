@@ -1893,7 +1893,7 @@ clienteVentaNombreV?.addEventListener("input", debounce(async (e) => {
     if(autocompleteClientesV) autocompleteClientesV.appendChild(li);
   });
   if(autocompleteClientesV) autocompleteClientesV.style.display = "block";
-});
+}, 300));
 
 clienteVentaNombreV?.addEventListener("blur", () => {
   setTimeout(() => {
@@ -1948,7 +1948,7 @@ productoVentaNombreV?.addEventListener("input", debounce(async (e) => {
     if(autocompleteProductosV) autocompleteProductosV.appendChild(li);
   });
   if(autocompleteProductosV) autocompleteProductosV.style.display = "block";
-});
+}, 300));
 
 productoVentaNombreV?.addEventListener("blur", () => {
   setTimeout(() => {
