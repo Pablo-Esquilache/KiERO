@@ -58,7 +58,7 @@ export const exportarBackupSQL = async (req, res) => {
   if (!comercio_id) return res.status(400).json({ error: "comercio_id requerido" });
 
   try {
-    const tablas = ["clientes", "productos", "gastos", "ventas", "ventas_detalle", "devoluciones", "devoluciones_detalle", "cajas", "cajas_movimientos"];
+    const tablas = ["clientes", "productos", "gastos", "ventas", "ventas_detalle", "devoluciones", "devoluciones_detalle", "cajas", "cuenta_corriente_movimientos", "turnos", "configuracion_sync", "usuarios"];
     let sqlDump = `-- Backup generado automáticamente\n-- Fecha: ${new Date().toISOString()}\n-- Comercio ID: ${comercio_id}\n\n`;
 
     for (const tabla of tablas) {
@@ -69,11 +69,18 @@ export const exportarBackupSQL = async (req, res) => {
         queryStr = `SELECT vd.* FROM ventas_detalle vd JOIN ventas v ON v.id = vd.venta_id WHERE v.comercio_id = $1`;
       } else if (tabla === 'devoluciones_detalle') {
         queryStr = `SELECT dd.* FROM devoluciones_detalle dd JOIN devoluciones d ON d.id = dd.devolucion_id WHERE d.comercio_id = $1`;
-      } else if (tabla === 'cajas_movimientos') {
-        queryStr = `SELECT cm.* FROM cajas_movimientos cm JOIN cajas c ON c.id = cm.caja_id WHERE c.comercio_id = $1`;
+      } else if (tabla === 'cuenta_corriente_movimientos') {
+        queryStr = `SELECT ccm.* FROM cuenta_corriente_movimientos ccm JOIN clientes c ON c.id = ccm.cliente_id WHERE c.comercio_id = $1`;
       }
       
-      const { rows } = await db.query(queryStr, [comercio_id]);
+      let rows = [];
+        try {
+          const res = await db.query(queryStr, [comercio_id]);
+          rows = res.rows;
+        } catch (e) {
+          console.warn(`Skipping table ${tabla} due to error: `, e.message);
+          continue;
+        }
       if (rows.length === 0) continue;
 
       sqlDump += `-- Tabla: ${tabla}\n`;
