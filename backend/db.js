@@ -9,7 +9,7 @@ const poolConfig = process.env.DATABASE_URL
   ? { 
       connectionString: process.env.DATABASE_URL,
       ssl: { rejectUnauthorized: false },
-      max: 2,
+      // max: 2, // Lo comentamos temporalmente porque Netlify Dev en local puede ahogarse si paralelizamos mucho
       idleTimeoutMillis: 10000
     }
   : {
@@ -21,14 +21,11 @@ const poolConfig = process.env.DATABASE_URL
       ssl: process.env.PGHOST && process.env.PGHOST !== "localhost" && process.env.PGHOST !== "127.0.0.1" 
         ? { rejectUnauthorized: false } 
         : false,
-      max: 5,
+      max: 10,
       idleTimeoutMillis: 10000
     };
 
-// Sugerencia Claude: Si usamos Supabase en Serverless, 
-// lo ideal en Netlify es bajar el pool a 1 o 2.
 const pool = new Pool(poolConfig);
-
 
 pool.on("connect", () => {
   // console.log("PostgreSQL conectado");
