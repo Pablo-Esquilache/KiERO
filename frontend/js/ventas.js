@@ -494,7 +494,7 @@ async function cargarClientes() {
 // ==============================
 async function cargarMetodosYDescuentos() {
   try {
-    const rMetodos = await fetch(`/api/ajustes/metodos_pago/${comercioId}`);
+    const rMetodos = await fetch(`/api/ajustes/metodos_pago/${comercioId}`, { headers: { "Authorization": `Bearer ${session?.token || ''}` } });
     if (rMetodos.ok) {
       const metodos = await rMetodos.json();
       const activeMethods = metodos.filter(m => m.activo);
@@ -515,7 +515,7 @@ async function cargarMetodosYDescuentos() {
   metodoPagoVenta.value = "Efectivo"; // Default
 
   try {
-    const rDescuentos = await fetch(`/api/ajustes/descuentos/${comercioId}`);
+    const rDescuentos = await fetch(`/api/ajustes/descuentos/${comercioId}`, { headers: { "Authorization": `Bearer ${session?.token || ''}` } });
     if (rDescuentos.ok) {
       const descuentos = await rDescuentos.json();
       const activeDesc = descuentos.filter(d => d.activo);
