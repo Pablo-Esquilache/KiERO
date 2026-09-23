@@ -5,30 +5,31 @@ import XLSX from "xlsx";
    GET - EXPORTAR TABLA A EXCEL
    ========================== */
 export const exportarExcel = async (req, res) => {
-  const { tabla } = req.query;
+  const { tabla, comercio_id } = req.query;
+  if (!comercio_id) return res.status(400).json({ error: "comercio_id requerido" });
 
   if (!tabla) return res.status(400).json({ error: "tabla requerida" });
 
   let query;
   switch (tabla) {
     case "ventas":
-      query = "SELECT * FROM ventas";
+      query = "SELECT * FROM ventas WHERE comercio_id = $1";
       break;
     case "clientes":
-      query = "SELECT * FROM clientes";
+      query = "SELECT * FROM clientes WHERE comercio_id = $1";
       break;
     case "productos":
-      query = "SELECT * FROM productos";
+      query = "SELECT * FROM productos WHERE comercio_id = $1";
       break;
     case "gastos":
-      query = "SELECT * FROM gastos";
+      query = "SELECT * FROM gastos WHERE comercio_id = $1";
       break;
     default:
       return res.status(400).json({ error: "Tabla no válida" });
   }
 
   try {
-    const { rows } = await db.query(query);
+    const { rows } = await db.query(query, [comercio_id]);
 
     // Generar libro y hoja de Excel
     const wb = XLSX.utils.book_new();

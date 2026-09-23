@@ -890,8 +890,10 @@ document
 
     try {
       // Usaremos fetch directo aca por la lógica de blob particular
-      const API_BASE = "http://localhost:4000/api";
-      const res = await fetch(`${API_BASE}/exportar-tabla?tabla=${tabla}`);
+      const API_BASE = "/api";
+      const session = JSON.parse(localStorage.getItem("session"));
+      const comercioId = session?.comercio_id;
+      const res = await fetch(`${API_BASE}/exportar-tabla?tabla=${tabla}&comercio_id=${comercioId}`);
       if (!res.ok) throw new Error("Error al descargar tabla");
 
       const blob = await res.blob();
