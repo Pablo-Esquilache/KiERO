@@ -17,6 +17,21 @@ document.getElementById("cerrarModalTicketDevolucion")?.addEventListener("click"
 
 // HELPERS (RESTORED)
 
+document.getElementById("btnImprimirTicketDevolucion")?.addEventListener("click", () => {
+  const contenido = document.getElementById("ticketDevExitoContenido")?.innerHTML || "";
+  const ventana = window.open('', '_blank', 'width=300,height=500');
+  ventana.document.write('<html><head><title>Imprimir Ticket Devolución</title></head><body style="font-family: monospace;">');
+  ventana.document.write('<h3 style="text-align:center;">Comprobante de Devolución</h3>');
+  ventana.document.write(contenido);
+  ventana.document.write('</body></html>');
+  ventana.document.close();
+  ventana.onload = () => {
+    ventana.print();
+    ventana.close();
+  };
+});
+
+
 window.verDetalleDevolucion = async (devolucionId) => {
   try {
     const devoluciones = await DevolucionesAPI.getAll(comercioId);
@@ -25,24 +40,25 @@ window.verDetalleDevolucion = async (devolucionId) => {
 
     const detalles = await DevolucionesAPI.getDetalle(devolucionId);
 
-    document.getElementById("ticketDevId").textContent = devolucion.id;
-    document.getElementById("ticketDevFecha").textContent = window.formatearFecha ? window.formatearFecha(devolucion.fecha) : devolucion.fecha;
-    document.getElementById("ticketDevCliente").textContent = devolucion.cliente_nombre || "-";
-    document.getElementById("ticketDevTotal").textContent = Number(devolucion.total).toFixed(2);
-
-    const tbody = document.getElementById("ticketDevDetalleBody");
-    if (tbody) {
-      tbody.innerHTML = "";
-      detalles.forEach((item) => {
-        const fila = document.createElement("tr");
-        fila.innerHTML = `
-          <td>${item.producto_nombre || "Producto"}</td>
-          <td>${item.cantidad}</td>
-          <td>${Number(item.precio_unitario).toFixed(2)}</td>
-          <td>${Number(item.subtotal).toFixed(2)}</td>
-        `;
-        tbody.appendChild(fila);
-      });
+    const ticketContent = document.getElementById("ticketDevExitoContenido");
+    if (ticketContent) {
+      const fechaFormat = window.formatearFecha ? window.formatearFecha(devolucion.fecha) : devolucion.fecha;
+      const clienteName = devolucion.cliente_nombre || "Consumidor Final";
+      
+      let itemsHtml = "";
+      for(let item of detalles) {
+          itemsHtml += `<div style="display:flex; justify-content:space-between;"><span>${item.cantidad}x ${item.producto_nombre || "Producto"}</span><span>${Number(item.subtotal).toFixed(2)}</span></div>`;
+      }
+      
+      ticketContent.innerHTML = `
+          <div style="margin-bottom: 5px;"><strong>ID Devolución:</strong> ${devolucion.id}</div>
+          <div style="margin-bottom: 5px;"><strong>Fecha:</strong> ${fechaFormat}</div>
+          <div style="margin-bottom: 5px;"><strong>Cliente:</strong> ${clienteName}</div>
+          <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
+          ${itemsHtml}
+          <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
+          <div style="text-align: right; font-weight: bold; font-size: 1.2em; margin-top: 5px;">Total Reintegrado: ${Number(devolucion.total).toFixed(2)}</div>
+      `;
     }
 
     const modalTicketDev = document.getElementById("modalTicketDevolucion");
