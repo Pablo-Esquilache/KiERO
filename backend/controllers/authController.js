@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 
-const SECRET = "clave_super_secreta_local"; // después la podés mover a .env
+const SECRET = process.env.JWT_SECRET || "clave_super_secreta_local"; // después la podés mover a .env
 
 // ================= LOGIN =================
 export const login = async (req, res) => {
@@ -41,9 +41,9 @@ export const login = async (req, res) => {
     // Crear token
     const sessionToken = uuidv4();
     const token = jwt.sign(
-      { id: user.id, role: user.role },
+      { id: user.id, role: user.role, comercio_id: user.comercio_id },
       SECRET,
-      { expiresIn: "8h" }
+      { expiresIn: "8h", issuer: "kiero-pos", audience: "kiero-web" }
     );
 
     // Guardar sesión

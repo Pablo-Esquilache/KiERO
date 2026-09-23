@@ -14,7 +14,7 @@ export async function apiFetch(endpoint, options = {}) {
 
   const defaultHeaders = {
     "Content-Type": "application/json",
-    "x-user-role": session?.role || "",
+    "Authorization": session?.token ? `Bearer ${session.token}` : "",
   };
 
   const config = {
