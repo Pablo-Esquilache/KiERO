@@ -10,62 +10,62 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const cid = session.comercio_id || 1;
 
-  // ===== ECOMMERCE SYNC =====
-  const txtUrl = document.getElementById("apiUrlSync");
-  const txtToken = document.getElementById("apiTokenSync");
-  const chkEnabled = document.getElementById("syncEnabledSwitch");
-  const formSync = document.getElementById("formCloudSync");
-  const btnGuardarSync = document.getElementById("btnGuardarSync");
-
-  async function cargarConfigSync() {
-    try {
-      const res = await fetch("/api/config-sync", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        txtUrl.value = data.api_url || "http://127.0.0.1:3000/api/sync";
-        txtToken.value = data.api_token || "";
-        chkEnabled.checked = data.sync_enabled || false;
-      }
-    } catch (e) {
-      console.warn("No se pudo cargar config sync", e);
-    }
-  }
-
-  formSync.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const url = txtUrl.value.trim();
-    const tkn = txtToken.value.trim();
-    const isEnabled = chkEnabled.checked;
-    const oldText = btnGuardarSync.textContent;
-
-    btnGuardarSync.textContent = "Guardando...";
-    btnGuardarSync.disabled = true;
-
-    try {
-      const res = await fetch("/api/config-sync", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ api_url: url, api_token: tkn, sync_enabled: isEnabled })
-      });
-
-      if (res.ok) {
-        alert("Configuración de E-Commerce guardada.");
-      } else {
-        alert("Error al guardar la configuración");
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Error de red");
-    } finally {
-      btnGuardarSync.textContent = oldText;
-      btnGuardarSync.disabled = false;
-    }
-  });
+//   // ===== ECOMMERCE SYNC =====
+//   const txtUrl = document.getElementById("apiUrlSync");
+//   const txtToken = document.getElementById("apiTokenSync");
+//   const chkEnabled = document.getElementById("syncEnabledSwitch");
+//   const formSync = document.getElementById("formCloudSync");
+//   const btnGuardarSync = document.getElementById("btnGuardarSync");
+// 
+//   async function cargarConfigSync() {
+//     try {
+//       const res = await fetch("/api/config-sync", {
+//         headers: { Authorization: `Bearer ${token}` }
+//       });
+//       if (res.ok) {
+//         const data = await res.json();
+//         txtUrl.value = data.api_url || "http://127.0.0.1:3000/api/sync";
+//         txtToken.value = data.api_token || "";
+//         chkEnabled.checked = data.sync_enabled || false;
+//       }
+//     } catch (e) {
+//       console.warn("No se pudo cargar config sync", e);
+//     }
+//   }
+// 
+//   formSync.addEventListener("submit", async (e) => {
+//     e.preventDefault();
+//     const url = txtUrl.value.trim();
+//     const tkn = txtToken.value.trim();
+//     const isEnabled = chkEnabled.checked;
+//     const oldText = btnGuardarSync.textContent;
+// 
+//     btnGuardarSync.textContent = "Guardando...";
+//     btnGuardarSync.disabled = true;
+// 
+//     try {
+//       const res = await fetch("/api/config-sync", {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: `Bearer ${token}`
+//         },
+//         body: JSON.stringify({ api_url: url, api_token: tkn, sync_enabled: isEnabled })
+//       });
+// 
+//       if (res.ok) {
+//         alert("Configuración de E-Commerce guardada.");
+//       } else {
+//         alert("Error al guardar la configuración");
+//       }
+//     } catch (error) {
+//       console.error(error);
+//       alert("Error de red");
+//     } finally {
+//       btnGuardarSync.textContent = oldText;
+//       btnGuardarSync.disabled = false;
+//     }
+//   });
 
   // ===== METODOS DE PAGO =====
   const listaMetodos = document.getElementById("listaMetodos");
@@ -474,7 +474,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
   // Init
-  cargarConfigSync();
+  // cargarConfigSync();
   cargarTurnosConfig();
   cargarMetodos();
   cargarDescuentos();
