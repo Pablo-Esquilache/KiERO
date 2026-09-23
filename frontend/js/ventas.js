@@ -1,4 +1,5 @@
 import { toastError, toastOk, toastWarning } from "./utils/toast.js";
+import { debounce } from "./utils/debounce.js";
 import {
   VentasAPI,
   ComercioAPI,
@@ -1564,7 +1565,7 @@ btnCrearDevolucionLeft?.addEventListener("click", () => {
 });
 
 // Autocomplete Clientes Devolucion
-clienteDevolucionNombre?.addEventListener("input", async (e) => {
+clienteDevolucionNombre?.addEventListener("input", debounce(async (e) => {
   const q = e.target.value.toLowerCase().trim();
   if(autocompleteClientesDevolucion) autocompleteClientesDevolucion.innerHTML = "";
   if (!q) {
@@ -1604,7 +1605,7 @@ clienteDevolucionNombre?.addEventListener("blur", () => {
 });
 
 // Autocomplete Productos Devolucion
-productoDevolucionNombre?.addEventListener("input", async (e) => {
+productoDevolucionNombre?.addEventListener("input", debounce(async (e) => {
   const q = e.target.value.toLowerCase().trim();
   if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.innerHTML = "";
   if (!q) {
@@ -1851,7 +1852,7 @@ const clienteVentaNombreV = document.getElementById("clienteVentaNombre");
 const autocompleteClientesV = document.getElementById("autocompleteClientes");
 const clienteVentaV = document.getElementById("clienteVenta");
 
-clienteVentaNombreV?.addEventListener("input", async (e) => {
+clienteVentaNombreV?.addEventListener("input", debounce(async (e) => {
   const q = e.target.value.toLowerCase().trim();
   if(autocompleteClientesV) autocompleteClientesV.innerHTML = "";
   if (!q) {
@@ -1911,7 +1912,7 @@ const autocompleteProductosV = document.getElementById("autocompleteProductos");
 const productoVentaV = document.getElementById("productoVenta");
 const cantidadVentaV = document.getElementById("cantidadVenta");
 
-productoVentaNombreV?.addEventListener("input", async (e) => {
+productoVentaNombreV?.addEventListener("input", debounce(async (e) => {
   const q = e.target.value.toLowerCase().trim();
   if(autocompleteProductosV) autocompleteProductosV.innerHTML = "";
   if (!q) {
