@@ -136,7 +136,7 @@ export const getMovimientosDia = async (req, res) => {
     );
 
     const devoluciones = await pool.query(
-      `SELECT d.id, d.fecha, d.total, COALESCE(d.metodo_pago, v.metodo_pago) as metodo_pago FROM devoluciones d LEFT JOIN ventas v ON v.id = d.venta_id
+      `SELECT d.id, d.fecha, d.total, COALESCE(v.metodo_pago, 'Efectivo') as metodo_pago FROM devoluciones d LEFT JOIN ventas v ON v.id = d.venta_id
        WHERE d.comercio_id = $1
        ${dTimeCondition}`,
       baseParams
