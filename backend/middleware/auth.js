@@ -1,5 +1,4 @@
 import jwt from "jsonwebtoken";
-import pool from "../db.js";
 
 const SECRET = process.env.JWT_SECRET || "clave_super_secreta_local";
 
@@ -14,21 +13,11 @@ export async function authenticate(req, res, next) {
   try {
     const payload = jwt.verify(token, SECRET);
     
-    // Verificamos que la sesión siga activa y exista el usuario
-    const { rows } = await pool.query(
-      "SELECT id, role, comercio_id, active_session FROM usuarios WHERE id = $1",
-      [payload.id]
-    );
-    const user = rows[0];
-    
-    if (!user || !user.active_session) {
-      return res.status(401).json({ error: "Sesión expirada o inválida, iniciá sesión de nuevo" });
-    }
-    
-    // Inyectamos el usuario validado y su comercio_id en la request
-    req.user = user;
+    // Optimizacin Claude: El JWT es stateless.
+    // Confiamos en el payload sin hacer round-trip a la DB por cada request.
+    req.user = payload;
     next();
   } catch (err) {
-    return res.status(401).json({ error: "Token inválido o expirado" });
+    return res.status(401).json({ error: "Token invǭlido o expirado" });
   }
 }

@@ -418,9 +418,11 @@ if (btnNuevaVenta) {
     fechaVenta.value = hoy;
     fechaVenta.readOnly = true; // no editable
 
-    await cargarClientes();
-    await cargarProductos();
-    await cargarMetodosYDescuentos();
+    await Promise.all([
+      cargarClientes(),
+      cargarProductos(),
+      cargarMetodosYDescuentos()
+    ]);
     // modalVenta.style.display = "flex";
   });
 }
@@ -978,9 +980,11 @@ function activarBotonesEditar() {
       ventaEnEdicionId = venta.id;
 
       // 🔹 Cargar selects
-      await cargarClientes();
-      await cargarProductos();
-      await cargarMetodosYDescuentos();
+      await Promise.all([
+      cargarClientes(),
+      cargarProductos(),
+      cargarMetodosYDescuentos()
+    ]);
 
       // 🔹 Precargar datos básicos
       const d = new Date(venta.fecha);
