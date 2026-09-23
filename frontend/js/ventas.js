@@ -8,6 +8,63 @@ import {
 } from "./api.js";
 
 
+// ==============================
+
+document.getElementById("cerrarModalTicketDevolucion")?.addEventListener("click", () => {
+  const m = document.getElementById("modalTicketDevolucion");
+  if(m) m.style.display = "none";
+});
+
+// HELPERS (RESTORED)
+
+window.verDetalleDevolucion = async (devolucionId) => {
+  try {
+    const devoluciones = await DevolucionesAPI.getAll(comercioId);
+    const devolucion = devoluciones.find((d) => d.id == devolucionId);
+    if(!devolucion) return;
+
+    const detalles = await DevolucionesAPI.getDetalle(devolucionId);
+
+    document.getElementById("ticketDevId").textContent = devolucion.id;
+    document.getElementById("ticketDevFecha").textContent = window.formatearFecha ? window.formatearFecha(devolucion.fecha) : devolucion.fecha;
+    document.getElementById("ticketDevCliente").textContent = devolucion.cliente_nombre || "-";
+    document.getElementById("ticketDevTotal").textContent = Number(devolucion.total).toFixed(2);
+
+    const tbody = document.getElementById("ticketDevDetalleBody");
+    if (tbody) {
+      tbody.innerHTML = "";
+      detalles.forEach((item) => {
+        const fila = document.createElement("tr");
+        fila.innerHTML = `
+          <td>${item.producto_nombre || "Producto"}</td>
+          <td>${item.cantidad}</td>
+          <td>${Number(item.precio_unitario).toFixed(2)}</td>
+          <td>${Number(item.subtotal).toFixed(2)}</td>
+        `;
+        tbody.appendChild(fila);
+      });
+    }
+
+    const modalTicketDev = document.getElementById("modalTicketDevolucion");
+    if(modalTicketDev) modalTicketDev.style.display = "flex";
+  } catch(err) {
+    console.error("Error al cargar detalle devolucion", err);
+  }
+};
+
+// ==============================
+window.formatearFecha = function(fechaISO) {
+  if (!fechaISO) return "-";
+  const fecha = new Date(fechaISO);
+  return fecha.toLocaleDateString("es-AR");
+};
+function formatearFecha(fechaISO) {
+  return window.formatearFecha(fechaISO);
+}
+
+
+
+
 
 window.ensureProductosLoaded = async () => {
   if (!productosCache || productosCache.length === 0) {
@@ -58,7 +115,7 @@ const renderDevolucionesLazy = (append = false) => {
   
   // Re-bind click events for newly rendered buttons
   document.querySelectorAll(".btn-ver-devolucion").forEach((b) =>
-    b.addEventListener("click", () => verDetalleVenta(b.dataset.id))
+    b.addEventListener("click", () => { if(window.verDetalleDevolucion) window.verDetalleDevolucion(b.dataset.id); })
   );
 };
 
@@ -912,7 +969,7 @@ function activarBotonesEditar() {
 
 // ==============================
 function activarBotonesVerTicket() {
-  document.querySelectorAll(".btn-ver-ticket").forEach((btn) => {
+  document.querySelectorAll(".btn-ver-ticket:not(.btn-ver-devolucion)").forEach((btn) => {
     btn.addEventListener("click", async () => {
       try {
         const ventaId = btn.dataset.id;
