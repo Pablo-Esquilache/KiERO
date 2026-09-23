@@ -229,6 +229,35 @@ document.addEventListener("DOMContentLoaded", async () => {
                 // Caja abierta: mostramos la interfaz que estaba oculta por defecto en HTML
                 if (posHeader) posHeader.style.display = "block";
                 if (posContainer) posContainer.style.display = "grid";
+
+                // INIT POS
+                const hoy = new Date().toLocaleDateString("sv-SE");
+                const fVenta = document.getElementById("fechaVenta");
+                if (fVenta) {
+                  fVenta.value = hoy;
+                  fVenta.readOnly = true;
+                }
+                
+                if (btnToggleVista) {
+                  btnToggleVista.addEventListener("click", () => {
+                    const pos = document.getElementById("pos-container");
+                    const hist = document.getElementById("history-container");
+                    if (pos.style.display !== "none") {
+                      pos.style.display = "none";
+                      hist.style.display = "block";
+                      btnToggleVista.textContent = "Volver a Punto de Venta";
+                      if(typeof cargarVentas === "function") cargarVentas();
+                    } else {
+                      hist.style.display = "none";
+                      pos.style.display = "grid";
+                      btnToggleVista.textContent = "Historial de Ventas";
+                    }
+                  });
+                }
+                
+                if(typeof cargarClientes === "function") cargarClientes();
+                if(typeof cargarProductos === "function") cargarProductos();
+                if(typeof cargarMetodosYDescuentos === "function") cargarMetodosYDescuentos();
             }
         } catch (err) {
             console.error("Error al verificar estado de caja para bloqueo:", err);
@@ -1410,7 +1439,68 @@ btnAgregarDevolucionNuevo?.addEventListener("click", () => {
 
 // Submit Formulario Modificado
 
+
 // ==========================================
+// CREAR CLIENTE RAPIDO
+// ==========================================
+const btnCrearClienteRapido = document.getElementById("btnCrearClienteRapido");
+const modalClienteRapido = document.getElementById("modalClienteRapido");
+const cerrarModalClienteRapido = document.getElementById("cerrarModalClienteRapido");
+const formClienteRapido = document.getElementById("formClienteRapido");
+
+if (btnCrearClienteRapido) {
+  btnCrearClienteRapido.addEventListener("click", () => {
+    if (modalClienteRapido) {
+      modalClienteRapido.style.display = "flex";
+      document.getElementById("nombreClienteRapido").focus();
+    }
+  });
+}
+
+if (cerrarModalClienteRapido) {
+  cerrarModalClienteRapido.addEventListener("click", () => {
+    if (modalClienteRapido) modalClienteRapido.style.display = "none";
+  });
+}
+
+if (formClienteRapido) {
+  formClienteRapido.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("btnGuardarClienteRapido");
+    const oldText = btn.textContent;
+    btn.textContent = "Guardando...";
+    btn.disabled = true;
+
+    try {
+      const p = {
+        comercio_id: comercioId,
+        nombre: document.getElementById("nombreClienteRapido").value.trim(),
+        documento: document.getElementById("docClienteRapido").value.trim()
+      };
+      const res = await ClientesAPI.create(p);
+      
+      // Select the newly created client
+      const clienteVenta = document.getElementById("clienteVenta");
+      const clienteVentaNombre = document.getElementById("clienteVentaNombre");
+      if(clienteVenta) clienteVenta.value = res.id;
+      if(clienteVentaNombre) clienteVentaNombre.value = res.nombre;
+      
+      // Update local cache
+      allClientes.push(res);
+      currentFilteredClientes = allClientes;
+      
+      modalClienteRapido.style.display = "none";
+      formClienteRapido.reset();
+    } catch(err) {
+      alert("Error al crear cliente.");
+      console.error(err);
+    } finally {
+      btn.textContent = oldText;
+      btn.disabled = false;
+    }
+  });
+}
+
 // NUEVA LÓGICA DEVOLUCIONES LIBRES (RESTORED)
 // ==========================================
 const btnCrearDevolucionLeft = document.getElementById("btnCrearDevolucionLeft");
