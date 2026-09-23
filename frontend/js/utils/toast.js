@@ -11,7 +11,7 @@ export function toast(msg, tipo = "error") {
   const colores = { error: "#c0392b", ok: "#27ae60", info: "#2980b9", warning: "#f39c12" };
   const el = document.createElement("div");
   el.textContent = msg; 
-  el.style.cssText = \`background:\${colores[tipo]};color:#fff;padding:12px 18px;border-radius:8px;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.15);opacity:0;transition:opacity 0.3s ease, transform 0.3s ease;transform:translateY(20px);\`;
+  el.style.cssText = `background:${colores[tipo]};color:#fff;padding:12px 18px;border-radius:8px;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.15);opacity:0;transition:opacity 0.3s ease, transform 0.3s ease;transform:translateY(20px);`;
   
   const container = document.getElementById("toast-container") || crearContenedor();
   container.appendChild(el);
