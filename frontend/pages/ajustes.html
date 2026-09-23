@@ -37,6 +37,8 @@
       <p style="color: #64748b; margin-bottom: 20px;">Opciones y configuraciones exclusivas para perfil Administrador.</p>
 
       <div class="ajustes-grid">
+
+        <!-- FILA 1 -->
         <!-- 1. MÉTODOS DE PAGO -->
         <section class="ajustes-card">
           <h2 class="app-subtitle">Métodos de Pago</h2>
@@ -48,7 +50,6 @@
             <!-- Renderizado dinámico -->
           </ul>
         </section>
-
         <!-- 2. DESCUENTOS -->
         <section class="ajustes-card">
           <h2 class="app-subtitle">Descuentos (%)</h2>
@@ -60,42 +61,42 @@
             <!-- Renderizado dinámico -->
           </ul>
         </section>
-
-        <!-- E-COMMERCE DESHABILITADO TEMPORALMENTE
-<!-- 3. E-COMMERCE -->
+        <!-- 4. CATEGORÍAS DE GASTOS -->
         <section class="ajustes-card">
-          <h2 class="app-subtitle">Conexión E-Commerce</h2>
-          <p style="font-size: 0.9em; margin-bottom: 10px; color: #64748b;">
-            Configura la sincronización con tu tienda web.
-          </p>
-          <form id="formCloudSync" style="display: flex; flex-direction: column; gap: 10px;">
-            <div class="app-form-group">
-               <label>URL de E-commerce</label>
-               <input type="text" id="apiUrlSync" class="app-input" placeholder="http://127.0.0.1:3000/api/sync" autocomplete="off" />
-            </div>
-
-            <div class="app-form-group">
-               <label>Token de Conexión</label>
-               <input type="text" id="apiTokenSync" class="app-input" autocomplete="off" />
-            </div>
-
-            <div class="switch-container">
-               <label>Sincronización Automática</label>
-               <label class="switch-ui">
-                 <input type="checkbox" id="syncEnabledSwitch">
-                 <span class="slider">
-                   <span class="slider-dot"></span>
-                 </span>
-               </label>
-            </div>
-
-            <button type="submit" class="app-btn-primary" id="btnGuardarSync">
-               Guardar Configuración
-            </button>
-          </form>
+          <h2 class="app-subtitle">Categorías de Gastos</h2>
+          <div class="app-form-group" style="display: flex; gap: 5px;">
+            <input type="text" id="nuevaCategoriaGastoInput" class="app-input" placeholder="Ej: Alquiler" style="flex:1;" />
+            <button id="btnNuevaCategoriaGasto" class="app-btn-secondary">Agregar</button>
+          </div>
+          <ul id="listaCategoriasGasto" class="opciones-lista">
+            <!-- Renderizado dinámico -->
+          </ul>
         </section>
--->
 
+        <!-- FILA 2 -->
+        <!-- 5. SISTEMA / BD -->
+        <section class="ajustes-card">
+          <h2 class="app-subtitle">Sistema y Datos</h2>
+          <div class="ajustes-actions">
+            <button id="refresh-db-btn" class="app-btn-secondary" title="Actualizar datos forzosamente">
+              ⟳ Actualizar Tablas
+            </button>
+            <button id="backup-btn" class="app-btn-secondary" title="Hacer un respaldo manual">
+              💾 Descargar Backup
+            </button>
+          </div>
+        </section>
+        <!-- 6. UMBRAL DE STOCK -->
+        <section class="ajustes-card">
+          <h2 class="app-subtitle">Alertas de Stock</h2>
+          <p style="font-size: 0.9em; margin-bottom: 10px; color: #64748b;">
+            Define cuándo el stock figura como bajo.
+          </p>
+          <div class="app-form-group" style="display: flex; gap: 5px; align-items: center;">
+            <input type="number" id="inputUmbralStock" class="app-input" placeholder="Mínimo (Ej: 3)" style="flex:1;" />
+            <button id="btnGuardarUmbral" class="app-btn-secondary">Guardar</button>
+          </div>
+        </section>
         <!-- TURNERO CONFIG -->
         <section class="ajustes-card">
           <h2 class="app-subtitle">Módulo Turnero</h2>
@@ -150,43 +151,7 @@
           </form>
         </section>
 
-        <!-- 4. CATEGORÍAS DE GASTOS -->
-        <section class="ajustes-card">
-          <h2 class="app-subtitle">Categorías de Gastos</h2>
-          <div class="app-form-group" style="display: flex; gap: 5px;">
-            <input type="text" id="nuevaCategoriaGastoInput" class="app-input" placeholder="Ej: Alquiler" style="flex:1;" />
-            <button id="btnNuevaCategoriaGasto" class="app-btn-secondary">Agregar</button>
-          </div>
-          <ul id="listaCategoriasGasto" class="opciones-lista">
-            <!-- Renderizado dinámico -->
-          </ul>
-        </section>
-
-        <!-- 5. SISTEMA / BD -->
-        <section class="ajustes-card">
-          <h2 class="app-subtitle">Sistema y Datos</h2>
-          <div class="ajustes-actions">
-            <button id="refresh-db-btn" class="app-btn-secondary" title="Actualizar datos forzosamente">
-              ⟳ Actualizar Tablas
-            </button>
-            <button id="backup-btn" class="app-btn-secondary" title="Hacer un respaldo manual">
-              💾 Descargar Backup
-            </button>
-          </div>
-        </section>
-
-        <!-- 6. UMBRAL DE STOCK -->
-        <section class="ajustes-card">
-          <h2 class="app-subtitle">Alertas de Stock</h2>
-          <p style="font-size: 0.9em; margin-bottom: 10px; color: #64748b;">
-            Define cuándo el stock figura como bajo.
-          </p>
-          <div class="app-form-group" style="display: flex; gap: 5px; align-items: center;">
-            <input type="number" id="inputUmbralStock" class="app-input" placeholder="Mínimo (Ej: 3)" style="flex:1;" />
-            <button id="btnGuardarUmbral" class="app-btn-secondary">Guardar</button>
-          </div>
-        </section>
-
+        <!-- FILA 3 -->
         <!-- 7. GESTIÓN DE USUARIOS -->
         <section class="ajustes-card" style="grid-column: 1 / -1;">
           <h2 class="app-subtitle">Usuarios del Sistema</h2>
@@ -212,12 +177,11 @@
         </section>
 
       </div>
-
     </main>
 
     <!-- MODAL USUARIO -->
     <div id="modalUsuario" class="app-modal">
-      <div class="app-modal-content-producto" style="max-width: 400px; padding: 20px;">
+      <div class="app-modal-content" style="max-width: 400px; padding: 20px;">
         <div class="app-modal-header">
           <h2 class="app-subtitle" id="tituloModalUsuario">Crear Usuario</h2>
           <button type="button" class="app-close" id="cerrarModalUsuario">Cerrar</button>
