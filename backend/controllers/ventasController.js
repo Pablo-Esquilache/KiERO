@@ -116,7 +116,7 @@ export const createVenta = async (req, res) => {
     // 1️⃣ Verificar stock
     for (const item of items) {
       const { rows } = await client.query(
-        `SELECT stock FROM productos 
+        `SELECT stock, precio FROM productos 
          WHERE id = $1 AND comercio_id = $2`,
         [item.producto_id, comercio_id],
       );
@@ -124,6 +124,9 @@ export const createVenta = async (req, res) => {
       if (!rows[0]) throw new Error("Producto no encontrado");
       if (item.cantidad > Number(rows[0].stock))
         throw new Error("Stock insuficiente");
+        
+      // Override client price to prevent manipulation
+      item.precio_unitario = Number(rows[0].precio);
     }
 
     // 2️⃣ Calcular totales
@@ -177,14 +180,16 @@ RETURNING *
         ],
       );
 
-      await client.query(
+      const updateRes = await client.query(
         `
         UPDATE productos
         SET stock = stock - $1
-        WHERE id = $2 AND comercio_id = $3
+        WHERE id = $2 AND comercio_id = $3 AND stock >= $1
+        RETURNING stock
         `,
         [item.cantidad, item.producto_id, comercio_id],
       );
+      if (!updateRes.rows[0]) throw new Error("Stock insuficiente (Error de concurrencia)");
     }
 
     // 🔹 Si es cuenta corriente, registrar deuda

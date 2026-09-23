@@ -717,11 +717,12 @@ if (descuentoVenta) {
 if (formVenta) {
   formVenta?.addEventListener("submit", async (e) => {
     e.preventDefault();
-
     if (carrito.length === 0) {
       toastWarning("Debe agregar al menos un producto.");
       return;
     }
+    const submitBtn = formVenta.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
 
     const payload = {
       fecha: fechaVenta.value,
