@@ -32,7 +32,14 @@ export const getGastos = async (req, res) => {
    POST - CREAR GASTO
    ========================== */
 export const createGasto = async (req, res) => {
-  const { fecha, descripcion, tipo, importe, comercio_id } = req.body;
+  let { fecha, descripcion, tipo, importe, comercio_id } = req.body;
+  
+  // Si la fecha es igual a hoy, le anexamos la hora actual para que ingrese correctamente a la caja abierta de hoy.
+  const hoyStr = new Date().toLocaleDateString("sv-SE"); // YYYY-MM-DD local
+  if (fecha === hoyStr) {
+    fecha = new Date().toISOString(); 
+  }
+
 
   if (!comercio_id) {
     return res.status(400).json({ error: "comercio_id requerido" });
@@ -60,7 +67,13 @@ export const createGasto = async (req, res) => {
    ========================== */
 export const updateGasto = async (req, res) => {
   const { id } = req.params;
-  const { fecha, descripcion, tipo, importe, comercio_id } = req.body;
+  let { fecha, descripcion, tipo, importe, comercio_id } = req.body;
+  
+  const hoyStr = new Date().toLocaleDateString("sv-SE");
+  if (fecha === hoyStr) {
+    fecha = new Date().toISOString(); 
+  }
+
 
   if (!comercio_id) {
     return res.status(400).json({ error: "comercio_id requerido" });

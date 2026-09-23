@@ -127,13 +127,22 @@ export const getMovimientosDia = async (req, res) => {
       baseParams
     );
 
-    const gastos = await pool.query(
-      `SELECT id, fecha, importe, descripcion
-       FROM gastos
-       WHERE comercio_id = $1
-       ${timeCondition}`,
-      baseParams
-    );
+    
+      // Modificamos la condicion para gastos: 
+      // Si la caja esta abierta (no hay endTime), solo incluimos los gastos hasta el final del dia en que se abrio la caja.
+      // Asi evitamos que un gasto del dia 28 se sume a la caja de hoy.
+      const gastosTimeCondition = endTime 
+        ? `AND fecha >= $2 AND fecha <= $3` 
+        : `AND fecha >= $2 AND fecha::date <= $2::date`;
+
+      const gastos = await pool.query(
+        `SELECT id, fecha, importe, descripcion
+         FROM gastos
+         WHERE comercio_id = $1
+         ${gastosTimeCondition}`,
+        baseParams
+      );
+
 
     const devoluciones = await pool.query(
       `SELECT d.id, d.fecha, d.total, COALESCE(v.metodo_pago, 'Efectivo') as metodo_pago FROM devoluciones d LEFT JOIN ventas v ON v.id = d.venta_id

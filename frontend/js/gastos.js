@@ -46,11 +46,13 @@ let gastos = [];
 // UTILIDADES
 // ------------------------------
 function formatFecha(fechaISO) {
-  if (!fechaISO) return "—";
-  const dObj = new Date(fechaISO);
-  const localIso = new Date(dObj - dObj.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-  const [y, m, d] = localIso.split("-");
+  if (!fechaISO) return "-";
+  // The backend returns something like "2026-09-23T00:00:00.000Z" for a DATE column.
+  // Extract just the YYYY-MM-DD part to avoid local timezone shifts (-3 hrs in Argentina).
+  const soloFecha = fechaISO.substring(0, 10);
+  const [y, m, d] = soloFecha.split("-");
   return `${d}/${m}/${y}`;
+}/${m}/${y}`;
 }
 
 // ------------------------------
@@ -227,11 +229,9 @@ document
 // EDITAR
 // ------------------------------
 function formatFechaInput(fechaString) {
-  const fecha = new Date(fechaString);
-  const yyyy = fecha.getFullYear();
-  const mm = String(fecha.getMonth() + 1).padStart(2, "0");
-  const dd = String(fecha.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
+  if (!fechaString) return "";
+  return fechaString.substring(0, 10);
+}-${mm}-${dd}`;
 }
 
 function editarGasto(id) {
