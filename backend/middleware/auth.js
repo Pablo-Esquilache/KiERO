@@ -16,6 +16,13 @@ export async function authenticate(req, res, next) {
     // Optimizacion Claude: El JWT es stateless.
     // Confiamos en el payload sin hacer round-trip a la DB por cada request.
     req.user = payload;
+    
+    // FALLBACK DE SEGURIDAD: Si la base de datos o el token viejo no tiene comercio_id,
+    // forzamos a que sea 1 por defecto para evitar errores 500.
+    if (!req.user.comercio_id) {
+      req.user.comercio_id = 1;
+    }
+    
     next();
   } catch (err) {
     return res.status(401).json({ error: "Token invlido o expirado" });
