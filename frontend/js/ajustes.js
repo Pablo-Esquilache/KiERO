@@ -9,6 +9,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const cid = session.comercio_id || 1;
+  const authFetch = async (url, options = {}) => {
+    options.headers = options.headers || {};
+    if (token) options.headers['Authorization'] = 'Bearer ' + token;
+    return globalThis.authFetch(url, options);
+  };
 
 //   // ===== ECOMMERCE SYNC =====
 //   const txtUrl = document.getElementById("apiUrlSync");
@@ -19,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // 
 //   async function cargarConfigSync() {
 //     try {
-//       const res = await fetch("/api/config-sync", {
+//       const res = await authFetch("/api/config-sync", {
 //         headers: { Authorization: `Bearer ${token}` }
 //       });
 //       if (res.ok) {
@@ -44,7 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
 //     btnGuardarSync.disabled = true;
 // 
 //     try {
-//       const res = await fetch("/api/config-sync", {
+//       const res = await authFetch("/api/config-sync", {
 //         method: "POST",
 //         headers: {
 //           "Content-Type": "application/json",
@@ -75,7 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function cargarMetodos() {
     listaMetodos.innerHTML = "<p>Cargando...</p>";
     try {
-      const res = await fetch(`/api/ajustes/metodos_pago/${cid}`);
+      const res = await authFetch(`/api/ajustes/metodos_pago/${cid}`);
       const data = await res.json();
       listaMetodos.innerHTML = "";
       data.forEach(m => {
@@ -99,7 +104,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const nombre = inputNuevoMetodo.value.trim();
     if (!nombre) return;
     try {
-      const res = await fetch("/api/ajustes/metodos_pago", {
+      const res = await authFetch("/api/ajustes/metodos_pago", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ comercio_id: cid, nombre })
@@ -116,7 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const id = e.target.getAttribute("data-id");
       const activo = e.target.checked;
       try {
-        await fetch(`/api/ajustes/metodos_pago/${id}/toggle`, {
+        await authFetch(`/api/ajustes/metodos_pago/${id}/toggle`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ activo })
@@ -134,7 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function cargarDescuentos() {
     listaDescuentos.innerHTML = "<p>Cargando...</p>";
     try {
-      const res = await fetch(`/api/ajustes/descuentos/${cid}`);
+      const res = await authFetch(`/api/ajustes/descuentos/${cid}`);
       const data = await res.json();
       listaDescuentos.innerHTML = "";
       data.forEach(d => {
@@ -158,7 +163,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const porc = parseFloat(inputNuevoDescuento.value);
     if (isNaN(porc)) return;
     try {
-      const res = await fetch("/api/ajustes/descuentos", {
+      const res = await authFetch("/api/ajustes/descuentos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ comercio_id: cid, porcentaje: porc })
@@ -175,7 +180,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const id = e.target.getAttribute("data-id");
       const activo = e.target.checked;
       try {
-        await fetch(`/api/ajustes/descuentos/${id}/toggle`, {
+        await authFetch(`/api/ajustes/descuentos/${id}/toggle`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ activo })
@@ -190,7 +195,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if(!confirm("¿Eliminar este método de pago?")) return;
       const id = e.target.getAttribute("data-id");
       try {
-        await fetch(`/api/ajustes/metodos_pago/${id}`, { method: "DELETE" });
+        await authFetch(`/api/ajustes/metodos_pago/${id}`, { method: "DELETE" });
         cargarMetodos();
       } catch (err) { console.error(err); }
     }
@@ -201,7 +206,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if(!confirm("¿Eliminar este descuento?")) return;
       const id = e.target.getAttribute("data-id");
       try {
-        await fetch(`/api/ajustes/descuentos/${id}`, { method: "DELETE" });
+        await authFetch(`/api/ajustes/descuentos/${id}`, { method: "DELETE" });
         cargarDescuentos();
       } catch (err) { console.error(err); }
     }
@@ -215,7 +220,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function cargarCategoriasGasto() {
     listaCategoriasGasto.innerHTML = "<p>Cargando...</p>";
     try {
-      const res = await fetch(`/api/ajustes/gastos_categorias/${cid}`);
+      const res = await authFetch(`/api/ajustes/gastos_categorias/${cid}`);
       const data = await res.json();
       listaCategoriasGasto.innerHTML = "";
       data.forEach(c => {
@@ -239,7 +244,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const nombre = nuevaCategoriaGastoInput.value.trim();
     if (!nombre) return;
     try {
-      const res = await fetch("/api/ajustes/gastos_categorias", {
+      const res = await authFetch("/api/ajustes/gastos_categorias", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ comercio_id: cid, nombre })
@@ -256,7 +261,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const id = e.target.getAttribute("data-id");
       const activo = e.target.checked;
       try {
-        await fetch(`/api/ajustes/gastos_categorias/${id}/toggle`, {
+        await authFetch(`/api/ajustes/gastos_categorias/${id}/toggle`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ activo })
@@ -270,7 +275,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if(!confirm("¿Eliminar esta categoría de gasto?")) return;
       const id = e.target.getAttribute("data-id");
       try {
-        await fetch(`/api/ajustes/gastos_categorias/${id}`, { method: "DELETE" });
+        await authFetch(`/api/ajustes/gastos_categorias/${id}`, { method: "DELETE" });
         cargarCategoriasGasto();
       } catch (err) { console.error(err); }
     }
@@ -287,7 +292,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function cargarTurnosConfig() {
     try {
-      const res = await fetch(`/api/ajustes/turnos_config/${cid}`);
+      const res = await authFetch(`/api/ajustes/turnos_config/${cid}`);
       if (res.ok) {
         const data = await res.json();
         turnosEnabledSwitch.checked = data.modulo_habilitado;
@@ -316,7 +321,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     try {
-      const res = await fetch(`/api/ajustes/turnos_config/${cid}`, {
+      const res = await authFetch(`/api/ajustes/turnos_config/${cid}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -342,7 +347,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function cargarUmbralStock() {
     try {
       // Necesitamos fetchear data del comercio para el umbral
-      const res = await fetch(`/api/comercios/uid/${session.uid}`);
+      const res = await authFetch(`/api/comercios/uid/${session.uid}`);
       if(res.ok) {
         const data = await res.json();
         inputUmbralStock.value = data.umbral_stock || 3;
@@ -354,7 +359,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const val = parseInt(inputUmbralStock.value);
     if(isNaN(val)) return;
     try {
-      const res = await fetch(`/api/ajustes/umbral_stock/${cid}`, {
+      const res = await authFetch(`/api/ajustes/umbral_stock/${cid}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ umbral_stock: val })
@@ -375,7 +380,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function cargarUsuarios() {
     try {
-      const res = await fetch(`/api/usuarios/${cid}`);
+      const res = await authFetch(`/api/usuarios/${cid}`);
       const data = await res.json();
       usuariosCache = data;
       tablaUsuariosBody.innerHTML = "";
@@ -418,7 +423,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Edit
         const body = { role, usuario };
         if (password) body.password = password;
-        const res = await fetch(`/api/usuarios/${modeId}`, {
+        const res = await authFetch(`/api/usuarios/${modeId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body)
@@ -433,7 +438,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         // Create
         if (!password) { alert("La contraseña es requerida para un nuevo usuario"); return; }
-        const res = await fetch(`/api/usuarios`, {
+        const res = await authFetch(`/api/usuarios`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ usuario, password, role, comercio_id: cid })
@@ -455,7 +460,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if(!confirm("¿Deseas eliminar este usuario de forma permanente?")) return;
       const id = btn.getAttribute("data-id");
       try {
-        await fetch(`/api/usuarios/${id}`, { method: "DELETE" });
+        await authFetch(`/api/usuarios/${id}`, { method: "DELETE" });
         cargarUsuarios();
       } catch (err) { console.error(err); }
     } else if (btn.classList.contains("btn-editar-usuario")) {
@@ -497,7 +502,7 @@ if (backupBtn) {
       const session = JSON.parse(localStorage.getItem("session"));
       const comercioId = session?.comercio_id;
 
-      const res = await fetch(`/api/exportar-tabla/sql?comercio_id=${comercioId}`);
+      const res = await authFetch(`/api/exportar-tabla/sql?comercio_id=${comercioId}`);
       if (!res.ok) throw new Error("Error al descargar backup");
 
       const blob = await res.blob();
