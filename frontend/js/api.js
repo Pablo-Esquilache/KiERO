@@ -63,11 +63,26 @@ export const ComercioAPI = {
 export const VentasAPI = {
   getAll: (comercioId) => apiFetch(`/ventas?comercio_id=${comercioId}`),
   getDetalle: (ventaId) => apiFetch(`/ventas/${ventaId}/detalle`),
-  create: (data) => apiFetch("/ventas", { method: "POST", body: data }),
-  update: (id, data) =>
-    apiFetch(`/ventas/${id}`, { method: "PUT", body: data }),
-  delete: (id, comercioId) =>
-    apiFetch(`/ventas/${id}?comercio_id=${comercioId}`, { method: "DELETE" }),
+  create: async (data) => {
+    const res = await apiFetch("/ventas", { method: "POST", body: data });
+    const comercioId = JSON.parse(localStorage.getItem("session"))?.comercio_id;
+    localStorage.removeItem(`productos_cache_${comercioId}`);
+    localStorage.removeItem(`clientes_cache_${comercioId}`);
+    return res;
+  },
+  update: async (id, data) => {
+    const res = await apiFetch(`/ventas/${id}`, { method: "PUT", body: data });
+    const comercioId = JSON.parse(localStorage.getItem("session"))?.comercio_id;
+    localStorage.removeItem(`productos_cache_${comercioId}`);
+    localStorage.removeItem(`clientes_cache_${comercioId}`);
+    return res;
+  },
+  delete: async (id, comercioId) => {
+    const res = await apiFetch(`/ventas/${id}?comercio_id=${comercioId}`, { method: "DELETE" });
+    localStorage.removeItem(`productos_cache_${comercioId}`);
+    localStorage.removeItem(`clientes_cache_${comercioId}`);
+    return res;
+  },
 };
 
 export const ClientesAPI = {
@@ -98,8 +113,11 @@ export const ClientesAPI = {
     apiFetch(`/clientes/${id}/saldo?comercio_id=${comercioId}`),
   getCuentaCorriente: (id, comercioId) =>
     apiFetch(`/clientes/${id}/cuenta-corriente?comercio_id=${comercioId}`),
-  registrarPago: (id, data) =>
-    apiFetch(`/clientes/${id}/pago`, { method: "POST", body: data }),
+  registrarPago: async (id, data) => {
+    const res = await apiFetch(`/clientes/${id}/pago`, { method: "POST", body: data });
+    localStorage.removeItem(`clientes_cache_${JSON.parse(localStorage.getItem("session"))?.comercio_id}`);
+    return res;
+  },
 };
 
 export const ProductosAPI = {
@@ -136,7 +154,13 @@ export const ProductosAPI = {
 export const DevolucionesAPI = {
   getAll: (comercioId) =>
     apiFetch(`/devoluciones?comercio_id=${comercioId}`),
-  create: (data) => apiFetch("/devoluciones", { method: "POST", body: data }),
+  create: async (data) => {
+    const res = await apiFetch("/devoluciones", { method: "POST", body: data });
+    const comercioId = JSON.parse(localStorage.getItem("session"))?.comercio_id;
+    localStorage.removeItem(`productos_cache_${comercioId}`);
+    localStorage.removeItem(`clientes_cache_${comercioId}`);
+    return res;
+  },
   getDetalle: (devolucionId) =>
     apiFetch(`/devoluciones/${devolucionId}/detalle`),
 };
