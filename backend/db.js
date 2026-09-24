@@ -5,12 +5,14 @@ dotenv.config();
 
 const { Pool } = pkg;
 
-const pool = new Pool({ 
+const poolConfig = { 
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
-  max: 1, // Recomendado para entornos Serverless + Supabase Pooler
+  max: 10,
   idleTimeoutMillis: 10000
-});
+};
+
+const pool = new Pool(poolConfig);
 
 pool.on("connect", () => {
   // console.log("PostgreSQL conectado");
