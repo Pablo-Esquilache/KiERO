@@ -32,6 +32,12 @@ export async function apiFetch(endpoint, options = {}) {
   try {
     const response = await fetch(url, config);
 
+    if (response.status === 401) {
+      localStorage.removeItem("session");
+      window.location.href = "/index.html";
+      return;
+    }
+
     // Si la respuesta es NO-CONTENT (204) no intentar parsear JSON
     if (response.status === 204) {
       return null;
