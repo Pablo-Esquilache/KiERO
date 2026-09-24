@@ -2001,3 +2001,44 @@ if (btnImprimirTicketExito) {
     };
   });
 }
+
+// ==========================================
+// ATAJOS DE TECLADO (F2, F8, ENTER)
+// ==========================================
+document.addEventListener("keydown", (e) => {
+  if (e.target && e.target.tagName && e.target.tagName.toLowerCase() === "textarea") return;
+
+  if (e.key === "F2") {
+    e.preventDefault();
+    const pInput = document.getElementById("productoVentaNombre");
+    if (pInput) {
+      pInput.focus();
+      pInput.select();
+    }
+  }
+
+  if (e.key === "F8") {
+    e.preventDefault();
+    const formVentaF8 = document.querySelector(".app-form-venta");
+    if (formVentaF8) {
+      const btn = formVentaF8.querySelector("button[type='submit']");
+      if (btn) btn.click();
+    }
+  }
+
+  if (e.key === "Enter") {
+    const modalTicket = document.getElementById("modalTicketExito");
+    if (modalTicket && modalTicket.style.display === "flex") {
+      e.preventDefault();
+      const btn = document.getElementById("btnAceptarTicketExito");
+      if (btn) btn.click();
+      return;
+    }
+
+    if (document.activeElement && document.activeElement.id === "productoVentaNombre") {
+      e.preventDefault();
+      const btn = document.getElementById("btnAgregarProducto");
+      if (btn) btn.click();
+    }
+  }
+});
