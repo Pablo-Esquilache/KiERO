@@ -1,14 +1,8 @@
 import { apiFetch, TurnosAPI, ClientesAPI } from "./api.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const token = JSON.parse(localStorage.getItem("token") || '"{}"');
   const session = JSON.parse(localStorage.getItem("session") || "{}");
   const cid = session.comercio_id || 1;
-
-  if (!token || typeof token !== "string") {
-    window.location.href = "index.html";
-    return;
-  }
 
   // Elementos UI
   const turneroLayout = document.querySelector(".turnero-layout");

@@ -25,7 +25,7 @@ router.get("/fix-db", async (req, res) => {
     }
     res.send("Restriccion borrada con exito en Supabase. Ya podes abrir multiples cajas hoy. Podes cerrar esta ventana.");
   } catch (err) {
-    res.status(500).send("Error: " + err.message);
+    res.status(500).send("Error interno del servidor");
   }
 });
 

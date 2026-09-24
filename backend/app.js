@@ -34,7 +34,7 @@ pool.query("SELECT NOW()")
 
 /* ===== MIDDLEWARES ===== */
 app.use(helmet());
-app.use(cors());
+app.use(cors({ origin: ["https://kiero-appventas.netlify.app"] }));
 app.use(express.json());
 
 /* ===== RUTAS API ===== */
