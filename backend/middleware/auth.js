@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 
-const SECRET = process.env.JWT_SECRET || "clave_super_secreta_local";
+const SECRET = process.env.JWT_SECRET;
+if (!SECRET) throw new Error("Falta configurar JWT_SECRET en las variables de entorno");
 
 export async function authenticate(req, res, next) {
   const header = req.headers.authorization || "";
@@ -12,15 +13,10 @@ export async function authenticate(req, res, next) {
 
   try {
     const payload = jwt.verify(token, SECRET);
-    
-    // Optimizacion Claude: El JWT es stateless.
-    // Confiamos en el payload sin hacer round-trip a la DB por cada request.
     req.user = payload;
     
-    // FALLBACK DE SEGURIDAD: Si la base de datos o el token viejo no tiene comercio_id,
-    // forzamos a que sea 1 por defecto para evitar errores 500.
     if (!req.user.comercio_id) {
-      req.user.comercio_id = 1;
+      return res.status(400).json({ error: "El usuario no tiene un comercio asignado" });
     }
     
     next();

@@ -1,3 +1,4 @@
+import { escapeHtml } from "./utils/escapeHtml.js";
 import { toastError, toastOk, toastWarning } from "./utils/toast.js";
 import { debounce } from "./utils/debounce.js";
 import {

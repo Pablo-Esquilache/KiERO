@@ -1,3 +1,4 @@
+import { escapeHtml } from "./utils/escapeHtml.js";
 import { ComercioAPI, ClientesAPI, HistorialAPI, VentasAPI, DevolucionesAPI } from "./api.js";
 
 // ===========================================================

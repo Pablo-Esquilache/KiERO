@@ -3,7 +3,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 
-const SECRET = process.env.JWT_SECRET || "clave_super_secreta_local"; // despuǸs la podǸs mover a .env
+const SECRET = process.env.JWT_SECRET;
+if (!SECRET) throw new Error("Falta configurar JWT_SECRET en las variables de entorno");
 
 // ================= LOGIN =================
 export const login = async (req, res) => {
