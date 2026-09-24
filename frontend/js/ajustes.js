@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const authFetch = async (url, options = {}) => {
     options.headers = options.headers || {};
     if (token) options.headers['Authorization'] = 'Bearer ' + token;
-    return globalThis.authFetch(url, options);
+    return globalThis.fetch(url, options);
   };
 
 //   // ===== ECOMMERCE SYNC =====
