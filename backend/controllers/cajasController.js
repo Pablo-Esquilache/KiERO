@@ -118,7 +118,7 @@ export const getMovimientosDia = async (req, res) => {
       // Asi evitamos que un gasto del dia 28 se sume a la caja de hoy.
       const gastosTimeCondition = endTime 
         ? `AND fecha >= $2 AND fecha <= $3` 
-        : `AND fecha >= $2 AND fecha::date <= $2::date`;
+        : `AND fecha >= $2`;
 
       const gastos = await pool.query(
         `SELECT id, fecha, importe, descripcion
