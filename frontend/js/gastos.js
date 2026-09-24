@@ -74,8 +74,8 @@ async function cargarGastos() {
 async function cargarCategoriasGasto() {
   if (!comercioId) return;
   try {
-    const token = JSON.parse(localStorage.getItem("token") || '"{}"');
-    const res = await fetch(`/api/ajustes/gastos_categorias/${comercioId}`);
+    // "token") || '"{}"');
+    const res = await fetch(`/api/ajustes/gastos_categorias/${comercioId}`, { headers: { "Authorization": `Bearer ${session?.token || ''}` } });
     if (res.ok) {
       const data = await res.json();
       const activas = data.filter(c => c.activo);
