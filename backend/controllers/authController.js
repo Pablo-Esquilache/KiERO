@@ -4,10 +4,13 @@ import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 
 const SECRET = process.env.JWT_SECRET;
-if (!SECRET) throw new Error("Falta configurar JWT_SECRET en las variables de entorno");
 
 // ================= LOGIN =================
 export const login = async (req, res) => {
+  if (!SECRET) {
+    return res.status(500).json({ error: "Falta configurar JWT_SECRET en las variables de entorno del servidor" });
+  }
+
   const { usuario, password } = req.body;
 
   if (!usuario || !password) {

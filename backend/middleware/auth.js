@@ -1,9 +1,12 @@
 import jwt from "jsonwebtoken";
 
 const SECRET = process.env.JWT_SECRET;
-if (!SECRET) throw new Error("Falta configurar JWT_SECRET en las variables de entorno");
 
 export async function authenticate(req, res, next) {
+  if (!SECRET) {
+    return res.status(500).json({ error: "Falta configurar JWT_SECRET en las variables de entorno del servidor" });
+  }
+
   const header = req.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : null;
   
