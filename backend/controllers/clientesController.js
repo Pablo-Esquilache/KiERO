@@ -74,7 +74,8 @@ export const createCliente = async (req, res) => {
       email || "",
       localidad || "",
       comentarios || "", 
-      comercio_id, comercio_id]);
+      comercio_id
+    ]);
 
     res.status(201).json(rows[0]);
   } catch (error) {
