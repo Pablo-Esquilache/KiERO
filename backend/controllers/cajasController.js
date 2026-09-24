@@ -30,6 +30,12 @@ export const abrirCaja = async (req, res) => {
   try {
     const comercio_id = req.user?.comercio_id; 
     
+    // Auto-fix unique constraint silently before opening box
+    try {
+      await pool.query('ALTER TABLE cajas DROP CONSTRAINT IF EXISTS unica_caja_por_dia');
+      await pool.query('ALTER TABLE cajas DROP CONSTRAINT IF EXISTS cajas_comercio_id_fecha_key');
+    } catch(e) {}
+
     const { rows } = await pool.query(
       `INSERT INTO cajas (comercio_id, fecha, saldo_inicial)
        VALUES ($1, COALESCE($3, CURRENT_DATE), $2)

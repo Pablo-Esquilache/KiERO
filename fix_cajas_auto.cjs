@@ -1,0 +1,3 @@
+const fs = require('fs');
+let t = fs.readFileSync('backend/controllers/cajasController.js', 'utf8');
+t = t.replace(\n  omatch => `const comercio_id = req.user?.comercio_id;\n\n    // Auto-fix unique constraint\n    await pool.query('ALTER TABLE cajas DROP CONSTRAINT IF EXISTS unica_caja_por_dia');\n    await pool.query('ALTER TABLE cajas DROP CONSTRAINT IF EXISTS cajas_comercio_id_fecha_key');`\r\n);\nfs.writeFileSync('backend/controllers/cajasController.js', t);
