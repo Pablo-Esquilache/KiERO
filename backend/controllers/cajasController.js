@@ -89,7 +89,7 @@ export const getMovimientosDia = async (req, res) => {
       `SELECT hora_apertura, hora_cierre FROM cajas 
        WHERE comercio_id = $1 
        AND (estado = 'abierta' OR fecha = CURRENT_DATE)
-       ORDER BY fecha DESC LIMIT 1`,
+       ORDER BY hora_apertura DESC LIMIT 1`,
       [comercioId]
     );
 
