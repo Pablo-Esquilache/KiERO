@@ -89,8 +89,8 @@ async function cargarCategoriasGasto() {
       selectFiltro.innerHTML = '<option value="">Todos</option>';
       
       activas.forEach(c => {
-        selectModal.innerHTML += `<option value="${c.nombre}">${c.nombre}</option>`;
-        selectFiltro.innerHTML += `<option value="${c.nombre}">${c.nombre}</option>`;
+        selectModal.innerHTML += `<option value="${escapeHtml(c.nombre)}">${escapeHtml(c.nombre)}</option>`;
+        selectFiltro.innerHTML += `<option value="${escapeHtml(c.nombre)}">${escapeHtml(c.nombre)}</option>`;
       });
     }
   } catch (err) {
@@ -126,7 +126,7 @@ function renderTablaGastos() {
     tablaGastosBody.innerHTML += `
       <tr>
         <td>${formatFecha(g.fecha)}</td>
-        <td>${g.descripcion}</td>
+        <td>${escapeHtml(g.descripcion)}</td>
         <td>${g.tipo}</td>
         <td>$${parseFloat(g.importe).toFixed(2)}</td>
         <td>

@@ -240,8 +240,8 @@ function renderTablaProductos() {
     
     tablaProductosBody.innerHTML += `
       <tr>
-        <td>${p.nombre}</td>
-        <td>${p.categoria || "-"}</td>
+        <td>${escapeHtml(p.nombre)}</td>
+        <td>${escapeHtml(p.categoria) || "-"}</td>
         <td>${p.codigo_barras || "-"}</td>
         <td style="${colorStock}">${p.stock}</td>
         <td>$${p.precio.toFixed(2)}</td>

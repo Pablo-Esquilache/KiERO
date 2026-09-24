@@ -9,7 +9,7 @@ const poolConfig = process.env.DATABASE_URL
   ? { 
       connectionString: process.env.DATABASE_URL,
       ssl: { rejectUnauthorized: false },
-      // max: 2, // Lo comentamos temporalmente porque Netlify Dev en local puede ahogarse si paralelizamos mucho
+      max: 10, // Límite de conexiones para evitar agotar el pool de Supabase
       idleTimeoutMillis: 10000
     }
   : {

@@ -50,7 +50,7 @@ window.verDetalleDevolucion = async (devolucionId) => {
       
       let itemsHtml = "";
       for(let item of detalles) {
-          itemsHtml += `<div style="display:flex; justify-content:space-between;"><span>${item.cantidad}x ${item.producto_nombre || "Producto"}</span><span>${Number(item.subtotal).toFixed(2)}</span></div>`;
+          itemsHtml += `<div style="display:flex; justify-content:space-between;"><span>${item.cantidad}x ${escapeHtml(item.producto_nombre) || "Producto"}</span><span>${Number(item.subtotal).toFixed(2)}</span></div>`;
       }
       
       ticketContent.innerHTML = `
@@ -123,7 +123,7 @@ const renderDevolucionesLazy = (append = false) => {
     const fila = document.createElement("tr");
     fila.innerHTML = `
       <td>${formatearFecha(d.fecha)}</td>
-      <td>${d.cliente_nombre || "Consumidor Final"}</td>
+      <td>${escapeHtml(d.cliente_nombre) || "Consumidor Final"}</td>
       <td>$${Number(d.total).toFixed(2)}</td>
       <td>
         <button class="btn-ver-ticket btn-ver-devolucion" data-id="${d.id}">Ver</button>
@@ -155,7 +155,7 @@ const renderProductosModalLazy = (append = false) => {
   for (let i = startIndex; i < limit; i++) {
     const p = currentFilteredProductos[i];
     const fila = document.createElement("tr");
-    fila.innerHTML = `<td>${p.nombre}</td><td>${p.stock}</td>`;
+    fila.innerHTML = `<td>${escapeHtml(p.nombre)}</td><td>${p.stock}</td>`;
     fila.style.cursor = "pointer";
     fila.addEventListener("click", () => {
       const tId = document.getElementById(window.targetProductInput || 'productoVenta');
@@ -289,9 +289,9 @@ const renderClientesBuscadorLazy = (append = false) => {
     const tr = document.createElement("tr");
     tr.style.cursor = "pointer";
     tr.innerHTML = `
-      <td>${c.nombre}</td>
-      <td>${c.telefono || "-"}</td>
-      <td>${c.email || "-"}</td>
+      <td>${escapeHtml(c.nombre)}</td>
+      <td>${escapeHtml(c.telefono) || "-"}</td>
+      <td>${escapeHtml(c.email) || "-"}</td>
     `;
     tr.addEventListener("click", () => {
       document.getElementById(window.targetClientInput).value = c.id;
@@ -548,7 +548,7 @@ async function cargarProductos() {
   productoVenta.innerHTML = `<option value="">Seleccionar producto</option>`;
   productos.forEach((p) => {
     if (p.stock > 0) {
-      productoVenta.innerHTML += `<option value="${p.id}">${p.nombre}</option>`;
+      productoVenta.innerHTML += `<option value="${p.id}">${escapeHtml(p.nombre)}</option>`;
     }
   });
 }
@@ -639,7 +639,7 @@ function renderCarrito() {
   carrito.forEach((item, index) => {
     const fila = document.createElement("tr");
     fila.innerHTML = `
-      <td>${item.nombre}</td>
+      <td>${escapeHtml(item.nombre)}</td>
       <td>
         <input type="number" min="1" class="app-input cantidad-carrito" data-index="${index}" value="${item.cantidad}" style="width: 70px; padding: 4px;">
       </td>
@@ -753,7 +753,7 @@ if (formVenta) {
             const clienteName = document.getElementById("clienteVentaNombre")?.value || "Consumidor Final";
             let itemsHtml = "";
             for(let i of carrito) {
-                itemsHtml += `<div style="display:flex; justify-content:space-between;"><span>${i.cantidad}x ${i.nombre}</span><span>${i.subtotal.toFixed(2)}</span></div>`;
+                itemsHtml += `<div style="display:flex; justify-content:space-between;"><span>${i.cantidad}x ${escapeHtml(i.nombre)}</span><span>${i.subtotal.toFixed(2)}</span></div>`;
             }
             const sub = carrito.reduce((acc, i) => acc + i.subtotal, 0);
             const desc = Number(descuentoVenta.value) || 0;
@@ -827,7 +827,7 @@ const renderVentasPrincipalLazy = (append = false) => {
     const fila = document.createElement("tr");
     fila.innerHTML = `
       <td>${formatearFecha(v.fecha)}</td>
-      <td>${v.cliente_nombre || "-"}</td>
+      <td>${escapeHtml(v.cliente_nombre) || "-"}</td>
       <td>${Number(v.total_bruto).toFixed(2)}</td>
       <td>${Number(v.descuento_monto).toFixed(2)}</td>
       <td>${Number(v.total).toFixed(2)}</td>
@@ -1032,7 +1032,7 @@ function activarBotonesVerTicket() {
           
           let itemsHtml = "";
           for(let item of detalles) {
-              itemsHtml += `<div style="display:flex; justify-content:space-between;"><span>${item.cantidad}x ${item.producto_nombre || "Producto"}</span><span>${Number(item.subtotal).toFixed(2)}</span></div>`;
+              itemsHtml += `<div style="display:flex; justify-content:space-between;"><span>${item.cantidad}x ${escapeHtml(item.producto_nombre) || "Producto"}</span><span>${Number(item.subtotal).toFixed(2)}</span></div>`;
           }
           
           let descHtml = "";
@@ -1043,7 +1043,7 @@ function activarBotonesVerTicket() {
           const ticketHTML = `
             <div style="margin-bottom: 5px;"><strong>ID Venta:</strong> ${venta.id}</div>
             <div style="margin-bottom: 5px;"><strong>Fecha:</strong> ${formatearFecha(venta.fecha)}</div>
-            <div style="margin-bottom: 5px;"><strong>Cliente:</strong> ${venta.cliente_nombre || "Consumidor Final"}</div>
+            <div style="margin-bottom: 5px;"><strong>Cliente:</strong> ${escapeHtml(venta.cliente_nombre) || "Consumidor Final"}</div>
             <div style="margin-bottom: 5px;"><strong>Método de pago:</strong> ${venta.metodo_pago}</div>
             <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
             ${itemsHtml}
@@ -1099,7 +1099,7 @@ function renderProductosModal(lista) {
       const fila = document.createElement("tr");
 
       fila.innerHTML = `
-        <td>${p.nombre}</td>
+        <td>${escapeHtml(p.nombre)}</td>
         <td>${p.stock}</td>
       `;
 
@@ -1173,7 +1173,7 @@ async function cargarClientesDevolucion() {
   clienteDevolucion.innerHTML = `<option value="">Seleccionar cliente</option>`;
 
   clientes.forEach((c) => {
-    clienteDevolucion.innerHTML += `<option value="${c.id}">${c.nombre}</option>`;
+    clienteDevolucion.innerHTML += `<option value="${c.id}">${escapeHtml(c.nombre)}</option>`;
   });
 }
 
@@ -1319,7 +1319,7 @@ function renderCarritoDevolucion() {
     const fila = document.createElement("tr");
 
     fila.innerHTML = `
-      <td>${item.nombre}</td>
+      <td>${escapeHtml(item.nombre)}</td>
       <td>${item.cantidad}</td>
       <td>$${item.subtotal.toFixed(2)}</td>
       <td>
@@ -1592,7 +1592,7 @@ clienteDevolucionNombre?.addEventListener("input", debounce(async (e) => {
   }
   filtrados.forEach(c => {
     const li = document.createElement("li");
-    li.textContent = c.documento ? `${c.nombre} (${c.documento})` : c.nombre;
+    li.textContent = c.documento ? `${escapeHtml(c.nombre)} (${c.documento})` : c.nombre;
     li.addEventListener("mousedown", (ev) => {
       ev.preventDefault();
       if(clienteDevolucion) clienteDevolucion.value = c.id;
@@ -1629,7 +1629,7 @@ productoDevolucionNombre?.addEventListener("input", debounce(async (e) => {
   }
   filtrados.forEach(p => {
     const li = document.createElement("li");
-    li.textContent = `${p.nombre} - ${Number(p.precio).toFixed(2)}`;
+    li.textContent = `${escapeHtml(p.nombre)} - ${Number(p.precio).toFixed(2)}`;
     li.addEventListener("mousedown", (ev) => {
       ev.preventDefault();
       if(productoDevolucion) productoDevolucion.value = p.id;
@@ -1884,7 +1884,7 @@ clienteVentaNombreV?.addEventListener("input", debounce(async (e) => {
   }
   filtrados.forEach(c => {
     const li = document.createElement("li");
-    li.textContent = `${c.nombre} ${c.documento ? '('+c.documento+')' : ''}`;
+    li.textContent = `${escapeHtml(c.nombre)} ${c.documento ? '('+c.documento+')' : ''}`;
     li.addEventListener("mousedown", (ev) => {
       ev.preventDefault();
       if(clienteVentaV) clienteVentaV.value = c.id;
@@ -1938,7 +1938,7 @@ productoVentaNombreV?.addEventListener("input", debounce(async (e) => {
   }
   filtrados.forEach(p => {
     const li = document.createElement("li");
-    li.textContent = `${p.nombre} - $${Number(p.precio_venta || p.precio).toFixed(2)}`;
+    li.textContent = `${escapeHtml(p.nombre)} - $${Number(p.precio_venta || p.precio).toFixed(2)}`;
     li.addEventListener("mousedown", (ev) => {
       ev.preventDefault();
       if(productoVentaV) productoVentaV.value = p.id;

@@ -238,14 +238,14 @@ function renderTablaClientes() {
       <tr>
         <td class="cliente-nombre-cell">
           <button class="btn-nombre-cliente" onclick="verHistorialCliente(${c.id}, '${escapeQuote(c.nombre)}')">
-            ${c.nombre}
+            ${escapeHtml(c.nombre)}
           </button>
         </td>
         <td>${calcularEdad(c.fecha_nacimiento) ?? "-"}</td>
         <td>${c.genero || "-"}</td>
-        <td>${c.telefono || "-"}</td>
-        <td>${c.email || "-"}</td>
-        <td>${c.localidad || "-"}</td>
+        <td>${escapeHtml(c.telefono) || "-"}</td>
+        <td>${escapeHtml(c.email) || "-"}</td>
+        <td>${escapeHtml(c.localidad) || "-"}</td>
         <td>${c.comentarios || "-"}</td>
         <td>
           <div class="acciones-clientes">
