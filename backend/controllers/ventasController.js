@@ -198,10 +198,10 @@ RETURNING *
       await client.query(
         `
     INSERT INTO cuenta_corriente_movimientos
-    (cliente_id,  tipo, monto, venta_id)
-    VALUES ($1, 'venta', $2, $3)
+    (cliente_id,  tipo, monto, venta_id, comercio_id)
+    VALUES ($1, 'venta', $2, $3, $4)
     `,
-        [cliente_id,  total, venta.id],
+        [cliente_id,  total, venta.id, comercio_id],
       );
     }
 
