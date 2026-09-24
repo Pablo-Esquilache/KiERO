@@ -71,10 +71,27 @@ export const VentasAPI = {
 };
 
 export const ClientesAPI = {
-  getAll: (comercioId) => apiFetch(`/clientes?comercio_id=${comercioId}`),
-  create: (data) => apiFetch("/clientes", { method: "POST", body: data }),
-  update: (id, data) =>
-    apiFetch(`/clientes/${id}`, { method: "PUT", body: data }),
+  getAll: async (comercioId) => {
+    const cacheKey = `clientes_cache_${comercioId}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < 300000) return data;
+    }
+    const data = await apiFetch(`/clientes?comercio_id=${comercioId}`);
+    localStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: Date.now() }));
+    return data;
+  },
+  create: async (data) => {
+    const res = await apiFetch("/clientes", { method: "POST", body: data });
+    localStorage.removeItem(`clientes_cache_${JSON.parse(localStorage.getItem("session"))?.comercio_id}`);
+    return res;
+  },
+  update: async (id, data) => {
+    const res = await apiFetch(`/clientes/${id}`, { method: "PUT", body: data });
+    localStorage.removeItem(`clientes_cache_${JSON.parse(localStorage.getItem("session"))?.comercio_id}`);
+    return res;
+  },
   getLocalidades: (comercioId) =>
     apiFetch(`/clientes/localidades/lista?comercio_id=${comercioId}`),
   getSaldo: (id, comercioId) =>
@@ -86,14 +103,34 @@ export const ClientesAPI = {
 };
 
 export const ProductosAPI = {
-  getAll: (comercioId) => apiFetch(`/productos?comercio_id=${comercioId}`),
+  getAll: async (comercioId) => {
+    const cacheKey = `productos_cache_${comercioId}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < 300000) return data;
+    }
+    const data = await apiFetch(`/productos?comercio_id=${comercioId}`);
+    localStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: Date.now() }));
+    return data;
+  },
   getCategorias: (comercioId) =>
     apiFetch(`/productos/categorias/lista?comercio_id=${comercioId}`),
-  create: (data) => apiFetch("/productos", { method: "POST", body: data }),
-  update: (id, data) =>
-    apiFetch(`/productos/${id}`, { method: "PUT", body: data }),
-  importar: (data) =>
-    apiFetch("/productos/importar", { method: "POST", body: data }),
+  create: async (data) => {
+    const res = await apiFetch("/productos", { method: "POST", body: data });
+    localStorage.removeItem(`productos_cache_${JSON.parse(localStorage.getItem("session"))?.comercio_id}`);
+    return res;
+  },
+  update: async (id, data) => {
+    const res = await apiFetch(`/productos/${id}`, { method: "PUT", body: data });
+    localStorage.removeItem(`productos_cache_${JSON.parse(localStorage.getItem("session"))?.comercio_id}`);
+    return res;
+  },
+  importar: async (data) => {
+    const res = await apiFetch("/productos/importar", { method: "POST", body: data });
+    localStorage.removeItem(`productos_cache_${JSON.parse(localStorage.getItem("session"))?.comercio_id}`);
+    return res;
+  },
 };
 
 export const DevolucionesAPI = {
