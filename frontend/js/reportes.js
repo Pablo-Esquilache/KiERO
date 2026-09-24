@@ -893,7 +893,9 @@ document
       const API_BASE = "/api";
       const session = JSON.parse(localStorage.getItem("session"));
       const comercioId = session?.comercio_id;
-      const res = await fetch(`${API_BASE}/exportar-tabla?tabla=${tabla}&comercio_id=${comercioId}`);
+      const res = await fetch(`${API_BASE}/exportar-tabla?tabla=${tabla}&comercio_id=${comercioId}`, {
+        headers: { "Authorization": `Bearer ${session?.token || ''}` }
+      });
       if (!res.ok) throw new Error("Error al descargar tabla");
 
       const blob = await res.blob();
