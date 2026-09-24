@@ -2002,9 +2002,12 @@ if (btnImprimirTicketExito) {
   });
 }
 
+
 // ==========================================
-// ATAJOS DE TECLADO (F2, F8, ENTER)
+// ATAJOS DE TECLADO (F2, F8, ENTER, FLECHAS)
 // ==========================================
+let currentFocus = -1;
+
 document.addEventListener("keydown", (e) => {
   if (e.target && e.target.tagName && e.target.tagName.toLowerCase() === "textarea") return;
 
@@ -2026,6 +2029,23 @@ document.addEventListener("keydown", (e) => {
     }
   }
 
+  const autocompleteList = document.getElementById("autocompleteProductos");
+  let items = autocompleteList && autocompleteList.style.display !== "none" ? autocompleteList.getElementsByTagName("li") : [];
+
+  if (document.activeElement && document.activeElement.id === "productoVentaNombre" && items.length > 0) {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      currentFocus++;
+      addActive(items);
+      return;
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      currentFocus--;
+      addActive(items);
+      return;
+    }
+  }
+
   if (e.key === "Enter") {
     const modalTicket = document.getElementById("modalTicketExito");
     if (modalTicket && modalTicket.style.display === "flex") {
@@ -2035,10 +2055,39 @@ document.addEventListener("keydown", (e) => {
       return;
     }
 
-    if (document.activeElement && document.activeElement.id === "productoVentaNombre") {
+    if (document.activeElement && (document.activeElement.id === "productoVentaNombre" || document.activeElement.id === "cantidadVenta")) {
       e.preventDefault();
-      const btn = document.getElementById("btnAgregarProducto");
-      if (btn) btn.click();
+      if (currentFocus > -1 && items.length > 0) {
+        const ev = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
+        items[currentFocus].dispatchEvent(ev);
+        currentFocus = -1;
+      } else {
+        const btn = document.getElementById("btnAgregarProducto");
+        if (btn) btn.click();
+      }
+    }
+  }
+
+  function addActive(x) {
+    if (!x) return false;
+    removeActive(x);
+    if (currentFocus >= x.length) currentFocus = 0;
+    if (currentFocus < 0) currentFocus = (x.length - 1);
+    x[currentFocus].style.backgroundColor = "#e2e8f0";
+    x[currentFocus].style.color = "#0f172a";
+  }
+
+  function removeActive(x) {
+    for (let i = 0; i < x.length; i++) {
+      x[i].style.backgroundColor = "";
+      x[i].style.color = "";
     }
   }
 });
+
+const pInputFocus = document.getElementById("productoVentaNombre");
+if (pInputFocus) {
+  pInputFocus.addEventListener("input", () => {
+    currentFocus = -1;
+  });
+}
