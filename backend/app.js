@@ -14,7 +14,7 @@ import authRouter from "./routes/auth.js";
 import usuariosRouter from "./routes/usuarios.js";
 import reportesRoutes from "./routes/reportes.js";
 import exportarTablaRouter from "./routes/deacragaExcel.js";
-import systemRouter from "./routes/system.js";
+
 import clientesHistorialRoutes from "./routes/historial.js";
 import devolucionesRoutes from "./routes/devoluciones.js";
 import syncConfigRoutes from "./routes/syncConfigRoutes.js";
@@ -54,7 +54,7 @@ router.use("/clientes", clientesRouter);
 router.use("/gastos", gastosRouter);
 router.use("/comercios", comerciosRouter);
 router.use("/exportar-tabla", exportarTablaRouter);
-router.use("/system", systemRouter);
+
 router.use("/reportes", reportesRoutes);
 router.use("/", clientesHistorialRoutes);
 router.use("/devoluciones", devolucionesRoutes);

@@ -30,16 +30,8 @@ export async function authenticate(req, res, next) {
 }
 
 export function requireAdmin(req, res, next) {
-  // PARCHE TEMPORAL: Permitimos el paso aunque no sea admin, 
-  // para que puedas usar la pantalla de Ajustes y crear usuarios.
-  // (En Supabase tu usuario debi quedar como 'user' en vez de 'admin')
-  
-  if (!req.user) {
-    return res.status(403).json({ error: "No autenticado" });
+  if (!req.user || req.user.role !== "admin") {
+    return res.status(403).json({ error: "Acceso denegado. Se requiere rol de administrador." });
   }
-  
-  // Forzamos el rol a admin temporalmente para este request
-  req.user.role = "admin";
-  
   next();
 }
