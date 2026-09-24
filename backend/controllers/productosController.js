@@ -101,7 +101,7 @@ export const createProducto = async (req, res) => {
   try {
     const query = `
       INSERT INTO productos
-      (nombre, categoria, precio, stock,  codigo_barras)
+      (nombre, categoria, precio, stock, codigo_barras, comercio_id)
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `;
@@ -112,6 +112,7 @@ export const createProducto = async (req, res) => {
       precio,
       stock ?? 0, 
       codigo_barras || null,
+      comercio_id
     ]);
 
     const finalProduct = rows[0];
@@ -190,8 +191,9 @@ export const updateProducto = async (req, res) => {
       categoria || null,
       precio,
       stock,
-      id, 
-      codigo_barras || null,
+      id,
+      comercio_id,
+      codigo_barras || null
     ]);
 
     if (!rows[0]) {
