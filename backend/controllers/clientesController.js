@@ -74,8 +74,7 @@ export const createCliente = async (req, res) => {
       email || "",
       localidad || "",
       comentarios || "", 
-      comercio_id
-    ]);
+      comercio_id, comercio_id]);
 
     res.status(201).json(rows[0]);
   } catch (error) {
@@ -127,8 +126,7 @@ export const updateCliente = async (req, res) => {
       email || "",
       localidad || "",
       comentarios || "",
-      id, 
-    ]);
+      id, comercio_id]);
 
     if (!rows[0]) {
       return res.status(404).json({ error: "Cliente no encontrado" });
