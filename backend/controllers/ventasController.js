@@ -145,7 +145,7 @@ export const createVenta = async (req, res) => {
   INSERT INTO ventas
   (fecha, cliente_id, metodo_pago, total_bruto,
    descuento_monto, descuento_porcentaje, total, comercio_id)
-  VALUES (COALESCE($8, NOW()), $1,$2,$3,$4,$5,$6,$7)
+  VALUES (CURRENT_TIMESTAMP, $1,$2,$3,$4,$5,$6,$7)
 RETURNING *
   `,
       [
@@ -155,9 +155,8 @@ RETURNING *
         descuento_monto,
         descuento,
         total,
-        comercio_id,
-        (fecha && fecha.length === 10) ? fecha + "T12:00:00Z" : (fecha || null)
-      ],
+        comercio_id
+        ],
     );
 
     const venta = ventaResult.rows[0];

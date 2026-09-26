@@ -50,7 +50,7 @@ export const createGasto = async (req, res) => {
     const { rows } = await db.query(
       `
       INSERT INTO gastos (fecha, descripcion, tipo, importe, comercio_id)
-      VALUES ($1, $2, $3, $4, $5)
+      VALUES (CASE WHEN $1::date = CURRENT_DATE THEN CURRENT_TIMESTAMP ELSE $1::timestamp END, $2, $3, $4, $5)
       RETURNING *
       `,
       [fecha, descripcion, tipo, importe, comercio_id]
