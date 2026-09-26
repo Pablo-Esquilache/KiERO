@@ -1,4 +1,5 @@
 import pool from "../db.js";
+import { DateTime } from "luxon";
 
 /**
  * GET - Obtener caja del día actual
@@ -94,9 +95,7 @@ export const getMovimientosDia = async (req, res) => {
       startTime = cajaQuery.rows[0].hora_apertura;
       endTime = cajaQuery.rows[0].hora_cierre;
     } else {
-      const hoy = new Date();
-      hoy.setHours(0,0,0,0);
-      startTime = hoy.toISOString();
+      startTime = DateTime.now().setZone("America/Argentina/Buenos_Aires").startOf("day").toUTC().toISO();
     }
 
     const baseParams = endTime ? [comercioId, startTime, endTime] : [comercioId, startTime];
