@@ -163,6 +163,9 @@ function limpiarFormulario() {
   document.getElementById("stockProducto").readOnly = false;
   document.getElementById("grupoStockIngresar").style.display = "none";
   document.getElementById("labelStockProducto").textContent = "Stock inicial";
+  if (document.getElementById("precioAbiertoProducto")) {
+     document.getElementById("precioAbiertoProducto").checked = false;
+  }
 }
 
 // ------------------------------
@@ -177,15 +180,16 @@ document
       nuevaCategoriaProducto.value.trim() || categoriaProducto.value;
 
     const data = {
-      nombre: nombreProducto.value.trim(),
-      categoria: categoriaFinal,
-      codigo_barras: codigoBarrasProducto.value.trim() || null,
-      stock: modoEdicion 
-        ? (parseInt(document.getElementById("stockIngresarProducto").value) || 0) 
-        : parseInt(stockProducto.value),
-      precio: parseFloat(precioProducto.value),
-      comercio_id: comercioId,
-    };
+    nombre: nombreProducto.value.trim(),
+    categoria: categoriaFinal,
+    codigo_barras: codigoBarrasProducto.value.trim() || null,
+    stock: modoEdicion 
+      ? (parseInt(document.getElementById("stockIngresarProducto").value) || 0) 
+      : parseInt(stockProducto.value),
+    precio: parseFloat(precioProducto.value),
+    comercio_id: comercioId,
+    precio_abierto: document.getElementById("precioAbiertoProducto")?.checked || false,
+  };
 
     try {
       if (!modoEdicion) {
