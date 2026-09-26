@@ -69,3 +69,4 @@ app.use("/api", router);
 
 // Exportamos la app pura de Express (sin app.listen) para serverless-http
 export default app;
+

@@ -243,11 +243,11 @@ export const registrarPagoCliente = async (req, res) => {
     const { rows } = await db.query(
       `
       INSERT INTO cuenta_corriente_movimientos
-      (cliente_id,  tipo, monto)
-      VALUES ($1,$2,'pago',$3)
-      RETURNING *
+        (cliente_id, comercio_id, tipo, monto)
+        VALUES ($1, $2, 'pago', $3)
+        RETURNING *
       `,
-      [id,  monto],
+      [id, comercio_id, monto],
     );
 
     res.status(201).json(rows[0]);
