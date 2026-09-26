@@ -1,0 +1,585 @@
+
+
+<!-- Archivo refactorizado: orden y comentarios, sin cambios funcionales -->
+<!doctype html>
+<html lang="es">
+  <head>
+    <!-- ========================= -->
+    <!-- META -->
+    <!-- ========================= -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#151515" />
+
+    <title>Gestión de Ventas</title>
+
+    <!-- ========================= -->
+    <!-- ESTILOS -->
+    <!-- ========================= -->
+    <link rel="stylesheet" href="../css/normalize.css" />
+    <link rel="stylesheet" href="../css/globals.css" />
+    <link rel="stylesheet" href="../css/ventas.css" />
+
+    <link rel="icon" href="../icons/icon-192.png" type="image/png" />
+  </head>
+
+  <body>
+    <!-- ========================= -->
+    <!-- NAVBAR -->
+    <!-- ========================= -->
+    <nav class="app-navbar">
+      <div class="app-navbar-logo">MI APP</div>
+
+      <ul class="app-navbar-menu">
+        <li id="tab-caja"><a href="caja.html">Caja</a></li>
+        <li id="tab-ventas"><a href="ventas.html" class="app-active">Ventas</a></li>
+        <li id="tab-productos"><a href="productos.html">Productos</a></li>
+        <li id="tab-clientes"><a href="clientes.html">Clientes</a></li>
+        <li id="tab-gastos"><a href="gastos.html">Gastos</a></li>
+        <li id="tab-reportes"><a href="reportes.html">Reportes</a></li>
+        <li id="tab-turnero"><a href="turnos.html">Turnos</a></li>
+
+        <li id="tab-ajustes" class="app-admin-only"><a href="ajustes.html">Ajustes</a></li>
+
+        <li>
+          <span class="user-role-badge"></span>
+          <button id="logout-btn">Cerrar Sesión</button>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- ========================= -->
+    <!-- CONTENIDO PRINCIPAL -->
+    <!-- ========================= -->
+    <main class="app-container">
+      
+
+      <!-- ========================= -->
+      
+      <div class="pos-header" style="display: none;"><h1 class="app-title">Punto de Venta</h1></div>
+      <div id="pos-container" class="pos-layout" style="display: none;">
+        <form class="app-form-venta">
+          <!-- LEFT COLUMN (20%) -->
+          <div class="pos-left">
+            <div class="pos-info-box">
+                <label>Fecha de hoy</label>
+                <input type="date" id="fechaVenta" class="app-input" required readonly />
+                <button type="button" id="btnToggleVista" class="app-btn-secondary" style="width: 100%; margin-top: 15px;">Historial de Ventas</button>
+              </div>
+
+            <div class="pos-info-box">
+              <label>Cliente</label>
+              <input type="hidden" id="clienteVenta" required>
+              <div style="position: relative; width: 100%; margin-bottom: 10px;">
+                <input type="text" id="clienteVentaNombre" class="app-input" style="width: 100%;" placeholder="Buscar cliente..." autocomplete="off">
+                <ul id="autocompleteClientes" class="app-autocomplete-list" style="display:none;"></ul>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" id="btnBuscarCliente" class="app-btn-secondary" style="flex: 1; padding: 10px;" title="Buscar Cliente">🔍 Buscar</button>
+                <button type="button" id="btnCrearClienteRapido" class="app-btn-primary" style="flex: 1; padding: 10px; margin: 0;" title="Crear nuevo cliente">+ Nuevo</button>
+                </div>
+              </div>
+
+              <!-- BOTONES DEVOLUCION AL PISO -->
+              <div class="pos-info-box" style="margin-top: auto; border: 1px dashed #f59e0b; background: #fffbeb; padding: 10px;">
+                <div style="display: flex; gap: 8px; flex-direction: row;">
+                  <button type="button" id="btnVerDevolucionesLeft" class="app-btn-secondary" style="flex: 1; padding: 10px; color: #b45309; border-color: #fcd34d; font-size: 0.9em;">Historial de Devolución</button>
+                  <button type="button" id="btnCrearDevolucionLeft" class="app-btn-primary" style="flex: 1; padding: 10px; background-color: #f59e0b; border: none; font-weight: bold; font-size: 0.9em;">Generar Devolución</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- RIGHT COLUMN (80%) -->
+          <div class="pos-right">
+            
+            <!-- TOP: Product Search -->
+            <div class="pos-right-top">
+              <input type="text" id="barcodeVenta" class="app-input" placeholder="🔍 Escanear con pistola..." style="flex: 3; border-color: #3fd18c; height: 38px;" />
+              
+              <!-- El select sigue existiendo para no romper js, pero visualmente lo achicamos o le damos otro rol -->
+              <div style="position: relative; flex: 2; min-width: 200px;">
+                <input type="hidden" id="productoVenta">
+                <input type="text" id="productoVentaNombre" class="app-input" style="width: 100%; height: 38px;" placeholder="Buscar producto..." autocomplete="off">
+                <ul id="autocompleteProductos" class="app-autocomplete-list" style="display:none; width: 100%;"></ul>
+              </div>
+              
+              <button type="button" id="btnBuscarProducto" class="app-btn-secondary" style="padding: 0 15px;" title="Búsqueda Avanzada">🔍</button>
+              
+              <input type="number" id="cantidadVenta" min="1" value="1" class="app-input" placeholder="Cant." style="flex: 0.5; max-width: 80px; text-align: center;" />
+              <button type="button" id="btnAgregarProducto" class="app-btn-secondary" style="padding: 0 20px;">Agregar</button>
+            </div>
+
+            <!-- MIDDLE: Cart -->
+            <div class="app-carrito-container pos-right-middle">
+              <table class="app-tabla">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th style="width: 80px;">Cant.</th>
+                    <th style="width: 120px;">Precio</th>
+                    <th style="width: 120px;">Subtotal</th>
+                    <th style="width: 50px;"></th>
+                  </tr>
+                </thead>
+                <tbody id="carritoBody"></tbody>
+              </table>
+            </div>
+
+            <!-- BOTTOM: Totals -->
+            <div class="pos-right-bottom">
+              <div class="pos-totals-grid">
+                <div class="pos-tot-col">
+                  <label>Subtotal</label>
+                  <div class="pos-val">$<span id="subtotalVenta">0.00</span></div>
+                </div>
+                <div class="pos-tot-col">
+                  <label>Descuento</label>
+                  <select id="descuentoVenta" class="app-input"></select>
+                </div>
+                <div class="pos-tot-col">
+                  <label>Método de pago</label>
+                  <select id="metodoPagoVenta" class="app-input" required></select>
+                </div>
+                <div class="pos-tot-col pos-final">
+                  <label>Total Final</label>
+                  <div class="pos-val-final">$<span id="totalFinalVenta">0.00</span></div>
+                </div>
+              </div>
+              <button type="submit" class="app-btn-primary app-btn-guardar">COBRAR VENTA</button>
+            </div>
+
+          </div>
+        </form>
+      </div>
+
+      <div id="history-container" style="display:none;">
+      <!-- FILTROS PRINCIPALES -->
+      <!-- ========================= -->
+      <div class="app-controls">
+        <div>
+          <input
+            type="text"
+            id="buscarVenta"
+            class="app-input"
+            placeholder="Buscar..."
+          />
+          <button id="btnLimpiarFiltros" class="app-btn-secondary">
+            Limpiar filtros
+          </button>
+        </div>
+        
+        <div>
+          <input type="date" id="filtroFechaHistorial" class="app-input" style="width: 150px; padding: 10px;" title="Filtrar por fecha" />
+          <button id="btnVolverVentas" class="app-btn-primary" style="margin-left: 10px;">
+            Volver al Punto de Venta
+          </button>
+        </div>
+      </div>
+
+      <!-- ========================= -->
+      <!-- TABLA PRINCIPAL -->
+      <!-- ========================= -->
+      <div class="app-tabla-container">
+        <table class="app-tabla">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Cliente</th>
+              <th>Total Bruto</th>
+              <th>Desc.</th>
+              <th>Total</th>
+              <th>Método</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaVentasBody"></tbody>
+        </table>
+      </div>
+    </main>
+
+    <!-- ====================================================== -->
+    <!-- MODAL: NUEVA VENTA -->
+    <!-- ====================================================== -->
+    <div id="modalVenta" style="display:none;"></div>
+
+    <!-- ====================================================== -->
+    <!-- MODAL: VER TODAS LAS VENTAS -->
+    <!-- ====================================================== -->
+    <div id="modalVerVentas" style="display:none;">
+      <div class="app-modal-content">
+        <div class="app-modal-header">
+          <h2 class="app-subtitle">Todas las ventas</h2>
+          <button type="button" class="app-close app-close-ver">Cerrar</button>
+        </div>
+
+        <!-- FILTROS MODAL -->
+        <div class="app-controls">
+          <input
+            type="text"
+            id="buscarVentaModal"
+            class="app-input"
+            placeholder="Buscar..."
+          />
+          <input type="date" id="filtroDesdeModal" class="app-input" />
+          <input type="date" id="filtroHastaModal" class="app-input" />
+          <button id="btnLimpiarFiltrosModal" class="app-btn-secondary">
+            Limpiar filtros
+          </button>
+        </div>
+
+        <!-- TABLA -->
+        <div class="app-tabla-container">
+          <table class="app-tabla">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Cliente</th>
+                <th>Total</th>
+                <th>Método</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tablaVerVentasBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====================================================== -->
+    <!-- MODAL: TICKET -->
+    <!-- ====================================================== -->
+    <!-- ====================================================== -->
+    <!-- MODAL TICKET (HISTORIAL) -->
+    <!-- ====================================================== -->
+    <div id="modalTicket" class="app-modal" style="z-index: 11000;">
+      <div class="app-modal-content" style="max-width: 400px; padding: 0;">
+        <div style="padding: 15px; border-bottom: 1px dashed #ccc; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border-radius: 8px 8px 0 0;">
+          <h2 style="margin: 0; font-size: 1.2rem; color: #1e293b;">Detalle de Venta</h2>
+          <button type="button" id="btnImprimirTicketHistorial" class="app-btn-secondary" style="padding: 5px 10px; font-size: 0.9em;">🖨️ Imprimir</button>
+        </div>
+        
+        <div id="ticketHistorialContenido" style="padding: 20px; max-height: 50vh; overflow-y: auto; font-family: monospace; font-size: 14px;">
+          <!-- JS Inyecta el texto aqui -->
+        </div>
+
+        <div style="padding: 15px; text-align: center; border-top: 1px dashed #ccc; background: #f8fafc; border-radius: 0 0 8px 8px;">
+          <button type="button" id="cerrarModalTicket" class="app-btn-primary" style="width: 100%; padding: 12px; font-size: 1.1em; background-color: #64748b; border: none;">Cerrar Ticket</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ========================= -->
+    <!-- MODAL BUSCAR PRODUCTO -->
+    <!-- ========================= -->
+    <div id="modalProductos" class="app-modal">
+      <div class="app-modal-content" style="max-width: 800px;">
+        <div class="app-modal-header">
+          <h2 class="app-subtitle">Seleccionar producto</h2>
+          <button type="button" class="app-close" id="cerrarModalProductos">
+            Cerrar
+          </button>
+        </div>
+
+        <div class="app-controls">
+          <input
+            type="text"
+            id="buscarProductoModal"
+            class="app-input"
+            placeholder="Buscar producto..."
+          />
+        </div>
+
+        <div class="app-tabla-container" id="scrollProductosBuscador" style="height: 65vh; max-height: 65vh; overflow-y: auto;">
+          <table class="app-tabla">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Stock</th>
+              </tr>
+            </thead>
+            <tbody id="tablaProductosModalBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <!-- ========================= -->
+    <!-- MODAL DEVOLUCIÓN - CLIENTE -->
+    <!-- ========================= -->
+    <div id="modalDevolucion" class="app-modal" style="z-index: 1000;">
+      <div class="app-modal-content" style="max-width: 800px">
+        <div class="app-modal-header">
+          <h2 class="app-subtitle">Generar Devolución</h2>
+          <button type="button" class="app-close" id="cerrarModalDevolucion">
+            Cerrar
+          </button>
+        </div>
+
+        <form id="formDevolucion" style="display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0;">
+          <div class="app-form-group" style="margin-bottom: 0; flex: none;">
+              <label>Cliente (Opcional - Consumidor Final si se omite)</label>
+            <input type="hidden" id="clienteDevolucion">
+            <div style="display: flex; gap: 8px;">
+              <div style="position: relative; flex: 1;">
+                <input type="text" id="clienteDevolucionNombre" class="app-input" style="width: 100%; height: 38px;" placeholder="Buscar cliente..." autocomplete="off">
+                <ul id="autocompleteClientesDevolucion" class="app-autocomplete-list" style="display:none; width: 100%;"></ul>
+              </div>
+              <button type="button" id="btnBuscarClienteDev" class="app-btn-secondary" style="padding: 0 15px; height: 38px;" title="Búsqueda Avanzada">🔍</button>
+            </div>
+          </div>
+
+          <div class="app-form-group" style="margin-bottom: 0; flex: none;">
+              <label>Producto a devolver</label>
+            <div style="display: flex; gap: 8px;">
+              <div style="position: relative; flex: 1;">
+                <input type="hidden" id="productoDevolucion">
+                <input type="text" id="productoDevolucionNombre" class="app-input" style="width: 100%; height: 38px;" placeholder="Buscar producto..." autocomplete="off">
+                <ul id="autocompleteProductosDevolucion" class="app-autocomplete-list" style="display:none; width: 100%;"></ul>
+              </div>
+              <button type="button" id="btnBuscarProductoDev" class="app-btn-secondary" style="padding: 0 15px; height: 38px;" title="Búsqueda Avanzada">🔍</button>
+            </div>
+          </div>
+          
+          <div style="display: flex; gap: 10px; flex: none;">
+            <div class="app-form-group" style="margin-bottom: 0; flex: 1;">
+              <label>Cantidad</label>
+              <input
+                type="number"
+                id="cantidadDevolucion"
+                class="app-input"
+                min="1"
+                placeholder="Cant."
+                style="height: 38px;"
+              />
+            </div>
+            
+            <div class="app-form-group" style="margin-bottom: 0; flex: 1; display: flex; flex-direction: column;">
+              <label>&nbsp;</label>
+              <button
+                type="button"
+                id="btnAgregarDevolucion"
+                class="app-btn-secondary"
+                style="height: 38px; width: 100%; padding: 0;"
+              >
+                Agregar
+              </button>
+            </div>
+          </div>
+
+          <div class="app-tabla-container" style="flex: 1; min-height: 0; margin-top: 10px; overflow-y: auto; max-height: none;">
+            <table class="app-tabla">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Cantidad</th>
+                  <th>Subtotal</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="carritoDevolucionBody"></tbody>
+            </table>
+          </div>
+
+          <div class="app-resumen" style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 0 0 0; margin-top: auto; border-top: 1px solid #e2e8f0; flex-shrink: 0;">
+            <div class="app-total-final" style="color: #f59e0b; font-size: 1.2rem; font-weight: bold; margin: 0;">
+              Total: $<span id="totalDevolucion">0.00</span>
+            </div>
+            <button
+              type="submit"
+              class="app-btn-primary"
+              style="background-color: #f59e0b; border: none; width: auto; padding: 10px 25px;"
+            >
+              Confirmar Devolución
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ========================= -->
+    
+    <!-- ========================= -->
+    <!-- MODAL VER DEVOLUCIONES -->
+    <!-- ========================= -->
+    <div id="modalVerDevoluciones" class="app-modal" style="z-index: 1000;">
+      <div class="app-modal-content" style="max-width: 800px">
+        <div class="app-modal-header">
+          <h2 class="app-subtitle">Historial de Devoluciones del Día</h2>
+          <button
+            type="button"
+            class="app-close"
+            id="cerrarModalVerDevoluciones"
+          >
+            Cerrar
+          </button>
+        </div>
+        <div class="app-tabla-container" id="scrollDevolucionesBuscador" style="height: 65vh; max-height: 65vh; overflow-y: auto;">
+          <table class="app-tabla">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Cliente</th>
+                <th>Total</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tablaDevolucionesBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+<!-- MODAL BUSCAR CLIENTE -->
+    <div id="modalBuscarCliente" class="app-modal" style="z-index: 10000;">
+      <div class="app-modal-content" style="max-width: 800px;">
+        <div class="app-modal-header">
+          <h2 class="app-subtitle">Buscar Cliente</h2>
+          <button type="button" class="app-close" id="cerrarModalBuscarCliente">Cerrar</button>
+        </div>
+        <div class="app-controls">
+          <input type="text" id="inputBuscarClienteModal" class="app-input" placeholder="Buscar por nombre..." />
+          <button type="button" id="btnNuevoClienteDesdeBuscador" class="app-btn-primary">Nuevo Cliente</button>
+        </div>
+        <div class="app-tabla-container" id="scrollClientesBuscador" style="height: 65vh; max-height: 65vh; overflow-y: auto;">
+          <table class="app-tabla">
+            <thead><tr><th>Nombre</th><th>Teléfono</th></tr></thead>
+            <tbody id="tablaClientesBuscadorBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    
+    
+    <!-- MODAL CREAR CLIENTE COMPLETO -->
+      <div id="modalClienteRapido" class="app-modal" style="z-index: 15000;">
+
+      <div class="app-modal-content">
+        <div class="app-modal-header">
+          <h2 class="app-subtitle">Nuevo cliente</h2>
+          <button type="button" class="app-close" id="cerrarModalClienteRapido">Cerrar</button>
+        </div>
+
+        <form id="formCliente" class="app-form-venta">
+          <div class="app-form-row">
+            <div
+              class="app-form-group"
+              id="fila-id-cliente"
+              style="display: none"
+            >
+              <label>ID (generado)</label>
+              <input type="text" id="idCliente" class="app-input" readonly />
+            </div>
+
+            <div class="app-form-group">
+              <label>Nombre</label>
+              <input type="text" id="nombre" class="app-input" required />
+            </div>
+
+            <div class="app-form-group app-col">
+              <label>Fecha de nacimiento</label>
+              <input
+                type="date"
+                id="fechaNacimiento"
+                class="app-input"
+                required
+              />
+            </div>
+            <div class="app-form-group app-col">
+              <label>Género</label>
+              <select id="genero" class="app-input">
+                <option value="">Seleccionar</option>
+                <option value="Femenino">Femenino</option>
+                <option value="Masculino">Masculino</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="app-form-row">
+            <div class="app-form-group">
+              <label>Teléfono</label>
+              <input type="text" id="telefono" class="app-input" />
+            </div>
+
+            <div class="app-form-group">
+              <label>Email</label>
+              <input type="email" id="email" class="app-input" />
+            </div>
+            <div class="app-form-group">
+              <label>Localidad</label>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <select id="localidad" class="app-input" style="flex: 1;">
+                  <option value="">Seleccionar localidad</option>
+                </select>
+                <input type="text" id="nuevaLocalidad" class="app-input" placeholder="Escribí nueva localidad" style="display: none; flex: 1;" />
+                <button type="button" id="btnNuevaLocalidad" class="app-btn-secondary" style="flex-shrink: 0;">Nueva</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="app-form-row">
+            <div class="app-form-group">
+              <label>Comentarios</label>
+              <textarea id="comentarios" class="app-input" rows="2"></textarea>
+            </div>
+          </div>
+
+          <button type="submit" class="app-btn-primary app-btn-guardar">
+            Guardar cliente
+          </button>
+        </form>
+        </div>
+
+      </div>
+
+    <!-- SCRIPTS -->
+    <!-- ========================= -->
+    <script src="../js/auth-ui.js?v=2"></script>
+    <script type="module" src="../js/ventas.js?v=2"></script>
+    <script type="module" src="../js/logout.js?v=2"></script>
+    <script type="module" src="../js/system.js?v=2"></script>
+  
+    <!-- ============================
+         MODAL TICKET EXITOSO
+    ============================ -->
+    <div id="modalTicketExito" class="app-modal" style="z-index: 12000;">
+      <div class="app-modal-content" style="max-width: 400px; padding: 0;">
+        <div style="padding: 15px; border-bottom: 1px dashed #ccc; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border-radius: 8px 8px 0 0;">
+          <h2 style="margin: 0; font-size: 1.2rem; color: #10b981;">¡Venta Exitosa!</h2>
+          <button type="button" id="btnImprimirTicketExito" class="app-btn-secondary" style="padding: 5px 10px; font-size: 0.9em;">🖨️ Imprimir</button>
+        </div>
+        
+        <div id="ticketExitoContenido" style="padding: 20px; max-height: 50vh; overflow-y: auto; font-family: monospace; font-size: 14px;">
+          <!-- Content generated via JS -->
+        </div>
+
+        <div style="padding: 15px; text-align: center; border-top: 1px dashed #ccc; background: #f8fafc; border-radius: 0 0 8px 8px;">
+          <button type="button" id="btnAceptarTicketExito" class="app-btn-primary" style="width: 100%; padding: 12px; font-size: 1.1em;">Aceptar y Continuar</button>
+        </div>
+      </div>
+    </div>
+
+  
+    <!-- ========================= -->
+    <!-- MODAL TICKET DEVOLUCION -->
+    <!-- ========================= -->
+    <div id="modalTicketDevolucion" class="app-modal" style="z-index: 10000;">
+      <div class="app-modal-content" style="max-width: 400px; padding: 0;">
+        <div style="padding: 15px; border-bottom: 1px dashed #ccc; display: flex; justify-content: space-between; align-items: center; background: #fffbeb; border-radius: 8px 8px 0 0;">
+          <h2 style="margin: 0; font-size: 1.2rem; color: #b45309;">Ticket Devolución</h2>
+          <button type="button" class="app-btn-secondary" id="cerrarModalTicketDevolucion" style="padding: 5px 10px; font-size: 0.9em; border-color: #fcd34d; color: #b45309;">Cerrar</button>
+        </div>
+        
+        <div id="ticketDevExitoContenido" style="padding: 20px; max-height: 50vh; overflow-y: auto; font-family: monospace; font-size: 14px;">
+          <!-- Content generated via JS -->
+        </div>
+
+        <div style="padding: 15px; text-align: center; border-top: 1px dashed #ccc; background: #fffbeb; border-radius: 0 0 8px 8px;">
+          <button type="button" id="btnImprimirTicketDevolucion" class="app-btn-primary" style="width: 100%; padding: 12px; font-size: 1.1em; background-color: #f59e0b; border: none;">Imprimir Ticket</button>
+        </div>
+      </div>
+    </div>
+    </div>
+
+  </body>
+</html>

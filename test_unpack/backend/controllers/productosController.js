@@ -91,8 +91,6 @@ export const getProductoById = async (req, res) => {
    POST - CREAR PRODUCTO
    ========================== */
 export const createProducto = async (req, res) => {
-  const isAdmin = req.user.role === 'admin';
-  const precio_abierto = isAdmin ? (req.body.precio_abierto || false) : false;
   const { nombre, categoria, precio, stock,  codigo_barras } = req.body;
   const comercio_id = req.user.comercio_id;
 
@@ -103,20 +101,19 @@ export const createProducto = async (req, res) => {
   try {
     const query = `
       INSERT INTO productos
-        (nombre, categoria, precio, stock, codigo_barras, comercio_id, precio_abierto)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      (nombre, categoria, precio, stock, codigo_barras, comercio_id)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `;
 
     const { rows } = await db.query(query, [
-        nombre,
-        categoria || null,
-        precio,
-        stock ?? 0,
-        codigo_barras || null,
-        comercio_id,
-        precio_abierto
-      ]);
+      nombre,
+      categoria || null,
+      precio,
+      stock ?? 0, 
+      codigo_barras || null,
+      comercio_id
+    ]);
 
     const finalProduct = rows[0];
 
@@ -169,7 +166,6 @@ export const createProducto = async (req, res) => {
    PUT - ACTUALIZAR PRODUCTO
    ========================== */
 export const updateProducto = async (req, res) => {
-  const isAdmin = req.user.role === 'admin';
   const { id } = req.params;
   const { nombre, categoria, precio, stock,  codigo_barras } = req.body;
   const comercio_id = req.user.comercio_id;
@@ -184,7 +180,7 @@ export const updateProducto = async (req, res) => {
       SET nombre = $1,
           categoria = $2,
           precio = $3,
-          stock = stock + COALESCE($4::integer, 0),
+          stock = stock + COALESCE(CAST($4 AS INTEGER), 0),
           codigo_barras = $7
       WHERE id = $5 AND comercio_id = $6
       RETURNING *
@@ -317,3 +313,4 @@ export const importarProductos = async (req, res) => {
     client.release();
   }
 };
+

@@ -1,0 +1,908 @@
+
+}
+/* =========================================================
+   ARCHIVO: ventas.css
+   OBJETIVO:
+   - Mantener estilos existentes
+   - Mejorar organización visual
+   - Facilitar mantenimiento
+   NOTA: No se modificaron clases, selectores ni comportamiento.
+   ========================================================= */
+/* =========================================================
+   1. RESET BASE / GENERAL
+========================================================= */
+
+body {
+  background: #fafcfc;
+  color: #334155;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding-top: 64px;
+}
+
+/* Mostrar pestaña reportes solo para admin */
+#tab-reportes {
+  display: none;
+}
+
+body.role-admin #tab-reportes {
+  display: inline-flex;
+}
+
+/* =========================================================
+   2. NAVBAR
+========================================================= */
+
+.v-navbar {
+  background: #ffffff;
+  padding: 14px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+}
+
+.v-navbar-logo {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.v-navbar-menu {
+  display: flex;
+  gap: 16px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+}
+
+.v-navbar-menu li {
+  display: flex;
+  align-items: center;
+}
+
+.v-navbar-menu a {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  font-size: 14px;
+  color: #475569;
+  text-decoration: none;
+}
+
+.v-navbar-menu a:hover,
+.v-active {
+  color: #e07a5f !important;
+}
+
+/* Logout */
+
+#logout-btn {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  font-size: 14px;
+  background: none;
+  border: 1px solid #e74c3c;
+  color: #e74c3c;
+  padding: 0 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+#logout-btn:hover {
+  background-color: #e74c3c;
+  color: #1e293b;
+}
+
+#logout-btn:active {
+  transform: scale(0.97);
+}
+
+/* Refresh DB */
+
+.v-navbar-refresh {
+  margin-left: 32px;
+}
+
+#refresh-db-btn {
+  background: #ffffff;
+  border: 1px solid #e07a5f;
+  color: #e07a5f;
+  padding: 0 14px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: 0.2s ease;
+}
+
+#refresh-db-btn:hover {
+  background: #e07a5f;
+  color: #ffffff;
+}
+
+#refresh-db-btn:active {
+  transform: scale(0.96);
+}
+
+/* =========================================================
+   3. CONTENEDOR PRINCIPAL
+========================================================= */
+
+.v-container {
+  max-width: 1100px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.v-title {
+  margin-bottom: 1rem;
+  font-size: 1.8rem;
+}
+
+/* =========================================================
+   4. CONTROLES E INPUTS
+========================================================= */
+
+.v-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.v-input {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 0.5rem 0.7rem;
+  color: #1e293b;
+  border-radius: 4px;
+  min-width: 130px;
+}
+
+.v-input-small {
+  width: 100px;
+}
+
+/* =========================================================
+   5. BOTONES GENERALES
+========================================================= */
+
+.v-btn-primary,
+.v-btn-secondary {
+  padding: 0.65rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  font-size: 14px;
+  transition: 0.2s ease;
+}
+
+/* Primario */
+
+.v-btn-primary {
+  background-color: #3fd18c;
+  color: #ffffff;
+}
+
+.v-btn-primary:hover {
+  background: #d06a4f;
+}
+
+/* Secundario */
+
+.v-btn-secondary {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.v-btn-secondary:hover {
+  background: #e2e8f0;
+}
+
+/* Guardar */
+
+.v-btn-guardar {
+  margin-top: 1rem;
+  width: 100%;
+}
+
+/* Eliminar */
+
+.btn-eliminar,
+.btn-eliminar-item {
+  background-color: #e53935;
+  color: #ffffff;
+  padding: 6px 10px;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.btn-eliminar:hover,
+.btn-eliminar-item:hover {
+  background-color: #ff6b6b;
+}
+
+/* Ver ticket */
+
+.btn-ver-ticket {
+  background-color: #3fd18c;
+  color: #000;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  margin-right: 6px;
+  transition: 0.2s ease;
+}
+
+.btn-ver-ticket:hover {
+  background-color: #2bbf78;
+}
+
+/* Editar */
+
+.btn-editar {
+  background-color: #f59e0b;
+  color: #ffffff;
+  padding: 6px 10px;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-right: 6px;
+}
+
+.btn-editar:hover {
+  background-color: #fbbf24;
+}
+
+/* =========================================================
+   6. TABLAS
+========================================================= */
+
+.v-tabla-container {
+  max-height: 420px;
+  overflow-y: auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+}
+
+.v-tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.v-tabla th,
+.v-tabla td {
+  padding: 10px;
+  text-align: left;
+}
+
+.v-tabla th {
+  background: #ffffff;
+  font-weight: bold;
+}
+
+/* =========================================================
+   7. MODALES (BASE v-)
+========================================================= */
+
+.v-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  justify-content: center;
+  align-items: center;
+  padding-top: 55px;
+}
+
+.v-modal-content {
+  background: #ffffff;
+  width: 96%;
+  max-width: 1200px;
+  height: 90vh;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  overflow: hidden;
+}
+
+#modalVerVentas .v-modal-content {
+  height: 85vh;
+  width: 90%;
+  max-width: 1000px;
+  border-radius: 8px;
+}
+
+.v-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.v-close {
+  background-color: #e53935;
+  color: #1e293b;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.v-close:hover {
+  background-color: #ff6b6b;
+}
+
+/* =========================================================
+   8. FORMULARIO VENTA
+========================================================= */
+
+.v-form-venta {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.v-form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.v-form-group {
+  margin-bottom: 1rem;
+}
+
+/* =========================================================
+   9. CARRITO
+========================================================= */
+
+.v-carrito-add {
+  display: flex;
+  gap: 12px;
+  margin: 1rem 0;
+}
+
+.v-carrito-container {
+  flex: 2;
+  min-height: 0;
+  overflow-y: auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  background: #ffffff;
+}
+
+/* =========================================================
+   10. RESUMEN
+========================================================= */
+
+.v-resumen {
+  display: grid;
+  grid-template-columns: repeat(4, auto);
+  align-items: center;
+  gap: 12px 20px;
+  background: #f8fafc;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+}
+
+.v-total-final {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #e07a5f;
+}
+
+/* =========================================================
+   11. MODAL TICKET
+========================================================= */
+
+.v-modal-ticket {
+  max-width: 700px;
+  width: 95%;
+  height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.v-ticket-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+.v-ticket-tabla-container {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+}
+
+.v-ticket-total {
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-align: right;
+  color: #e07a5f;
+}
+
+/* =========================================================
+   12. MODAL PRODUCTOS
+========================================================= */
+
+.v-modal-productos {
+  width: 70%;
+  max-width: 800px;
+  height: 70vh;
+  border-radius: 10px;
+}
+
+.v-modal-productos .v-tabla-container {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+/* =========================================================
+   13. MODALES DEVOLUCIONES (sistema antiguo)
+========================================================= */
+
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  justify-content: center;
+  align-items: center;
+  z-index: 3000;
+}
+
+.modal-contenido {
+  background: #ffffff;
+  color: #334155;
+  padding: 2rem;
+  width: 85%;
+  max-width: 1200px;
+  height: 85vh;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-contenido.grande {
+  width: 90%;
+  max-width: 1400px;
+  height: 90vh;
+}
+
+/* Botón cerrar */
+
+.cerrar {
+  align-self: flex-end;
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: bold;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+
+.cerrar:hover {
+  color: #1e293b;
+}
+
+/* Botones devoluciones */
+
+.btn-primario {
+  background: #e07a5f;
+  color: #ffffff;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: 0.2s ease;
+  width: auto;
+  align-self: flex-start;
+}
+
+.btn-primario:hover {
+  background: #d06a4f;
+}
+
+.btn-secundario {
+  background: #f1f5f9;
+  color: #334155;
+  padding: 8px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-secundario:hover {
+  background: #e2e8f0;
+}
+
+/* Tablas devoluciones */
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+  background: #ffffff;
+  border-radius: 6px;
+  overflow: hidden;
+  table-layout: fixed;
+}
+
+.tabla th,
+.tabla td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+  word-wrap: break-word;
+}
+
+.tabla th {
+  background: #ffffff;
+  font-weight: bold;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.tabla tr:hover {
+  background: #f8fafc;
+}
+
+/* Scroll contenedores */
+
+.tabla-scroll {
+  max-height: 260px;
+  overflow-y: auto;
+  margin-top: 10px;
+}
+
+/* Inputs devoluciones */
+
+.modal select,
+.modal input {
+  width: 250px;
+  padding: 8px;
+  margin-top: 8px;
+  margin-bottom: 12px;
+  background: #ffffff;
+  color: #1e293b;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+}
+
+/* Total devolución */
+
+#totalDevolucion {
+  font-weight: bold;
+  font-size: 18px;
+  color: #e07a5f;
+  margin-top: 10px;
+}
+
+#modalDevolucion hr {
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin: 20px 0;
+}
+/* ==============================
+   POS SPLIT SCREEN
+============================== */
+.pos-container {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.pos-container .app-form-row {
+  display: flex;
+  flex-direction: column;
+}
+
+.pos-container .app-carrito-container {
+  min-height: 400px;
+  max-height: 500px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+}
+
+.pos-container .app-resumen {
+  background: #f8fafc;
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 20px;
+  border: 1px solid #e2e8f0;
+}
+
+.pos-container .app-btn-guardar {
+  font-size: 1.5rem;
+  padding: 20px;
+  margin-top: 20px;
+  background-color: #10b981;
+}
+
+
+
+@media(max-width: 900px) {
+  .pos-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==============================
+   POS 80/20 LAYOUT
+============================== */
+.app-container {
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 15px 30px !important;
+  height: calc(100vh - 65px) !important;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.pos-header {
+  flex-shrink: 0;
+  margin-bottom: 10px;
+}
+.pos-header .app-title {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.pos-layout {
+  flex-grow: 1;
+  display: flex;
+  min-height: 0; /* Important for inner scrolling */
+}
+
+.pos-layout .app-form-venta {
+  display: grid;
+  grid-template-columns: 30% 70%;
+  gap: 20px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+/* --- LEFT COLUMN --- */
+.pos-left {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+}
+
+.pos-info-box {
+  display: flex;
+  flex-direction: column;
+}
+.pos-info-box label {
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* --- RIGHT COLUMN --- */
+.pos-right {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  height: 100%;
+  min-height: 0; /* needed for flex children overflow */
+}
+
+.pos-right-top {
+  display: flex;
+  gap: 10px;
+  background: #ffffff;
+  padding: 15px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+  flex-shrink: 0;
+}
+
+.pos-right-middle {
+  flex-grow: 1;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+  overflow-y: auto; /* SCROLL DEL CARRITO */
+  min-height: 0;
+}
+
+.pos-right-middle thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #f8fafc;
+}
+
+.pos-right-bottom {
+  flex-shrink: 0;
+  background: #ffffff;
+  padding: 10px 15px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 -4px 15px rgba(0,0,0,0.03);
+}
+
+.pos-totals-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.pos-tot-col {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.pos-tot-col label {
+  font-weight: 600;
+  color: #64748b;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+.pos-val {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.pos-final {
+  background: #f8fafc;
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 2px solid #e2e8f0;
+}
+.pos-val-final {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #10b981;
+}
+
+.app-btn-guardar {
+  width: 100%;
+  padding: 15px;
+  font-size: 1.4rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  background-color: #10b981;
+  transition: all 0.2s;
+  border-radius: 10px;
+}
+.app-btn-guardar:hover {
+  background-color: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+}
+
+#history-container {
+  overflow-y: auto;
+  height: 100%;
+}
+
+.app-btn-guardar {
+  width: 100%;
+  padding: 10px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  background-color: #10b981;
+  transition: all 0.2s;
+  border-radius: 8px;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+.app-btn-guardar:hover {
+  background-color: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+}
+/* ==============================
+   AUTOCOMPLETE
+============================== */
+.app-autocomplete-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: white;
+  border: 1px solid #cbd5e1;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.app-autocomplete-list li {
+  padding: 10px 15px;
+  cursor: pointer;
+  border-bottom: 1px solid #f1f5f9;
+}
+.app-autocomplete-list li:hover {
+  background-color: #f8fafc;
+  color: #10b981;
+}
+.app-autocomplete-list li:last-child {
+  border-bottom: none;
+}
+
+/* Thin out top bar */
+.pos-right-top {
+  padding: 8px 12px !important;
+}
+.pos-right-top .app-input, .pos-right-top .app-btn-secondary, .pos-right-top .app-btn-primary {
+  height: 38px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  line-height: 36px !important;
+}
+#modalProductos .app-modal-content {
+  width: 90% !important;
+  max-width: 800px !important;
+}
+#modalProductos .app-tabla-container {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+/* Fix for native selects being crushed */
+select#metodoPagoVenta, select#descuentoVenta {
+  height: 38px !important;
+  appearance: auto !important;
+  -webkit-appearance: menulist !important;
+  background-color: white !important;
+  color: #1e293b !important;
+  border: 1px solid #cbd5e1 !important;
+  padding: 0 10px !important;
+  line-height: normal !important;

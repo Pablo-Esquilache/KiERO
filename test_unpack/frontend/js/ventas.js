@@ -1,3 +1,4 @@
+);
 import { escapeHtml } from "./utils/escapeHtml.js";
 import { toastError, toastOk, toastWarning, toastInfo } from "./utils/toast.js";
 import { debounce } from "./utils/debounce.js";
@@ -556,7 +557,7 @@ async function cargarProductos() {
 // ==============================
 // AGREGAR AL CARRITO
 // ==============================
-function procesarAgregarProducto(productoId, cantidadAgregada, precioCustom = null) {
+function procesarAgregarProducto(productoId, cantidadAgregada) {
   const producto = productosCache.find((p) => p.id == productoId);
   if (!producto) return;
 
@@ -2090,4 +2091,3 @@ if (pInputFocus) {
   pInputFocus.addEventListener("input", () => {
     currentFocus = -1;
   });
-}

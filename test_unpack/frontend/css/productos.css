@@ -1,0 +1,63 @@
+/
+/* =========================================================
+   ACCIONES Y BOTONES ESPECÍFICOS
+========================================================= */
+
+.acciones-productos {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* =========================================================
+   MODAL EXCEL INFOS
+========================================================= */
+
+.app-info-excel {
+  background: #f8fafc;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.app-info-excel ul {
+  padding-left: 18px;
+  margin: 6px 0;
+}
+
+#inputExcelProductos {
+  margin-bottom: 20px;
+  padding: 10px;
+  border: 1px dashed #ccc;
+  border-radius: 6px;
+  width: 100%;
+  cursor: pointer;
+}
+
+/* =========================================================
+   4. FORMULARIO
+========================================================= */
+
+#modalProducto #formProducto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#modalProducto #formProducto .app-form-row {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 400px;
+}
+
+#modalProducto #formProducto .app-form-group {
+  width: 100%;
+}
+
+#modalProducto #formProducto button {
+      min-width: 150px

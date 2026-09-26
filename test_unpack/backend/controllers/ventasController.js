@@ -116,22 +116,17 @@ export const createVenta = async (req, res) => {
     // 1️⃣ Verificar stock
     for (const item of items) {
       const { rows } = await client.query(
-        `SELECT stock, precio, precio_abierto FROM productos 
-           WHERE id = $1 AND comercio_id = $2`,
+        `SELECT stock, precio FROM productos 
+         WHERE id = $1 AND comercio_id = $2`,
         [item.producto_id, comercio_id],
       );
 
       if (!rows[0]) throw new Error("Producto no encontrado");
-      if (rows[0].precio_abierto) {
-          const precioCliente = Number(item.precio_unitario);
-          if (!Number.isFinite(precioCliente) || precioCliente <= 0) throw new Error(`Precio inv�lido para "${item.nombre}"`);
-          item.precio_unitario = precioCliente;
-          item.esPrecioAbierto = true;
-        } else {
-          if (item.cantidad > Number(rows[0].stock)) throw new Error("Stock insuficiente");
-          item.precio_unitario = Number(rows[0].precio);
-          item.esPrecioAbierto = false;
-        }
+      if (item.cantidad > Number(rows[0].stock))
+        throw new Error("Stock insuficiente");
+        
+      // Override client price to prevent manipulation
+      item.precio_unitario = Number(rows[0].precio);
     }
 
     // 2️⃣ Calcular totales
@@ -150,7 +145,7 @@ export const createVenta = async (req, res) => {
   INSERT INTO ventas
   (fecha, cliente_id, metodo_pago, total_bruto,
    descuento_monto, descuento_porcentaje, total, comercio_id)
-  VALUES (CURRENT_TIMESTAMP, $1,$2,$3,$4,$5,$6,$7)
+  VALUES (COALESCE($8, datetime('now', 'localtime')), $1,$2,$3,$4,$5,$6,$7)
 RETURNING *
   `,
       [
@@ -160,8 +155,9 @@ RETURNING *
         descuento_monto,
         descuento,
         total,
-        comercio_id
-        ],
+        comercio_id,
+        (fecha && fecha.length === 10) ? fecha + "T12:00:00Z" : (fecha || null)
+      ],
     );
 
     const venta = ventaResult.rows[0];
@@ -454,4 +450,5 @@ export const deleteVenta = async (req, res) => {
     client.release();
   }
 };
+
 

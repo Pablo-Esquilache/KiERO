@@ -1,0 +1,249 @@
+
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestión de Clientes</title>
+    <link rel="stylesheet" href="../css/normalize.css" />
+    <link rel="stylesheet" href="../css/globals.css" />
+    <link rel="stylesheet" href="../css/clientes.css" />
+    <link rel="icon" href="../icons/icon-192.png" type="image/png" />
+    <meta name="theme-color" content="#151515" />
+  </head>
+  <body>
+    <!-- NAVBAR -->
+    <nav class="app-navbar">
+      <div class="app-navbar-logo">MI APP</div>
+      <ul class="app-navbar-menu">
+        <li id="tab-caja"><a href="caja.html">Caja</a></li>
+        <li id="tab-ventas"><a href="ventas.html">Ventas</a></li>
+        <li id="tab-productos"><a href="productos.html">Productos</a></li>
+        <li id="tab-clientes">
+          <a href="clientes.html" class="app-active">Clientes</a>
+        </li>
+        <li id="tab-gastos"><a href="gastos.html">Gastos</a></li>
+        <li id="tab-reportes"><a href="reportes.html">Reportes</a></li>
+        <li id="tab-turnero"><a href="turnos.html">Turnos</a></li>
+        <li id="tab-ajustes" class="app-admin-only"><a href="ajustes.html">Ajustes</a></li>
+        <li>
+          <span class="user-role-badge"></span>
+          <button id="logout-btn">Cerrar Sesión</button>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- MAIN CONTAINER -->
+    <main class="app-container">
+      <h1 class="app-title">Gestión de Clientes</h1>
+
+      <!-- CONTROLS -->
+      <div class="app-controls">
+        <div>
+        <input
+          type="text"
+          id="c-buscar"
+          class="app-input"
+          placeholder="Buscar por nombre..."
+        />
+        <select id="c-filtro-localidad" class="app-input">
+          <option value="">Todas las localidades</option>
+        </select>
+        <button id="c-btn-limpiar" class="app-btn-secondary">
+          Limpiar filtros
+        </button>
+        </div>
+        <button id="c-btn-nuevo" class="app-btn-primary">Nuevo cliente</button>
+      </div>
+
+      <!-- TABLE LIST -->
+      <div class="app-tabla-container">
+        <table class="app-tabla">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Edad</th>
+              <th>Género</th>
+              <th>Teléfono</th>
+              <th>Email</th>
+              <th>Localidad</th>
+              <th>Comentarios</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaClientes"></tbody>
+        </table>
+      </div>
+    </main>
+
+    <!-- MODAL -->
+    <div id="app-modal" class="app-modal">
+      <div class="app-modal-content">
+        <div class="app-modal-header">
+          <h2 class="app-subtitle">Nuevo cliente</h2>
+          <button type="button" class="app-close">Cerrar</button>
+        </div>
+
+        <form id="formCliente" class="app-form-venta">
+          <div class="app-form-row">
+            <div
+              class="app-form-group"
+              id="fila-id-cliente"
+              style="display: none"
+            >
+              <label>ID (generado)</label>
+              <input type="text" id="idCliente" class="app-input" readonly />
+            </div>
+
+            <div class="app-form-group">
+              <label>Nombre</label>
+              <input type="text" id="nombre" class="app-input" required />
+            </div>
+
+            <div class="app-form-group app-col">
+              <label>Fecha de nacimiento</label>
+              <input
+                type="date"
+                id="fechaNacimiento"
+                class="app-input"
+                required
+              />
+            </div>
+            <div class="app-form-group app-col">
+              <label>Género</label>
+              <select id="genero" class="app-input">
+                <option value="">Seleccionar</option>
+                <option value="Femenino">Femenino</option>
+                <option value="Masculino">Masculino</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="app-form-row">
+            <div class="app-form-group">
+              <label>Teléfono</label>
+              <input type="text" id="telefono" class="app-input" />
+            </div>
+
+            <div class="app-form-group">
+              <label>Email</label>
+              <input type="email" id="email" class="app-input" />
+            </div>
+            <div class="app-form-group">
+              <label>Localidad</label>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <select id="localidad" class="app-input" style="flex: 1;">
+                  <option value="">Seleccionar localidad</option>
+                </select>
+                <input type="text" id="nuevaLocalidad" class="app-input" placeholder="Escribí nueva localidad" style="display: none; flex: 1;" />
+                <button type="button" id="btnNuevaLocalidad" class="app-btn-secondary" style="flex-shrink: 0;">Nueva</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="app-form-row">
+            <div class="app-form-group">
+              <label>Comentarios</label>
+              <textarea id="comentarios" class="app-input" rows="2"></textarea>
+            </div>
+          </div>
+
+          <button type="submit" class="app-btn-primary app-btn-guardar">
+            Guardar cliente
+          </button>
+        </form>
+      </div>
+    </div>
+
+    
+    
+    <script src="../js/libs/xlsx.full.min.js?v=2"></script>
+    <script src="../js/auth-ui.js?v=2"></script>
+    
+    <!-- MODAL HISTORIAL (Z-INDEX 1000) -->
+    <div id="app-modal-historial" class="app-modal" style="z-index: 1000;">
+      <div class="app-modal-content" style="max-width: 900px;">
+        <div class="app-modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <h2 class="app-subtitle" id="tituloHistorialCliente" style="margin:0;">Historial de Cliente</h2>
+          <div style="display: flex; gap: 10px;">
+            <button type="button" class="app-btn-primary" id="btnDescargarResumen">Descargar Resumen</button>
+            <button type="button" class="app-btn-secondary" id="btnRegistrarPagoHistorial" style="background-color: #e53935; color: white;">Registrar Pago</button>
+            <button type="button" class="app-close-historial app-close">Cerrar</button>
+          </div>
+        </div>
+
+        <div style="max-height: 400px; overflow-y: auto; margin-top: 15px; border: 1px solid #e2e8f0; border-radius: 8px;">
+          <table class="app-tabla">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Operación</th>
+                <th>Método</th>
+                <th>Total</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tablaHistorialBody">
+              <!-- JS Inyecta ventas y devoluciones acá -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="resumenHistorial" class="caja-grid" style="margin-top: 20px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;">
+          <!-- Tarjetas (Efectivo, Digital, Devoluciones, Total, CC) -->
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL REGISTRAR PAGO (Z-INDEX 1050) -->
+    <div id="app-modal-pago" class="app-modal" style="z-index: 1050; display: none;">
+      <div class="app-modal-content" style="max-width: 400px;">
+        <div class="app-modal-header">
+          <h2 class="app-subtitle">Registrar Pago de Deuda</h2>
+          <button type="button" class="app-close" id="btnCerrarModalPago">Cerrar</button>
+        </div>
+        <div class="app-form-group" style="margin-top: 20px;">
+          <label>Monto a Pagar</label>
+          <input type="number" id="ccMontoPago" class="app-input" placeholder="Ej: 5000" />
+        </div>
+        <button type="button" id="ccRegistrarPago" class="app-btn-primary" style="width: 100%; margin-top: 15px; font-size: 1.1em; padding: 12px;">CONFIRMAR PAGO</button>
+      </div>
+    </div>
+
+    <!-- MODAL DETALLE VENTA / TICKET (Z-INDEX 1100) -->
+    <!-- MODAL DETALLE VENTA / TICKET (Z-INDEX 1100) -->
+    <div id="app-modal-detalle" class="app-modal" style="z-index: 1100; display: none;">
+      <div class="app-modal-content" style="max-width: 400px; padding: 0;">
+        <div style="padding: 15px; border-bottom: 1px dashed #ccc; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border-radius: 8px 8px 0 0;">
+          <h2 style="margin: 0; font-size: 1.2rem; color: #1e293b;">Detalle de Operación</h2>
+          <button type="button" id="btnImprimirTicketHistorial" class="app-btn-secondary" style="padding: 5px 10px; font-size: 0.9em;">🖨 Imprimir</button>
+        </div>
+        
+        <div id="ticketContenidoImprimir" style="padding: 20px; max-height: 50vh; overflow-y: auto; font-family: monospace; font-size: 14px;">
+          <div style="margin-bottom: 5px;"><strong>Cliente:</strong> <span id="ticketNombreCli"></span></div>
+          <div style="margin-bottom: 5px;"><strong>ID:</strong> <span id="ticketIdDetalle"></span></div>
+          <div style="margin-bottom: 5px;"><strong>Fecha:</strong> <span id="ticketFechaDetalle"></span></div>
+          <div style="margin-bottom: 5px;"><strong>Método de pago:</strong> <span id="ticketMetodoDetalle"></span></div>
+          <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
+          <div id="tablaDetalleBody">
+            <!-- JS -->
+          </div>
+          <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
+          <div style="text-align: right; font-weight: bold; font-size: 1.2em; margin-top: 5px;">
+            Total: $<span id="detalleTotal"></span>
+          </div>
+        </div>
+
+        <div style="padding: 15px; text-align: center; border-top: 1px dashed #ccc; background: #f8fafc; border-radius: 0 0 8px 8px;">
+          <button type="button" class="app-close-detalle app-btn-primary" style="width: 100%; padding: 12px; font-size: 1.1em; background-color: #64748b; border: none;">Cerrar Ticket</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="../js/clientes.js?v=2"></script>
+    <script type="module" src="../js/logout.js?v=2"></script>
+    <script type="module" src="../js/system.js?v=2"></script>
+  </body>
+</html>
