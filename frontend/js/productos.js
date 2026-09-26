@@ -107,6 +107,13 @@ btnNuevoProducto.addEventListener("click", () => {
 
   tituloModal.textContent = "Nuevo producto";
   limpiarFormulario();
+  const currentUser = JSON.parse(localStorage.getItem("session") || "{}");
+  if (currentUser.role === "admin" && document.getElementById("containerPrecioAbierto")) {
+    document.getElementById("containerPrecioAbierto").style.display = "flex";
+    if (typeof p !== 'undefined' && p && document.getElementById("precioAbiertoProducto")) {
+       document.getElementById("precioAbiertoProducto").checked = p.precio_abierto === true;
+    }
+  }
   modalProducto.style.display = "flex";
 });
 
@@ -310,6 +317,13 @@ function editarProducto(id) {
   document.getElementById("grupoStockIngresar").style.display = "block";
   document.getElementById("stockIngresarProducto").value = "";
 
+  const currentUser = JSON.parse(localStorage.getItem("session") || "{}");
+  if (currentUser.role === "admin" && document.getElementById("containerPrecioAbierto")) {
+    document.getElementById("containerPrecioAbierto").style.display = "flex";
+    if (typeof p !== 'undefined' && p && document.getElementById("precioAbiertoProducto")) {
+       document.getElementById("precioAbiertoProducto").checked = p.precio_abierto === true;
+    }
+  }
   modalProducto.style.display = "flex";
 }
 
