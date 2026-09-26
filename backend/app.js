@@ -11,6 +11,7 @@ import clientesRouter from "./routes/clientes.js";
 import gastosRouter from "./routes/gastos.js";
 import comerciosRouter from "./routes/comercios.js";
 import authRouter from "./routes/auth.js";
+import systemRoutes from "./routes/system.js";
 import usuariosRouter from "./routes/usuarios.js";
 import reportesRoutes from "./routes/reportes.js";
 import exportarTablaRouter from "./routes/deacragaExcel.js";
@@ -42,6 +43,7 @@ app.use(express.json());
 // Pero por comodidad, a veces se usa el enrutador normal y Netlify hace el rewrite
 // Rutas PUBLICAS (Login/Logout)
 app.use("/api/auth", authRouter);
+app.use("/api/system", systemRoutes);
 
 // Rutas PRIVADAS (Requieren Token)
 const router = express.Router();
@@ -69,4 +71,5 @@ app.use("/api", router);
 
 // Exportamos la app pura de Express (sin app.listen) para serverless-http
 export default app;
+
 
