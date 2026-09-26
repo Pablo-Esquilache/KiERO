@@ -171,7 +171,7 @@ export const createProducto = async (req, res) => {
 export const updateProducto = async (req, res) => {
   const isAdmin = req.user.role === 'admin';
   const { id } = req.params;
-  const { nombre, categoria, precio, stock,  codigo_barras } = req.body;
+  const { nombre, categoria, precio, stock, codigo_barras } = req.body;
   const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {
@@ -179,26 +179,52 @@ export const updateProducto = async (req, res) => {
   }
 
   try {
-    const query = `
-      UPDATE productos
-      SET nombre = $1,
-          categoria = $2,
-          precio = $3,
-          stock = stock + COALESCE($4::integer, 0),
-          codigo_barras = $7
-      WHERE id = $5 AND comercio_id = $6
-      RETURNING *
-    `;
+    let query, params;
+    if (isAdmin && req.body.precio_abierto !== undefined) {
+      query = `
+        UPDATE productos
+        SET nombre = $1,
+            categoria = $2,
+            precio = $3,
+            stock = stock + COALESCE($4::integer, 0),
+            codigo_barras = $7,
+            precio_abierto = $8
+        WHERE id = $5 AND comercio_id = $6
+        RETURNING *
+      `;
+      params = [
+        nombre,
+        categoria || null,
+        precio,
+        stock,
+        id,
+        comercio_id,
+        codigo_barras || null,
+        req.body.precio_abierto
+      ];
+    } else {
+      query = `
+        UPDATE productos
+        SET nombre = $1,
+            categoria = $2,
+            precio = $3,
+            stock = stock + COALESCE($4::integer, 0),
+            codigo_barras = $7
+        WHERE id = $5 AND comercio_id = $6
+        RETURNING *
+      `;
+      params = [
+        nombre,
+        categoria || null,
+        precio,
+        stock,
+        id,
+        comercio_id,
+        codigo_barras || null
+      ];
+    }
 
-    const { rows } = await db.query(query, [
-      nombre,
-      categoria || null,
-      precio,
-      stock,
-      id,
-      comercio_id,
-      codigo_barras || null
-    ]);
+    const { rows } = await db.query(query, params);
 
     if (!rows[0]) {
       return res.status(404).json({ error: "Producto no encontrado" });
@@ -240,8 +266,6 @@ export const updateProducto = async (req, res) => {
                  if(!resp.ok) console.log(`[HOOK UPDATE] Falló body:`, await resp.text());
               })
               .catch(err => console.error("[HOOK UPDATE] Error de red hacia la Nube:", err.message));
-          } else {
-             console.log("[HOOK UPDATE] Ignorado (Configuración inactiva o sin token).");
           }
         })
         .catch(err => console.error("[HOOK UPDATE] Error query bd:", err));
@@ -255,7 +279,6 @@ export const updateProducto = async (req, res) => {
     res.status(500).json({ error: "Error al actualizar el producto" });
   }
 };
-
 /* ==========================
    POST - IMPORTAR DESDE EXCEL
    ========================== */
