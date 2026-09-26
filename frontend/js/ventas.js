@@ -599,7 +599,11 @@ if (btnAgregarProducto) {
 
     if (!productoId || cantidad <= 0) return;
 
-    procesarAgregarProducto(productoId, cantidad);
+  procesarAgregarProducto(productoId, cantidad, typeof precioCustom !== 'undefined' ? precioCustom : null);
+  if (typeof precioCustomInput !== 'undefined' && precioCustomInput) {
+    precioCustomInput.style.display = "none";
+    precioCustomInput.value = "";
+  }
 
     productoVenta.value = "";
     cantidadVenta.value = 1;
@@ -1403,6 +1407,15 @@ const btnAgregarDevolucionNuevo = document.getElementById("btnAgregarDevolucion"
 btnAgregarDevolucionNuevo?.addEventListener("click", () => {
   const prodId = productoDevolucion?.value;
   const cant = Number(cantidadDevolucion?.value);
+  const precioCustomDevInput = document.getElementById("precioCustomDevolucion");
+  let precioCustom = null;
+  if (precioCustomDevInput && precioCustomDevInput.style.display !== "none") {
+    precioCustom = Number(precioCustomDevInput.value);
+    if (!precioCustom || precioCustom <= 0) {
+      toastInfo("Ingrese un precio v�lido para este comod�n.");
+      return;
+    }
+  }
   
   if (!prodId) {
     toastInfo("Seleccioná un producto de la lista");
@@ -1944,7 +1957,17 @@ productoVentaNombreV?.addEventListener("input", debounce(async (e) => {
       if(productoVentaV) productoVentaV.value = p.id;
       if(productoVentaNombreV) productoVentaNombreV.value = p.nombre;
       if(autocompleteProductosV) autocompleteProductosV.style.display = "none";
-      if(cantidadVentaV) cantidadVentaV.focus();
+      const precioCustomInput = document.getElementById("precioCustomVenta");
+      if (p.precio_abierto) {
+        if(precioCustomInput) {
+          precioCustomInput.style.display = "inline-block";
+          precioCustomInput.value = "";
+          precioCustomInput.focus();
+        }
+      } else {
+        if(precioCustomInput) precioCustomInput.style.display = "none";
+        if(cantidadVentaV) cantidadVentaV.focus();
+      }
     });
     if(autocompleteProductosV) autocompleteProductosV.appendChild(li);
   });
