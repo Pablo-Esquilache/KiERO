@@ -560,28 +560,15 @@ function procesarAgregarProducto(productoId, cantidadAgregada, precioCustom = nu
   const producto = productosCache.find((p) => p.id == productoId);
   if (!producto) return;
 
-  const precioFinal = (producto.precio_abierto && precioCustom) ? precioCustom : Number(producto.precio);
-  
-  const stockDisponible = Number(producto.stock);
+  const esPrecioAbierto = producto.precio_abierto === true;
 
-  // Ver cu�nto ya est� en carrito
-  const cantidadEnCarrito = carrito
-    .filter((i) => i.producto_id == productoId)
-    .reduce((acc, i) => acc + i.cantidad, 0);
-
-  const nuevaCantidadTotal = cantidadEnCarrito + cantidadAgregada;
-
-  if (!producto.precio_abierto && nuevaCantidadTotal > stockDisponible) {
-    toastInfo(`Stock insuficiente. Disponible en total: ${stockDisponible}`);
+  if (esPrecioAbierto && (!precioCustom || precioCustom <= 0)) {
+    toastWarning("Este producto requiere ingresar un precio.");
     return;
   }
+  const precioFinal = esPrecioAbierto ? Number(precioCustom) : Number(producto.precio);
 
-  const itemExistente = carrito.find((i) => i.producto_id == productoId);
-  if (itemExistente && !producto.precio_abierto) {
-    itemExistente.cantidad += cantidadAgregada;
-    itemExistente.subtotal = itemExistente.precio_unitario * itemExistente.cantidad;
-  } else {
-    // Si es precio abierto, no lo agrupamos
+  if (esPrecioAbierto) {
     carrito.push({
       producto_id: producto.id,
       nombre: producto.nombre,
@@ -589,14 +576,94 @@ function procesarAgregarProducto(productoId, cantidadAgregada, precioCustom = nu
       precio_unitario: precioFinal,
       subtotal: precioFinal * cantidadAgregada,
     });
+  } else {
+    const stockDisponible = Number(producto.stock);
+
+    const cantidadEnCarrito = carrito
+      .filter((i) => i.producto_id == productoId)
+      .reduce((acc, i) => acc + i.cantidad, 0);
+
+    const nuevaCantidadTotal = cantidadEnCarrito + cantidadAgregada;
+
+    if (nuevaCantidadTotal > stockDisponible) {
+      toastInfo(`Stock insuficiente. Disponible en total: ${stockDisponible}`);
+      return;
+    }
+
+    const itemExistente = carrito.find((i) => i.producto_id == productoId);
+    if (itemExistente) {
+      itemExistente.cantidad += cantidadAgregada;
+      itemExistente.subtotal = itemExistente.precio_unitario * itemExistente.cantidad;
+    } else {
+      carrito.push({
+        producto_id: producto.id,
+        nombre: producto.nombre,
+        cantidad: cantidadAgregada,
+        precio_unitario: precioFinal,
+        subtotal: precioFinal * cantidadAgregada,
+      });
+    }
   }
 
   renderCarrito();
 }
 
-// ------------------------------
-// RENDER CARRITO
-// ------------------------------
+if (btnAgregarProducto) {
+  btnAgregarProducto.addEventListener("click", () => {
+    const productoId = productoVenta.value;
+    const cantidad = Number(cantidadVenta.value);
+
+    const precioCustomInput = document.getElementById("precioCustomVenta");
+    let precioCustom = null;
+    if (precioCustomInput && precioCustomInput.style.display !== "none") {
+      precioCustom = Number(precioCustomInput.value);
+      if (!precioCustom || precioCustom <= 0) {
+        toastInfo("Ingrese un precio válido para este comodín.");
+        return;
+      }
+    }
+
+    if (!productoId || cantidad <= 0) return;
+
+    procesarAgregarProducto(productoId, cantidad, precioCustom);
+
+    if (precioCustomInput) {
+      precioCustomInput.style.display = "none";
+      precioCustomInput.value = "";
+    }
+
+    productoVenta.value = "";
+    cantidadVenta.value = 1;
+    const pNombre = document.getElementById("productoVentaNombre");
+    if (pNombre) pNombre.value = "";
+  });
+}
+
+if (barcodeVenta) {
+  barcodeVenta.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const code = barcodeVenta.value.trim();
+      if (!code) return;
+
+      const producto = productosCache.find((p) => p.codigo_barras && p.codigo_barras.trim() === code);
+      
+      if (!producto) {
+        toastWarning("Producto no encontrado con ese código.");
+        barcodeVenta.value = "";
+        return;
+      }
+
+      // Add 1 by default when scanning
+      procesarAgregarProducto(producto.id, 1);
+      
+      barcodeVenta.value = "";
+      barcodeVenta.focus();
+    }
+  });
+}
+
+// ==============================
 function renderCarrito() {
   carritoBody.innerHTML = "";
 
