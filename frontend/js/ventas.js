@@ -165,7 +165,7 @@ const renderProductosModalLazy = (append = false) => {
       
       const isDev = window.targetProductInput === 'productoDevolucion';
       const qtyInput = document.getElementById(isDev ? "cantidadDevolucion" : "cantidadVenta");
-      if (qtyInput) qtyInput.focus();
+      if (qtyInput) { qtyInput.value = "1"; qtyInput.focus(); }
       
       const modalProductos = document.getElementById("modalProductos");
       if(modalProductos) modalProductos.style.display = "none";
@@ -1146,7 +1146,7 @@ function renderProductosModal(lista) {
           // Focus the quantity input based on which module we are in
           const isDev = window.targetProductInput === 'productoDevolucion';
           const qtyInput = document.getElementById(isDev ? "cantidadDevolucion" : "cantidadVenta");
-          if (qtyInput) qtyInput.focus();
+          if (qtyInput) { qtyInput.value = "1"; qtyInput.focus(); }
           
           modalProductos.style.display = "none";
       });
@@ -1690,12 +1690,12 @@ productoDevolucionNombre?.addEventListener("input", debounce(async (e) => {
           if (precioCustomDevInput) {
             const contenedor = document.getElementById("contenedorPrecioCustomDevolucion");
             if(contenedor) contenedor.style.display = "flex";
-            precioCustomDevInput.value = "";
-            precioCustomDevInput.focus();
+            precioCustomDevInput.value = ""; if(cantidadDevolucion) cantidadDevolucion.value = "1"; precioCustomDevInput.focus();
           }
         } else {
             const contenedor = document.getElementById("contenedorPrecioCustomDevolucion");
             if(contenedor) contenedor.style.display = "none";
+        if(cantidadDevolucion) cantidadDevolucion.value = "1";
           if (cantidadDevolucion) cantidadDevolucion.focus();
         }
     });
@@ -2010,12 +2010,11 @@ productoVentaNombreV?.addEventListener("input", debounce(async (e) => {
       if (p.precio_abierto) {
         if(precioCustomInput) {
           precioCustomInput.style.display = "inline-block";
-          precioCustomInput.value = "";
-          precioCustomInput.focus();
+          precioCustomInput.value = ""; if(cantidadVentaV) cantidadVentaV.value = "1"; precioCustomInput.focus();
         }
       } else {
         if(precioCustomInput) precioCustomInput.style.display = "none";
-        if(cantidadVentaV) cantidadVentaV.focus();
+        if (cantidadVentaV) { cantidadVentaV.value = "1"; cantidadVentaV.focus(); }
       }
     });
     if(autocompleteProductosV) autocompleteProductosV.appendChild(li);
