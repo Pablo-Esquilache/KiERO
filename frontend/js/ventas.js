@@ -560,83 +560,43 @@ function procesarAgregarProducto(productoId, cantidadAgregada, precioCustom = nu
   const producto = productosCache.find((p) => p.id == productoId);
   if (!producto) return;
 
+  const precioFinal = (producto.precio_abierto && precioCustom) ? precioCustom : Number(producto.precio);
+  
   const stockDisponible = Number(producto.stock);
 
-  // 🔎 Ver cuánto ya está en carrito
+  // Ver cu�nto ya est� en carrito
   const cantidadEnCarrito = carrito
     .filter((i) => i.producto_id == productoId)
     .reduce((acc, i) => acc + i.cantidad, 0);
 
   const nuevaCantidadTotal = cantidadEnCarrito + cantidadAgregada;
 
-  if (nuevaCantidadTotal > stockDisponible) {
+  if (!producto.precio_abierto && nuevaCantidadTotal > stockDisponible) {
     toastInfo(`Stock insuficiente. Disponible en total: ${stockDisponible}`);
     return;
   }
 
   const itemExistente = carrito.find((i) => i.producto_id == productoId);
-  if (itemExistente) {
+  if (itemExistente && !producto.precio_abierto) {
     itemExistente.cantidad += cantidadAgregada;
     itemExistente.subtotal = itemExistente.precio_unitario * itemExistente.cantidad;
   } else {
-    const precio = Number(producto.precio);
+    // Si es precio abierto, no lo agrupamos
     carrito.push({
       producto_id: producto.id,
       nombre: producto.nombre,
       cantidad: cantidadAgregada,
-      precio_unitario: precio,
-      subtotal: precio * cantidadAgregada,
+      precio_unitario: precioFinal,
+      subtotal: precioFinal * cantidadAgregada,
     });
   }
 
   renderCarrito();
 }
 
-if (btnAgregarProducto) {
-  btnAgregarProducto.addEventListener("click", () => {
-    const productoId = productoVenta.value;
-    const cantidad = Number(cantidadVenta.value);
-
-    if (!productoId || cantidad <= 0) return;
-
-  procesarAgregarProducto(productoId, cantidad, typeof precioCustom !== 'undefined' ? precioCustom : null);
-  if (typeof precioCustomInput !== 'undefined' && precioCustomInput) {
-    precioCustomInput.style.display = "none";
-    precioCustomInput.value = "";
-  }
-
-    productoVenta.value = "";
-    cantidadVenta.value = 1;
-    const pNombre = document.getElementById("productoVentaNombre");
-    if (pNombre) pNombre.value = "";
-  });
-}
-
-if (barcodeVenta) {
-  barcodeVenta.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      const code = barcodeVenta.value.trim();
-      if (!code) return;
-
-      const producto = productosCache.find((p) => p.codigo_barras && p.codigo_barras.trim() === code);
-      
-      if (!producto) {
-        toastWarning("Producto no encontrado con ese código.");
-        barcodeVenta.value = "";
-        return;
-      }
-
-      // Add 1 by default when scanning
-      procesarAgregarProducto(producto.id, 1);
-      
-      barcodeVenta.value = "";
-      barcodeVenta.focus();
-    }
-  });
-}
-
-// ==============================
+// ------------------------------
+// RENDER CARRITO
+// ------------------------------
 function renderCarrito() {
   carritoBody.innerHTML = "";
 
