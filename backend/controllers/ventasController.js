@@ -124,7 +124,7 @@ export const createVenta = async (req, res) => {
       if (!rows[0]) throw new Error("Producto no encontrado");
       if (rows[0].precio_abierto) {
           const precioCliente = Number(item.precio_unitario);
-          if (!Number.isFinite(precioCliente) || precioCliente <= 0) throw new Error(`Precio inv�lido para "${item.nombre}"`);
+          if (!Number.isFinite(precioCliente) || precioCliente === 0) throw new Error(`Precio inv�lido para "${item.nombre}"`);
           item.precio_unitario = precioCliente;
           item.esPrecioAbierto = true;
         } else {

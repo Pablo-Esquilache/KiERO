@@ -49,17 +49,32 @@ export const registrarDevolucion = async (req, res) => {
         }
         item.precio = Number(detalleRes.rows[0].precio_unitario);
         totalDevolucion += item.precio * Number(item.cantidad);
+        
+        // Determinar si es de precio abierto para no sumar stock
+        const prodRes = await client.query("SELECT precio_abierto FROM productos WHERE id = $1 AND comercio_id = $2", [item.producto_id, comercio_id]);
+        if (prodRes.rows.length && prodRes.rows[0].precio_abierto) {
+           item.esPrecioAbierto = true;
+        }
       }
     } else {
-      // Devolución Libre (modelo nuevo)
+      // Devolucion Libre (modelo nuevo)
       for (const item of items) {
         const prodRes = await client.query(
-          "SELECT precio FROM productos WHERE id = $1 AND comercio_id = $2",
+          "SELECT precio, precio_abierto FROM productos WHERE id = $1 AND comercio_id = $2",
           [item.producto_id, comercio_id]
         );
-        if (!prodRes.rows.length) throw new Error("Producto no encontrado en el catálogo");
+        if (!prodRes.rows.length) throw new Error("Producto no encontrado en el catalogo");
         
-        item.precio = Number(prodRes.rows[0].precio);
+        if (prodRes.rows[0].precio_abierto) {
+          const precioCliente = Number(item.precio_unitario || item.precio);
+          if (!Number.isFinite(precioCliente) || precioCliente === 0) throw new Error(`Precio invalido para "${item.nombre || item.producto_id}"`);
+          item.precio = precioCliente;
+          item.esPrecioAbierto = true;
+        } else {
+          item.precio = Number(prodRes.rows[0].precio);
+          item.esPrecioAbierto = false;
+        }
+        
         totalDevolucion += item.precio * Number(item.cantidad);
       }
     }
@@ -79,10 +94,12 @@ export const registrarDevolucion = async (req, res) => {
         "INSERT INTO devoluciones_detalle (devolucion_id, producto_id, cantidad, precio_unitario, subtotal) VALUES ($1,$2,$3,$4,$5)",
         [devolucion.id, item.producto_id, item.cantidad, item.precio, subtotal]
       );
-      await client.query(
+      if (!item.esPrecioAbierto) {
+            await client.query(
         "UPDATE productos SET stock = stock + $1 WHERE id = $2 AND comercio_id = $3",
         [item.cantidad, item.producto_id, comercio_id]
       );
+      }
     }
 
     // 5. Compensacion de CC removida por requerimiento de Devolucion Libre sin metodo de pago

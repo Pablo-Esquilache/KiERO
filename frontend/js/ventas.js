@@ -562,7 +562,7 @@ function procesarAgregarProducto(productoId, cantidadAgregada, precioCustom = nu
 
   const esPrecioAbierto = producto.precio_abierto === true;
 
-  if (esPrecioAbierto && (!precioCustom || precioCustom <= 0)) {
+  if (esPrecioAbierto && (precioCustom === null || isNaN(precioCustom) || precioCustom === 0)) {
     toastWarning("Este producto requiere ingresar un precio.");
     return;
   }
@@ -617,7 +617,7 @@ if (btnAgregarProducto) {
     let precioCustom = null;
     if (precioCustomInput && precioCustomInput.style.display !== "none") {
       precioCustom = Number(precioCustomInput.value);
-      if (!precioCustom || precioCustom <= 0) {
+      if (precioCustom === null || isNaN(precioCustom) || precioCustom === 0) {
         toastInfo("Ingrese un precio válido para este comodín.");
         return;
       }
@@ -1438,7 +1438,7 @@ btnAgregarDevolucionNuevo?.addEventListener("click", () => {
   let precioCustom = null;
   if (precioCustomDevInput && precioCustomDevInput.style.display !== "none") {
     precioCustom = Number(precioCustomDevInput.value);
-    if (!precioCustom || precioCustom <= 0) {
+    if (precioCustom === null || isNaN(precioCustom) || precioCustom === 0) {
       toastInfo("Ingrese un precio válido para este comodín.");
       return;
     }
