@@ -1475,9 +1475,8 @@ btnAgregarDevolucionNuevo?.addEventListener("click", () => {
   }
   
   if (precioCustomDevInput) {
-    precioCustomDevInput.style.display = "none";
-            const lbl = document.getElementById("labelPrecioCustomDevolucion");
-            if(lbl) lbl.style.display = "none";
+            const contenedor = document.getElementById("contenedorPrecioCustomDevolucion");
+            if(contenedor) contenedor.style.display = "none";
     precioCustomDevInput.value = "";
   }
   
@@ -1689,16 +1688,14 @@ productoDevolucionNombre?.addEventListener("input", debounce(async (e) => {
         const precioCustomDevInput = document.getElementById("precioCustomDevolucion");
         if (p.precio_abierto) {
           if (precioCustomDevInput) {
-            precioCustomDevInput.style.display = "inline-block";
-            const lbl = document.getElementById("labelPrecioCustomDevolucion");
-            if(lbl) lbl.style.display = "block";
+            const contenedor = document.getElementById("contenedorPrecioCustomDevolucion");
+            if(contenedor) contenedor.style.display = "flex";
             precioCustomDevInput.value = "";
             precioCustomDevInput.focus();
           }
         } else {
-          if (precioCustomDevInput) precioCustomDevInput.style.display = "none";
-            const lbl = document.getElementById("labelPrecioCustomDevolucion");
-            if(lbl) lbl.style.display = "none";
+            const contenedor = document.getElementById("contenedorPrecioCustomDevolucion");
+            if(contenedor) contenedor.style.display = "none";
           if (cantidadDevolucion) cantidadDevolucion.focus();
         }
     });
