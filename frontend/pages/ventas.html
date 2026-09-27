@@ -104,6 +104,7 @@
               <button type="button" id="btnBuscarProducto" class="app-btn-secondary" style="padding: 0 15px;" title="Búsqueda Avanzada">🔍</button>
               
               <input type="number" id="cantidadVenta" min="1" value="1" class="app-input" placeholder="Cant." style="flex: 0.5; max-width: 80px; text-align: center;" />
+              <input type="number" id="precioCustomVenta" class="app-input" placeholder="Precio $" step="0.01" min="0.01" style="display:none; flex: 0.5; max-width: 90px; text-align: center;">
               <button type="button" id="btnAgregarProducto" class="app-btn-secondary" style="padding: 0 20px;">Agregar</button>
             </div>
 
@@ -348,6 +349,7 @@
                 placeholder="Cant."
                 style="height: 38px;"
               />
+                <input type="number" id="precioCustomDevolucion" class="app-input" placeholder="Precio $" step="0.01" min="0.01" style="display:none; width:90px;">
             </div>
             
             <div class="app-form-group" style="margin-bottom: 0; flex: 1; display: flex; flex-direction: column;">
