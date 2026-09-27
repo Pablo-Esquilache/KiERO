@@ -597,13 +597,24 @@ if (btnAgregarProducto) {
     const productoId = productoVenta.value;
     const cantidad = Number(cantidadVenta.value);
 
+    const precioCustomInput = document.getElementById("precioCustomVenta");
+    let precioCustom = null;
+    if (precioCustomInput && precioCustomInput.style.display !== "none") {
+      precioCustom = Number(precioCustomInput.value);
+      if (!precioCustom || precioCustom <= 0) {
+        toastInfo("Ingrese un precio válido para este comodín.");
+        return;
+      }
+    }
+
     if (!productoId || cantidad <= 0) return;
 
-  procesarAgregarProducto(productoId, cantidad, typeof precioCustom !== 'undefined' ? precioCustom : null);
-  if (typeof precioCustomInput !== 'undefined' && precioCustomInput) {
-    precioCustomInput.style.display = "none";
-    precioCustomInput.value = "";
-  }
+    procesarAgregarProducto(productoId, cantidad, precioCustom);
+
+    if (precioCustomInput) {
+      precioCustomInput.style.display = "none";
+      precioCustomInput.value = "";
+    }
 
     productoVenta.value = "";
     cantidadVenta.value = 1;
@@ -1412,35 +1423,44 @@ btnAgregarDevolucionNuevo?.addEventListener("click", () => {
   if (precioCustomDevInput && precioCustomDevInput.style.display !== "none") {
     precioCustom = Number(precioCustomDevInput.value);
     if (!precioCustom || precioCustom <= 0) {
-      toastInfo("Ingrese un precio v�lido para este comod�n.");
+      toastInfo("Ingrese un precio válido para este comodín.");
       return;
     }
   }
   
   if (!prodId) {
-    toastInfo("Seleccioná un producto de la lista");
+    toastInfo("Seleccion� un producto de la lista");
     return;
   }
   if (!cant || cant <= 0) {
-    toastInfo("Ingresá una cantidad válida");
+    toastInfo("Ingres� una cantidad v�lida");
     return;
   }
   
   const prodObj = productosCache.find(p => p.id == prodId);
   if (!prodObj) return;
 
+  const precioFinal = (prodObj.precio_abierto && precioCustom) ? precioCustom : Number(prodObj.precio);
+
   const ex = carritoDevolucion.find(i => i.producto_id == prodId);
-  if (ex) {
+  if (ex && !prodObj.precio_abierto) {
     ex.cantidad += cant;
-    ex.subtotal = ex.cantidad * Number(prodObj.precio);
+    ex.subtotal = ex.cantidad * precioFinal;
   } else {
+    // Si es precio abierto, no agrupamos (podr�an ser 2 devoluciones de precios distintos)
     carritoDevolucion.push({
       producto_id: prodId,
       nombre: prodObj.nombre,
       cantidad: cant,
-      precio_unitario: Number(prodObj.precio),
-      subtotal: cant * Number(prodObj.precio)
+      precio: precioFinal, // Para retrocompatibilidad
+      precio_unitario: precioFinal,
+      subtotal: cant * precioFinal
     });
+  }
+  
+  if (precioCustomDevInput) {
+    precioCustomDevInput.style.display = "none";
+    precioCustomDevInput.value = "";
   }
   
   renderCarritoDevolucion();
