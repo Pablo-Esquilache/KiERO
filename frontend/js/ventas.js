@@ -1684,7 +1684,17 @@ productoDevolucionNombre?.addEventListener("input", debounce(async (e) => {
       if(productoDevolucion) productoDevolucion.value = p.id;
       if(productoDevolucionNombre) productoDevolucionNombre.value = p.nombre;
       if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.style.display = "none";
-      if(cantidadDevolucion) cantidadDevolucion.focus();
+        const precioCustomDevInput = document.getElementById("precioCustomDevolucion");
+        if (p.precio_abierto) {
+          if (precioCustomDevInput) {
+            precioCustomDevInput.style.display = "inline-block";
+            precioCustomDevInput.value = "";
+            precioCustomDevInput.focus();
+          }
+        } else {
+          if (precioCustomDevInput) precioCustomDevInput.style.display = "none";
+          if (cantidadDevolucion) cantidadDevolucion.focus();
+        }
     });
     if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.appendChild(li);
   });
