@@ -50,10 +50,10 @@ export const createGasto = async (req, res) => {
     const { rows } = await db.query(
       `
       INSERT INTO gastos (fecha, descripcion, tipo, importe, comercio_id)
-      VALUES (CURRENT_TIMESTAMP, $2, $3, $4, $5)
-      RETURNING *
-      `,
-      [fecha, descripcion, tipo, importe, comercio_id]
+        VALUES (CURRENT_TIMESTAMP, $1, $2, $3, $4)
+        RETURNING *
+        `,
+        [descripcion, tipo, importe, comercio_id]
     );
 
     res.status(201).json(rows[0]);
@@ -85,13 +85,13 @@ export const updateGasto = async (req, res) => {
     const { rows } = await db.query(
       `
       UPDATE gastos
-        SET descripcion = $2,
-            tipo = $3,
-            importe = $4
-      WHERE id = $5 AND comercio_id = $6
-      RETURNING *
-      `,
-      [fecha, descripcion, tipo, importe, id, comercio_id]
+        SET descripcion = $1,
+            tipo = $2,
+            importe = $3
+        WHERE id = $4 AND comercio_id = $5
+        RETURNING *
+        `,
+        [descripcion, tipo, importe, id, comercio_id]
     );
 
     if (!rows[0]) {
