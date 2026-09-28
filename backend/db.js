@@ -39,11 +39,18 @@ try {
 }
 
 // Convertidor de posicionales tipo Postgres ($1, $2) a SQLite (?)
-function toPositional(sql) {
-  // Strip FOR UPDATE for SQLite compatibility
-  sql = sql.replace(/FOR UPDATE/gi, '');
-  sql = sql.replace(/\bNOW\(\)/gi, 'CURRENT_TIMESTAMP');
-  return sql.replace(/\$(\d+)/g, '?');
+function toPositional(sql, originalParams) {
+  let newParams = [];
+  let newSql = sql.replace(/FOR UPDATE/gi, '');
+  newSql = newSql.replace(/\bNOW\(\)/gi, 'CURRENT_TIMESTAMP');
+  newSql = newSql.replace(/\$(\d+)/g, (match, p1) => {
+    const index = parseInt(p1, 10) - 1;
+    let val = originalParams[index];
+    if (typeof val === 'boolean') val = val ? 1 : 0;
+    newParams.push(val);
+    return '?';
+  });
+  return { sql: newSql, params: newParams };
 }
 
 // Emulador del pool de pg
@@ -51,15 +58,15 @@ const pool = {
   async query(sql, params = []) {
     return new Promise((resolve, reject) => {
       try {
-        const stmt = db.prepare(toPositional(sql));
+        const prepared = toPositional(sql, params);
+        const stmt = db.prepare(prepared.sql);
         const normalized = sql.trim().toUpperCase();
         
-        // Si es SELECT o incluye RETURNING (pero SQLite < 3.35 no lo soportaba, aunque el nuestro sí)
         if (normalized.startsWith('SELECT') || normalized.startsWith('WITH') || normalized.includes('RETURNING')) {
-          const rows = stmt.all(...params);
+          const rows = stmt.all(...prepared.params);
           resolve({ rows, rowCount: rows.length });
         } else {
-          const info = stmt.run(...params);
+          const info = stmt.run(...prepared.params);
           resolve({ rows: [], rowCount: info.changes });
         }
       } catch (err) {
