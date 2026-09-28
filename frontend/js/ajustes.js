@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "./api.js";
 document.addEventListener("DOMContentLoaded", () => {
   const session = JSON.parse(localStorage.getItem("session") || "{}");
   const token = session.token;
@@ -12,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const authFetch = async (url, options = {}) => {
     options.headers = options.headers || {};
     if (token) options.headers['Authorization'] = 'Bearer ' + token;
-    return globalThis.fetch(url, options);
+    return globalThis.fetch(url.startsWith('/api') ? API_BASE_URL + url.substring(4) : url, options);
   };
 
 //   // ===== ECOMMERCE SYNC =====
@@ -502,7 +503,7 @@ if (backupBtn) {
       const session = JSON.parse(localStorage.getItem("session"));
       const comercioId = session?.comercio_id;
 
-      const res = await fetch(`/api/exportar-tabla/sql?comercio_id=${comercioId}`, {
+      const res = await fetch(API_BASE_URL + '/exportar-tabla/sql?comercio_id=${comercioId}`, {
         headers: { "Authorization": `Bearer ${session?.token || ''}` }
       });
       if (!res.ok) throw new Error("Error al descargar backup");

@@ -1,5 +1,5 @@
 import { escapeHtml } from "./utils/escapeHtml.js";
-import { ComercioAPI, GastosAPI } from "./api.js";
+import { ComercioAPI, GastosAPI , API_BASE_URL } from "./api.js";
 
 // ------------------------------
 // SESIÓN / COMERCIO
@@ -76,7 +76,7 @@ async function cargarCategoriasGasto() {
   if (!comercioId) return;
   try {
     // "token") || '"{}"');
-    const res = await fetch(`/api/ajustes/gastos_categorias/${comercioId}`, { headers: { "Authorization": `Bearer ${session?.token || ''}` } });
+    const res = await fetch(API_BASE_URL + `/ajustes/gastos_categorias/${comercioId}`, { headers: { "Authorization": `Bearer ${session?.token || ''}` } });
     if (res.ok) {
       const data = await res.json();
       const activas = data.filter(c => c.activo);

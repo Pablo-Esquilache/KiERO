@@ -1,3 +1,4 @@
+import { API_BASE_URL, apiFetch } from "./api.js";
 /**
  * Interfaz para Conexión al E-commerce
  * Crea e inyecta dinámicamente el botón de "Conexión Nube" y el Modal de configuración.
@@ -84,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Cargar info de la BD
   const cargarConfig = async () => {
     try {
-      const res = await fetch("/api/config-sync", {
+      const res = await fetch(API_BASE_URL + "/config-sync", {
         headers: {
           "Authorization": `Bearer ${JSON.parse(localStorage.getItem("token")||'"{}"')}`
         }
@@ -120,7 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
     btnGuardar.disabled = true;
 
     try {
-      const res = await fetch("/api/config-sync", {
+      const res = await fetch(API_BASE_URL + "/config-sync", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
