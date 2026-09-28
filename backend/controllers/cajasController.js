@@ -30,28 +30,89 @@ export const getCajaHoy = async (req, res) => {
  * PUT - Cerrar caja
  */
 export const cerrarCaja = async (req, res) => {
-  const { id } = req.params;
-  const { total_ventas, total_gastos, total_devoluciones, total_resultado, total_cuenta_corriente } = req.body;
-  try {
+    const { id } = req.params;
     const comercio_id = req.user?.comercio_id;
-    const { rows } = await pool.query(
-      `UPDATE cajas
-       SET estado = 'cerrada',
-           hora_cierre = NOW(),
-           total_ventas = $1,
-           total_gastos = $2,
-           total_devoluciones = $3,
-           total_resultado = $4,
-           total_cuenta_corriente = $5
-       WHERE id = $6
-       RETURNING *`,
-      [total_ventas, total_gastos, total_devoluciones, total_resultado, total_cuenta_corriente || 0, id],
-    );
-
-    res.json(rows[0]);
-  } catch (err) {
-    console.error("Error cerrando caja:", err);
-    res.status(500).json({ error: "Error cerrando caja" });
+    const client = await pool.connect();
+    
+    try {
+      await client.query("BEGIN");
+      
+      const { rows: cajaRows } = await client.query(
+        `SELECT id, hora_apertura FROM cajas
+         WHERE id = $1 AND comercio_id = $2 AND estado = 'abierta' FOR UPDATE`,
+        [id, comercio_id]
+      );
+      
+      if (!cajaRows.length) {
+          throw new Error("Caja no encontrada o ya cerrada");
+      }
+      
+      const caja = cajaRows[0];
+      const startTime = caja.hora_apertura;
+      
+      // Totales
+      const { rows: [{ t_efectivo }] } = await client.query(
+          `SELECT COALESCE(SUM(total), 0) as t_efectivo FROM ventas 
+           WHERE comercio_id = $1 AND fecha >= $2 AND fecha <= NOW() AND metodo_pago = 'Efectivo'`,
+          [comercio_id, startTime]
+      );
+      
+      const { rows: [{ t_digital }] } = await client.query(
+          `SELECT COALESCE(SUM(total), 0) as t_digital FROM ventas 
+           WHERE comercio_id = $1 AND fecha >= $2 AND fecha <= NOW() AND metodo_pago NOT IN ('Efectivo', 'Cuenta Corriente')`,
+          [comercio_id, startTime]
+      );
+      
+      const { rows: [{ t_ctacte }] } = await client.query(
+          `SELECT COALESCE(SUM(total), 0) as t_ctacte FROM ventas 
+           WHERE comercio_id = $1 AND fecha >= $2 AND fecha <= NOW() AND metodo_pago = 'Cuenta Corriente'`,
+          [comercio_id, startTime]
+      );
+      
+      const { rows: [{ t_gastos }] } = await client.query(
+          `SELECT COALESCE(SUM(importe), 0) as t_gastos FROM gastos 
+           WHERE comercio_id = $1 AND fecha >= $2 AND fecha <= NOW()`,
+          [comercio_id, startTime]
+      );
+      
+      const { rows: [{ t_devoluciones }] } = await client.query(
+          `SELECT COALESCE(SUM(total), 0) as t_devoluciones FROM devoluciones 
+           WHERE comercio_id = $1 AND fecha >= $2 AND fecha <= NOW()`,
+          [comercio_id, startTime]
+      );
+      
+      const efectivo = Number(t_efectivo);
+      const digital = Number(t_digital);
+      const ctacte = Number(t_ctacte);
+      const gastos = Number(t_gastos);
+      const devoluciones = Number(t_devoluciones);
+      
+      const totalVentasLimpias = efectivo + digital;
+      const granTotal = efectivo + digital + ctacte - (gastos + devoluciones);
+      
+      const updateRes = await client.query(
+        `UPDATE cajas
+         SET estado = 'cerrada',
+             hora_cierre = NOW(),
+             total_ventas = $1,
+             total_gastos = $2,
+             total_devoluciones = $3,
+             total_resultado = $4,
+             total_cuenta_corriente = $5
+         WHERE id = $6 AND comercio_id = $7
+         RETURNING *`,
+        [totalVentasLimpias, gastos, devoluciones, granTotal, ctacte, id, comercio_id]
+      );
+      
+      await client.query("COMMIT");
+      res.json(updateRes.rows[0]);
+    } catch (err) {
+      await client.query("ROLLBACK");
+      console.error("Error cerrando caja:", err);
+      res.status(err.message === "Caja no encontrada o ya cerrada" ? 400 : 500).json({ error: err.message || "Error cerrando caja" });
+    } finally {
+      client.release();
+    }
   }
 };
 
