@@ -1198,6 +1198,7 @@ function renderProductosModal(lista) {
         
         const modalProductos = document.getElementById("modalProductos");
         if(modalProductos) modalProductos.style.display = "none";
+      });
 
       tablaProductosModalBody.appendChild(fila);
     }
