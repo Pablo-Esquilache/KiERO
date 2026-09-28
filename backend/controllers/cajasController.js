@@ -18,28 +18,9 @@ export const getCajaHoy = async (req, res) => {
 
     res.json(rows[0] || null);
   } catch (err) {
-    console.error("Error obteniendo caja:", err);
-    res.status(500).json({ error: "Error obteniendo caja" });
-  }
-};
-
-/**
- * POST - Abrir caja
- */
-export const abrirCaja = async (req, res) => {
-  const {  saldo_inicial, fecha } = req.body;
-  try {
-    const comercio_id = req.user?.comercio_id; 
-
-    const { rows } = await pool.query(
-      `INSERT INTO cajas (comercio_id, fecha, saldo_inicial)
-       VALUES ($1, COALESCE($3, CURRENT_DATE), $2)
-       RETURNING *`,
-      [comercio_id, saldo_inicial, (fecha && fecha.length === 10) ? fecha + "T12:00:00Z" : null],
-    );
-
-    res.json(rows[0]);
-  } catch (err) {
+      if (err.code === '23505') {
+          return res.status(400).json({ error: "Ya hay una caja abierta para este comercio." });
+      }
       console.error("Error abriendo caja:", err);
       res.status(500).json({ error: "Error interno al abrir caja" });
     }
