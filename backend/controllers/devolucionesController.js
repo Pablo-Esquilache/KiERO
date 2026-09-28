@@ -30,6 +30,9 @@ export const registrarDevolucion = async (req, res) => {
       if (!ventaRes.rows.length) throw new Error("Venta no encontrada");
 
       for (const item of items) {
+        if (!item.cantidad || isNaN(item.cantidad) || Number(item.cantidad) <= 0 || !Number.isInteger(Number(item.cantidad))) {
+          throw new Error("Cantidad inválida. Debe ser un entero positivo.");
+        }
         const detalleRes = await client.query(
           "SELECT cantidad, precio_unitario FROM ventas_detalle WHERE venta_id = $1 AND producto_id = $2 FOR UPDATE",
           [venta_id, item.producto_id]

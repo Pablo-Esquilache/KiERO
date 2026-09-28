@@ -101,6 +101,12 @@ export const createVenta = async (req, res) => {
 
 
   const descuento = Number(descuento_porcentaje) || 0;
+  if (descuento < 0 || descuento > 100) {
+    return res.status(400).json({ error: "El descuento debe estar entre 0 y 100" });
+  }
+    if (descuento < 0 || descuento > 100) {
+      return res.status(400).json({ error: "El descuento debe estar entre 0 y 100" });
+    }
 
   if (!comercio_id)
     return res.status(400).json({ error: "comercio_id requerido" });
@@ -115,6 +121,12 @@ export const createVenta = async (req, res) => {
 
     // 1️⃣ Verificar stock
     for (const item of items) {
+        if (!item.cantidad || isNaN(item.cantidad) || Number(item.cantidad) <= 0 || !Number.isInteger(Number(item.cantidad))) {
+          throw new Error("Cantidad inválida. Debe ser un entero positivo.");
+        }
+        if (item.esPrecioAbierto && (isNaN(item.precio_unitario) || Number(item.precio_unitario) < 0)) {
+          throw new Error("Precio abierto inválido. No puede ser negativo.");
+        }
       const { rows } = await client.query(
         `SELECT stock, precio, precio_abierto FROM productos 
            WHERE id = $1 AND comercio_id = $2`,
@@ -244,6 +256,9 @@ export const updateVenta = async (req, res) => {
 
 
   const descuento = Number(descuento_porcentaje) || 0;
+  if (descuento < 0 || descuento > 100) {
+    return res.status(400).json({ error: "El descuento debe estar entre 0 y 100" });
+  }
 
   if (!comercio_id)
     return res.status(400).json({ error: "comercio_id requerido" });
@@ -291,6 +306,12 @@ export const updateVenta = async (req, res) => {
 
     // 4️⃣ Verificar stock nuevo
     for (const item of items) {
+        if (!item.cantidad || isNaN(item.cantidad) || Number(item.cantidad) <= 0 || !Number.isInteger(Number(item.cantidad))) {
+          throw new Error("Cantidad inválida. Debe ser un entero positivo.");
+        }
+        if (item.esPrecioAbierto && (isNaN(item.precio_unitario) || Number(item.precio_unitario) < 0)) {
+          throw new Error("Precio abierto inválido. No puede ser negativo.");
+        }
         const { rows } = await client.query(
           `SELECT stock, precio, precio_abierto FROM productos
            WHERE id = $1 AND comercio_id = $2`,
