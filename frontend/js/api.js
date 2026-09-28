@@ -47,7 +47,11 @@ export async function apiFetch(endpoint, options = {}) {
 
     if (response.status === 401) {
       localStorage.removeItem("session");
-      window.location.href = "/index.html";
+      if (window.location.pathname.includes('/pages/')) {
+        window.location.href = "../index.html";
+      } else {
+        window.location.href = "index.html";
+      }
       return;
     }
 
