@@ -113,8 +113,7 @@ export const cerrarCaja = async (req, res) => {
     } finally {
       client.release();
     }
-  }
-};
+  };
 
 /**
  * GET - Movimientos del día para caja
