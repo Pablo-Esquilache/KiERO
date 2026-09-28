@@ -1,4 +1,5 @@
 import db from "../db.js";
+import { resolverFechaMovimiento } from "../utils/fechas.js";
 
 /* =====================================================
    GET ventas (tickets) por comercio
@@ -84,8 +85,8 @@ export const getVentaDetalle = async (req, res) => {
    POST crear venta
 ===================================================== */
 export const createVenta = async (req, res) => {
-  let {
-      fecha,
+  const {
+    fecha,
       cliente_id,
       metodo_pago,
       descuento_porcentaje = 0, 
@@ -249,10 +250,7 @@ export const updateVenta = async (req, res) => {
   const comercio_id = req.user.comercio_id;
   // Si la fecha enviada es "hoy", le inyectamos la hora actual exacta.
   // Esto evita que PostgreSQL la guarde como 00:00:00 (lo cual la deja fuera del horario de la Caja actual).
-  const hoyStr = new Date().toLocaleDateString("sv-SE");
-  if (fecha === hoyStr) {
-    fecha = new Date().toISOString();
-  }
+  const fechaFinal = resolverFechaMovimiento(fecha);
 
 
   const descuento = Number(descuento_porcentaje) || 0;
@@ -349,7 +347,7 @@ export const updateVenta = async (req, res) => {
     await client.query(
       `
       UPDATE ventas
-      SET fecha = $1,
+      SET fecha = COALESCE($1, NOW()),
           cliente_id = $2,
           metodo_pago = $3,
           total_bruto = $4,
@@ -359,7 +357,7 @@ export const updateVenta = async (req, res) => {
       WHERE id = $8 AND comercio_id = $9
       `,
       [
-        (fecha && fecha.length === 10) ? fecha + "T12:00:00Z" : (fecha || null),
+        fechaFinal,
         cliente_id,
         metodo_pago,
         total_bruto,

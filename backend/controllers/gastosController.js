@@ -1,4 +1,5 @@
 import db from "../db.js";
+import { resolverFechaMovimiento } from "../utils/fechas.js";
 
 /* ==========================
    GET - GASTOS POR COMERCIO
@@ -32,15 +33,9 @@ export const getGastos = async (req, res) => {
    POST - CREAR GASTO
    ========================== */
 export const createGasto = async (req, res) => {
-  let { fecha, descripcion, tipo, importe } = req.body;
+  const { fecha, descripcion, tipo, importe } = req.body;
   const comercio_id = req.user.comercio_id;
-  
-  // Si la fecha es igual a hoy, le anexamos la hora actual para que ingrese correctamente a la caja abierta de hoy.
-  const hoyStr = new Date().toLocaleDateString("sv-SE"); // YYYY-MM-DD local
-  if (fecha === hoyStr) {
-    fecha = new Date().toISOString(); 
-  }
-
+  const fechaFinal = resolverFechaMovimiento(fecha);
 
   if (!comercio_id) {
     return res.status(400).json({ error: "comercio_id requerido" });
@@ -50,10 +45,10 @@ export const createGasto = async (req, res) => {
     const { rows } = await db.query(
       `
       INSERT INTO gastos (fecha, descripcion, tipo, importe, comercio_id)
-        VALUES (CURRENT_TIMESTAMP, $1, $2, $3, $4)
+        VALUES (COALESCE($1, NOW()), $2, $3, $4, $5)
         RETURNING *
-        `,
-        [descripcion, tipo, importe, comercio_id]
+      `,
+      [fechaFinal, descripcion, tipo, importe, comercio_id]
     );
 
     res.status(201).json(rows[0]);
@@ -68,14 +63,9 @@ export const createGasto = async (req, res) => {
    ========================== */
 export const updateGasto = async (req, res) => {
   const { id } = req.params;
-  let { fecha, descripcion, tipo, importe } = req.body;
+  const { fecha, descripcion, tipo, importe } = req.body;
   const comercio_id = req.user.comercio_id;
-  
-  const hoyStr = new Date().toLocaleDateString("sv-SE");
-  if (fecha === hoyStr) {
-    fecha = new Date().toISOString(); 
-  }
-
+  const fechaFinal = resolverFechaMovimiento(fecha);
 
   if (!comercio_id) {
     return res.status(400).json({ error: "comercio_id requerido" });
@@ -85,16 +75,17 @@ export const updateGasto = async (req, res) => {
     const { rows } = await db.query(
       `
       UPDATE gastos
-        SET descripcion = $1,
-            tipo = $2,
-            importe = $3
-        WHERE id = $4 AND comercio_id = $5
-        RETURNING *
-        `,
-        [descripcion, tipo, importe, id, comercio_id]
+      SET fecha = COALESCE($1, NOW()),
+          descripcion = $2,
+          tipo = $3,
+          importe = $4
+      WHERE id = $5 AND comercio_id = $6
+      RETURNING *
+      `,
+      [fechaFinal, descripcion, tipo, importe, id, comercio_id]
     );
 
-    if (!rows[0]) {
+    if (rows.length === 0) {
       return res.status(404).json({ error: "Gasto no encontrado" });
     }
 
