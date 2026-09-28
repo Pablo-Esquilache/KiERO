@@ -3,10 +3,11 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 
-const SECRET = process.env.JWT_SECRET;
+
 
 // ================= LOGIN =================
 export const login = async (req, res) => {
+  const SECRET = process.env.JWT_SECRET;
   if (!SECRET) {
     return res.status(500).json({ error: "Falta configurar JWT_SECRET en las variables de entorno del servidor" });
   }

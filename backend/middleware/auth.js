@@ -1,8 +1,9 @@
 import jwt from "jsonwebtoken";
 
-const SECRET = process.env.JWT_SECRET;
+
 
 export async function authenticate(req, res, next) {
+  const SECRET = process.env.JWT_SECRET;
   if (!SECRET) {
     return res.status(500).json({ error: "Falta configurar JWT_SECRET en las variables de entorno del servidor" });
   }
