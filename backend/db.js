@@ -42,6 +42,7 @@ try {
 function toPositional(sql) {
   // Strip FOR UPDATE for SQLite compatibility
   sql = sql.replace(/FOR UPDATE/gi, '');
+  sql = sql.replace(/\bNOW\(\)/gi, 'CURRENT_TIMESTAMP');
   return sql.replace(/\$(\d+)/g, '?');
 }
 
