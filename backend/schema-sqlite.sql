@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS productos (
     stock INTEGER DEFAULT 0,
     comercio_id INTEGER NOT NULL,
     codigo_barras TEXT,
+    precio_abierto BOOLEAN DEFAULT 0,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
