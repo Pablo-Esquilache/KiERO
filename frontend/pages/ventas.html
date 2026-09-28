@@ -338,8 +338,8 @@
             </div>
           </div>
           
-          <div style="display: flex; gap: 10px; flex: none; justify-content: space-between; align-items: flex-end;">
-              <div class="app-form-group" style="margin-bottom: 0;">
+          <div style="display: flex; gap: 10px; flex: none; align-items: flex-end;">
+              <div class="app-form-group" style="margin-bottom: 0; flex: 1; min-width: 0;">
                 <label>Cantidad</label>
                 <input
                   type="number"
@@ -347,22 +347,22 @@
                   class="app-input"
                   min="1"
                   placeholder="Cant."
-                  style="height: 38px; width: 70px;"
+                  style="height: 38px; width: 100%; box-sizing: border-box; min-width: 0;"
                 />
               </div>
               
-              <div id="contenedorPrecioCustomDevolucion" class="app-form-group" style="margin-bottom: 0; display: none; flex-direction: column; width: 90px;">
+              <div id="contenedorPrecioCustomDevolucion" class="app-form-group" style="margin-bottom: 0; display: none; flex: 1; flex-direction: column; min-width: 0;">
                 <label>Precio</label>
-                <input type="number" id="precioCustomDevolucion" class="app-input" placeholder="Precio $" step="0.01" style="height: 38px; width: 100%; box-sizing: border-box;">
+                <input type="number" id="precioCustomDevolucion" class="app-input" placeholder="Precio $" step="0.01" style="height: 38px; width: 100%; box-sizing: border-box; min-width: 0;">
               </div>
               
-              <div class="app-form-group" style="margin-bottom: 0; display: flex; flex-direction: column;">
+              <div class="app-form-group" style="margin-bottom: 0; display: flex; flex-direction: column; flex: 1; min-width: 0;">
                 <label>&nbsp;</label>
                 <button
                   type="button"
                   id="btnAgregarDevolucion"
                   class="app-btn-secondary"
-                  style="height: 38px; padding: 0 15px;"
+                  style="height: 38px; width: 100%; padding: 0; box-sizing: border-box; min-width: 0; text-align: center;"
                 >
                   Agregar
                 </button>
