@@ -163,12 +163,36 @@ const renderProductosModalLazy = (append = false) => {
       if(tId) tId.value = p.id;
       if(tName) tName.value = p.nombre;
       
-      const isDev = window.targetProductInput === 'productoDevolucion';
-      const qtyInput = document.getElementById(isDev ? "cantidadDevolucion" : "cantidadVenta");
-      if (qtyInput) { qtyInput.value = "1"; qtyInput.focus(); }
-      
-      const modalProductos = document.getElementById("modalProductos");
-      if(modalProductos) modalProductos.style.display = "none";
+        const isDev = window.targetProductInput === 'productoDevolucion';
+        const qtyInput = document.getElementById(isDev ? "cantidadDevolucion" : "cantidadVenta");
+        if (p.precio_abierto) {
+          const precioCustomInput = document.getElementById(isDev ? "precioCustomDevolucion" : "precioCustomVenta");
+          if (precioCustomInput) {
+            if (isDev) {
+              const contenedor = document.getElementById("contenedorPrecioCustomDevolucion");
+              if(contenedor) contenedor.style.display = "flex";
+            } else {
+              precioCustomInput.style.display = "inline-block";
+            }
+            precioCustomInput.value = "";
+            if(qtyInput) qtyInput.value = "1";
+            precioCustomInput.focus();
+          }
+        } else {
+          const precioCustomInput = document.getElementById(isDev ? "precioCustomDevolucion" : "precioCustomVenta");
+          if (precioCustomInput) {
+            if (isDev) {
+              const contenedor = document.getElementById("contenedorPrecioCustomDevolucion");
+              if(contenedor) contenedor.style.display = "none";
+            } else {
+              precioCustomInput.style.display = "none";
+            }
+          }
+          if (qtyInput) { qtyInput.value = "1"; qtyInput.focus(); }
+        }
+        
+        const modalProductos = document.getElementById("modalProductos");
+        if(modalProductos) modalProductos.style.display = "none";
     });
     tabla.appendChild(fila);
   }
@@ -1144,12 +1168,36 @@ function renderProductosModal(lista) {
           if(tName) tName.value = p.nombre;
           
           // Focus the quantity input based on which module we are in
-          const isDev = window.targetProductInput === 'productoDevolucion';
-          const qtyInput = document.getElementById(isDev ? "cantidadDevolucion" : "cantidadVenta");
+        const isDev = window.targetProductInput === 'productoDevolucion';
+        const qtyInput = document.getElementById(isDev ? "cantidadDevolucion" : "cantidadVenta");
+        if (p.precio_abierto) {
+          const precioCustomInput = document.getElementById(isDev ? "precioCustomDevolucion" : "precioCustomVenta");
+          if (precioCustomInput) {
+            if (isDev) {
+              const contenedor = document.getElementById("contenedorPrecioCustomDevolucion");
+              if(contenedor) contenedor.style.display = "flex";
+            } else {
+              precioCustomInput.style.display = "inline-block";
+            }
+            precioCustomInput.value = "";
+            if(qtyInput) qtyInput.value = "1";
+            precioCustomInput.focus();
+          }
+        } else {
+          const precioCustomInput = document.getElementById(isDev ? "precioCustomDevolucion" : "precioCustomVenta");
+          if (precioCustomInput) {
+            if (isDev) {
+              const contenedor = document.getElementById("contenedorPrecioCustomDevolucion");
+              if(contenedor) contenedor.style.display = "none";
+            } else {
+              precioCustomInput.style.display = "none";
+            }
+          }
           if (qtyInput) { qtyInput.value = "1"; qtyInput.focus(); }
-          
-          modalProductos.style.display = "none";
-      });
+        }
+        
+        const modalProductos = document.getElementById("modalProductos");
+        if(modalProductos) modalProductos.style.display = "none";
 
       tablaProductosModalBody.appendChild(fila);
     }
@@ -1667,6 +1715,8 @@ productoDevolucionNombre?.addEventListener("input", debounce(async (e) => {
   if (!q) {
     if(autocompleteProductosDevolucion) autocompleteProductosDevolucion.style.display = "none";
     if(productoDevolucion) productoDevolucion.value = "";
+      const contenedorDev = document.getElementById("contenedorPrecioCustomDevolucion");
+      if(contenedorDev) contenedorDev.style.display = "none";
     return;
   }
   
@@ -1986,6 +2036,8 @@ productoVentaNombreV?.addEventListener("input", debounce(async (e) => {
   if (!q) {
     if(autocompleteProductosV) autocompleteProductosV.style.display = "none";
     if(productoVentaV) productoVentaV.value = "";
+      const pcv = document.getElementById("precioCustomVenta");
+      if(pcv) pcv.style.display = "none";
     return;
   }
   
