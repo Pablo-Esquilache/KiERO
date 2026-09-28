@@ -24,6 +24,11 @@ import ajustesRoutes from "./routes/ajustes.js";
 import turnosRoutes from "./routes/turnos.js";
 import { authenticate } from "./middleware/auth.js";
 
+// Al iniciar la app de escritorio, limpiar cualquier sesin activa que haya quedado colgada
+// (por ejemplo si el usuario cerr la ventana de golpe sin desloguearse)
+pool.query("UPDATE usuarios SET active_session = NULL").catch(err => console.error("Error limpiando sesiones:", err));
+
+
 dotenv.config();
 
 const app = express();
