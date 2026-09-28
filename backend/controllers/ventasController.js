@@ -185,16 +185,18 @@ RETURNING *
         ],
       );
 
-      const updateRes = await client.query(
-        `
-        UPDATE productos
-        SET stock = stock - $1
-        WHERE id = $2 AND comercio_id = $3 AND stock >= $1
-        RETURNING stock
-        `,
-        [item.cantidad, item.producto_id, comercio_id],
-      );
-      if (!updateRes.rows[0]) throw new Error("Stock insuficiente (Error de concurrencia)");
+              if (!item.esPrecioAbierto) {
+          const updateRes = await client.query(
+            `
+            UPDATE productos
+            SET stock = stock - $1
+            WHERE id = $2 AND comercio_id = $3 AND stock >= $1
+            RETURNING stock
+            `,
+            [item.cantidad, item.producto_id, comercio_id],
+          );
+          if (!updateRes.rows[0]) throw new Error("Stock insuficiente (Error de concurrencia)");
+        }
     }
 
     // 🔹 Si es cuenta corriente, registrar deuda

@@ -1485,7 +1485,8 @@ btnAgregarDevolucionNuevo?.addEventListener("click", () => {
   const cant = Number(cantidadDevolucion?.value);
   const precioCustomDevInput = document.getElementById("precioCustomDevolucion");
   let precioCustom = null;
-  if (precioCustomDevInput && precioCustomDevInput.style.display !== "none") {
+  const contenedorPrecio = document.getElementById("contenedorPrecioCustomDevolucion");
+    if (contenedorPrecio && contenedorPrecio.style.display !== "none") {
     precioCustom = Number(precioCustomDevInput.value);
     if (precioCustom === null || isNaN(precioCustom) || precioCustom === 0) {
       toastInfo("Ingrese un precio válido para este comodín.");
