@@ -1,6 +1,19 @@
 // api.js - Servicio Centralizado para Llamadas a la API
 
-export const API_BASE_URL = "/api";
+// Obtenemos el puerto asignado aleatoriamente por Electron
+const params = new URLSearchParams(window.location.search);
+let apiPort = params.get('apiPort');
+
+if (apiPort) {
+  // Lo guardamos para que sobreviva a las navegaciones (ej: al pasar a caja.html)
+  localStorage.setItem('electron_api_port', apiPort);
+} else {
+  // Si no está en la URL, lo recuperamos de localStorage
+  apiPort = localStorage.getItem('electron_api_port');
+}
+
+// Si hay puerto (escritorio), armamos la URL local. Si no (nube), usamos la relativa.
+export const API_BASE_URL = apiPort ? `http://127.0.0.1:${apiPort}/api` : "/api";
 
 /**
  * Función base para realizar peticiones fetch

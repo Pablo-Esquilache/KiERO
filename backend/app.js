@@ -29,7 +29,7 @@ dotenv.config();
 const app = express();
 
 /* ===== TEST CONEXIÓN DB ===== */
-pool.query("SELECT NOW()")
+pool.query("SELECT CURRENT_TIMESTAMP")
   .then(res => console.log("✅ Base conectada en la NUBE:", res.rows[0]))
   .catch(err => console.error("❌ Error conexión DB:", err));
 

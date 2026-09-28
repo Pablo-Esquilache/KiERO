@@ -162,8 +162,8 @@ export const getMovimientosDia = async (req, res) => {
     }
 
     const baseParams = endTime ? [comercioId, startTime, endTime] : [comercioId, startTime];
-    const timeCondition = endTime ? `AND fecha >= $2 AND fecha <= $3` : `AND fecha >= $2 AND fecha::date <= CURRENT_DATE`;
-    const dTimeCondition = endTime ? `AND d.fecha >= $2 AND d.fecha <= $3` : `AND d.fecha >= $2 AND d.fecha::date <= CURRENT_DATE`;
+    const timeCondition = endTime ? `AND fecha >= $2 AND fecha <= $3` : `AND fecha >= $2 AND date(fecha) <= CURRENT_DATE`;
+    const dTimeCondition = endTime ? `AND d.fecha >= $2 AND d.fecha <= $3` : `AND d.fecha >= $2 AND date(d.fecha) <= CURRENT_DATE`;
 
     const ventas = await pool.query(
       `SELECT id, fecha, total, metodo_pago
@@ -179,7 +179,7 @@ export const getMovimientosDia = async (req, res) => {
       // Asi evitamos que un gasto del dia 28 se sume a la caja de hoy.
       const gastosTimeCondition = endTime 
         ? `AND fecha >= $2 AND fecha <= $3` 
-        : `AND fecha >= $2 AND fecha::date <= CURRENT_DATE`;
+        : `AND fecha >= $2 AND date(fecha) <= CURRENT_DATE`;
 
       const gastos = await pool.query(
         `SELECT id, fecha, importe, descripcion

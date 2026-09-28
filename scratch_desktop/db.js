@@ -40,8 +40,6 @@ try {
 
 // Convertidor de posicionales tipo Postgres ($1, $2) a SQLite (?)
 function toPositional(sql) {
-  // Strip FOR UPDATE for SQLite compatibility
-  sql = sql.replace(/FOR UPDATE/gi, '');
   return sql.replace(/\$(\d+)/g, '?');
 }
 
