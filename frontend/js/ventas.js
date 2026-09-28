@@ -1958,7 +1958,11 @@ if(filtroFechaHistorial) {
     const seleccion = filtroFechaHistorial.value; // YYYY-MM-DD
     const filtradas = ventasCacheModal.filter((v) => {
       if(!v.fecha) return false;
-      return v.fecha.startsWith(seleccion);
+      const d = new Date(v.fecha);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}` === seleccion;
     });
     ventasCachePrincipal = filtradas;
     renderVentasPrincipal(filtradas);
