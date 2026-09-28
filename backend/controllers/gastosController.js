@@ -50,7 +50,7 @@ export const createGasto = async (req, res) => {
     const { rows } = await db.query(
       `
       INSERT INTO gastos (fecha, descripcion, tipo, importe, comercio_id)
-      VALUES (CASE WHEN $1::date = CURRENT_DATE THEN CURRENT_TIMESTAMP ELSE $1::timestamp END, $2, $3, $4, $5)
+      VALUES (CURRENT_TIMESTAMP, $2, $3, $4, $5)
       RETURNING *
       `,
       [fecha, descripcion, tipo, importe, comercio_id]
@@ -85,10 +85,9 @@ export const updateGasto = async (req, res) => {
     const { rows } = await db.query(
       `
       UPDATE gastos
-      SET fecha = $1,
-          descripcion = $2,
-          tipo = $3,
-          importe = $4
+        SET descripcion = $2,
+            tipo = $3,
+            importe = $4
       WHERE id = $5 AND comercio_id = $6
       RETURNING *
       `,
