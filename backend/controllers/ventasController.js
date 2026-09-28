@@ -266,39 +266,53 @@ export const updateVenta = async (req, res) => {
 
     // 1️⃣ Obtener detalles anteriores
     const { rows: detallesAnteriores } = await client.query(
-      `SELECT producto_id, cantidad
-       FROM ventas_detalle
-       WHERE venta_id = $1`,
+      `SELECT vd.producto_id, vd.cantidad, p.precio_abierto
+         FROM ventas_detalle vd
+         JOIN productos p ON p.id = vd.producto_id
+         WHERE vd.venta_id = $1`,
       [id],
     );
 
     // 2️⃣ Restaurar stock anterior
     for (const item of detallesAnteriores) {
-      await client.query(
-        `
-        UPDATE productos
-        SET stock = stock + $1
-        WHERE id = $2 AND comercio_id = $3
-        `,
-        [item.cantidad, item.producto_id, comercio_id],
-      );
-    }
+        if (item.precio_abierto) continue;
+        await client.query(
+          `
+          UPDATE productos
+          SET stock = stock + $1
+          WHERE id = $2 AND comercio_id = $3
+          `,
+          [item.cantidad, item.producto_id, comercio_id],
+        );
+      }
 
     // 3️⃣ Eliminar detalles anteriores
     await client.query(`DELETE FROM ventas_detalle WHERE venta_id = $1`, [id]);
 
     // 4️⃣ Verificar stock nuevo
     for (const item of items) {
-      const { rows } = await client.query(
-        `SELECT stock FROM productos
-         WHERE id = $1 AND comercio_id = $2`,
-        [item.producto_id, comercio_id],
-      );
-
-      if (!rows[0]) throw new Error("Producto no encontrado");
-      if (item.cantidad > Number(rows[0].stock))
-        throw new Error("Stock insuficiente");
-    }
+        const { rows } = await client.query(
+          `SELECT stock, precio, precio_abierto FROM productos
+           WHERE id = $1 AND comercio_id = $2`,
+          [item.producto_id, comercio_id],
+        );
+  
+        if (!rows[0]) throw new Error("Producto no encontrado");
+        
+        if (rows[0].precio_abierto) {
+            item.esPrecioAbierto = true;
+            const precioCliente = Number(item.precio_unitario);
+            if (!Number.isFinite(precioCliente) || precioCliente === 0) {
+                throw new Error("Precio inválido para producto comodín");
+            }
+            item.precio_unitario = precioCliente;
+        } else {
+            if (item.cantidad > Number(rows[0].stock))
+              throw new Error("Stock insuficiente");
+              
+            item.precio_unitario = Number(rows[0].precio);
+        }
+      }
 
     // 5️⃣ Calcular totales nuevos
     let total_bruto = 0;
@@ -331,9 +345,10 @@ export const updateVenta = async (req, res) => {
         descuento_monto,
         descuento,
         total,
-        id, 
-      ],
-    );
+          id,
+          comercio_id
+        ],
+      );
 
     // 7️⃣ Insertar nuevos detalles y descontar stock
     for (const item of items) {
@@ -348,14 +363,16 @@ export const updateVenta = async (req, res) => {
         [id, item.producto_id, item.cantidad, item.precio_unitario, subtotal],
       );
 
-      await client.query(
-        `
-        UPDATE productos
-        SET stock = stock - $1
-        WHERE id = $2 AND comercio_id = $3
-        `,
-        [item.cantidad, item.producto_id, comercio_id],
-      );
+      if (!item.esPrecioAbierto) {
+          await client.query(
+            `
+            UPDATE productos
+            SET stock = stock - $1
+            WHERE id = $2 AND comercio_id = $3
+            `,
+            [item.cantidad, item.producto_id, comercio_id],
+          );
+        }
     }
 
     await client.query("COMMIT");
