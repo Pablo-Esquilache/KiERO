@@ -75,7 +75,7 @@ async function obtenerCaja() {
   // Verificamos si la caja devuelta es de un día anterior y sigue abierta
   if (cajaActual && cajaActual.estado === "abierta") {
     const hoyString = new Date().toLocaleDateString('sv-SE');
-    const cajaString = cajaActual.fecha.split("T")[0];
+    const cajaString = cajaActual.fecha.split("T")[0].split(" ")[0];
     const esDiaAnterior = hoyString !== cajaString;
 
     if (esDiaAnterior) {
