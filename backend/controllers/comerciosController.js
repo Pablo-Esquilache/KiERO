@@ -9,7 +9,7 @@ export const getComercioByUid = async (req, res) => {
   try {
     // Antes buscábamos firebase_uid en la tabla comercios, lo correcto es buscar en usuarios por su ID
     const result = await pool.query(
-      `SELECT c.id, c.nombre
+      `SELECT c.id, c.nombre, c.umbral_stock
        FROM usuarios u
        JOIN comercios c ON u.comercio_id = c.id
        WHERE u.id = $1`,
