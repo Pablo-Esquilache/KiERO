@@ -56,7 +56,7 @@ window.verDetalleDevolucion = async (devolucionId) => {
       ticketContent.innerHTML = `
           <div style="margin-bottom: 5px;"><strong>ID Devolución:</strong> ${devolucion.id}</div>
           <div style="margin-bottom: 5px;"><strong>Fecha:</strong> ${fechaFormat}</div>
-          <div style="margin-bottom: 5px;"><strong>Cliente:</strong> ${clienteName}</div>
+          <div style="margin-bottom: 5px;"><strong>Cliente:</strong> ${escapeHtml(clienteName)}</div>
           <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
           ${itemsHtml}
           <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
@@ -816,8 +816,8 @@ if (formVenta) {
             const pago = metodoPagoVenta.value;
             
             ticketContent.innerHTML = `
-                <div style="margin-bottom: 5px;"><strong>Cliente:</strong> ${clienteName}</div>
-                <div style="margin-bottom: 5px;"><strong>Mtodo de pago:</strong> ${pago}</div>
+                <div style="margin-bottom: 5px;"><strong>Cliente:</strong> ${escapeHtml(clienteName)}</div>
+                <div style="margin-bottom: 5px;"><strong>Mtodo de pago:</strong> ${escapeHtml(pago)}</div>
                 <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
                 ${itemsHtml}
                 <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
@@ -952,7 +952,7 @@ function renderVentasModal(lista) {
     const fila = document.createElement("tr");
     fila.innerHTML = `
       <td>${formatearFecha(v.fecha)}</td>
-      <td>${v.cliente_nombre || "—"}</td>
+      <td>${escapeHtml(v.cliente_nombre) || "—"}</td>
       <td>$${Number(v.total).toFixed(2)}</td>
       <td>${v.metodo_pago || "—"}</td>
       <td>
@@ -1323,28 +1323,9 @@ async function cargarDetalleVentaParaDevolucion(ventaId) {
     const fila = document.createElement("tr");
 
     fila.innerHTML = `
-      <td>${d.producto_nombre}</td>
-      <td>${d.cantidad}</td>
-      <td>$${Number(d.precio_unitario).toFixed(2)}</td>
-      <td>
-        <input type="number"
-          min="1"
-          max="${d.cantidad}"
-          value="1"
-          style="width:90px; text-align:center"
-          class="app-input"
-          id="dev-${d.producto_id}">
-      </td>
-      <td>
-        <button class="btn-primario btn-agregar-dev"
-          data-id="${d.producto_id}"
-          data-nombre="${d.producto_nombre}"
-          data-precio="${d.precio_unitario}"
-          data-max="${d.cantidad}">
-          Agregar
-        </button>
-      </td>
-    `;
+      <td>${escapeHtml(d.producto_nombre)}</td>${p1}${p2}`;
+    const btn = fila.querySelector('.btn-agregar-dev');
+    if (btn) btn.dataset.nombre = d.producto_nombre;
 
     tablaDetalleVentaBody.appendChild(fila);
   });

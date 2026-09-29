@@ -1,3 +1,4 @@
+import { escapeHtml } from "./utils/escapeHtml.js";
 import { apiFetch, TurnosAPI, ClientesAPI } from "./api.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -100,9 +101,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             <span class="turno-hoy-hora">${horaCorta}</span>
             <span style="font-size:0.8em; font-weight:bold; color:${colorEstado}; text-transform:uppercase;">${turno.estado}</span>
           </div>
-          <div class="turno-hoy-cliente">👤 ${turno.cliente_nombre}</div>
+          <div class="turno-hoy-cliente">👤 ${escapeHtml(turno.cliente_nombre)}</div>
           <div style="font-size:0.9em; color: #64748b;">📞 ${turno.cliente_telefono || 'Sin teléfono'}</div>
-          <div style="font-size:0.9em; color: #64748b; margin-top:5px;">📌 ${turno.servicio_motivo || 'Sin detalle'}</div>
+          <div style="font-size:0.9em; color: #64748b; margin-top:5px;">📌 ${escapeHtml(turno.servicio_motivo || "Sin detalle")}</div>
           
           ${turno.estado === 'reservado' ? `
             <div class="turno-hoy-actions">
@@ -180,7 +181,7 @@ document.addEventListener("DOMContentLoaded", async () => {
              badgeHTML += `
                <div style="margin-bottom:5px; display:flex; align-items:center; gap:10px;">
                  <span class="badge-${t.estado}">${t.estado.toUpperCase()}</span> 
-                 <span style="flex:1;">${t.cliente_nombre} - ${t.servicio_motivo || ''}</span>
+                 <span style="flex:1;">${escapeHtml(t.cliente_nombre)} - ${escapeHtml(t.servicio_motivo || "")}</span>
                  ${t.estado === 'reservado' ? `<button class="btn-eliminar btn-cancelar-grilla" data-id="${t.id}" style="padding: 4px 8px; font-size: 0.8em; margin: 0;">Cancelar</button>` : ''}
                  ${t.estado === 'cancelado' ? `<button class="app-btn-secondary btn-limpiar-grilla" data-id="${t.id}" style="padding: 4px 8px; font-size: 0.8em; margin: 0;">Limpiar</button>` : ''}
                </div>
