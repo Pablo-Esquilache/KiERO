@@ -153,8 +153,10 @@ export const getDetalleDevolucion = async (req, res) => {
       `SELECT dd.*, p.nombre AS producto_nombre
       FROM devoluciones_detalle dd
       LEFT JOIN productos p ON dd.producto_id = p.id
-      WHERE dd.devolucion_id = $1`,
-      [id]
+      JOIN devoluciones d ON dd.devolucion_id = d.id
+      WHERE dd.devolucion_id = $1 AND d.comercio_id = $2
+      `,
+      [id, req.user.comercio_id]
     );
     res.json(rows);
   } catch (err) {

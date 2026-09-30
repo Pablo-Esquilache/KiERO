@@ -58,7 +58,7 @@ router.put("/metodos_pago/:id/toggle", requireAdmin, async (req, res) => {
 router.delete("/metodos_pago/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
   try {
-    await pool.query("DELETE FROM metodos_pago WHERE id = $1", [id]);
+    await pool.query("DELETE FROM metodos_pago WHERE id = $1 AND comercio_id = $2", [id, req.user.comercio_id]);
     res.json({ message: "Eliminado con éxito" });
   } catch (error) {
     console.error("Error al eliminar método de pago:", error);
@@ -120,7 +120,7 @@ router.put("/descuentos/:id/toggle", requireAdmin, async (req, res) => {
 router.delete("/descuentos/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
   try {
-    await pool.query("DELETE FROM descuentos_config WHERE id = $1", [id]);
+    await pool.query("DELETE FROM descuentos_config WHERE id = $1 AND comercio_id = $2", [id, req.user.comercio_id]);
     res.json({ message: "Eliminado con éxito" });
   } catch (error) {
     console.error("Error al eliminar descuento:", error);
@@ -178,7 +178,7 @@ router.put("/gastos_categorias/:id/toggle", requireAdmin, async (req, res) => {
 router.delete("/gastos_categorias/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
   try {
-    await pool.query("DELETE FROM gastos_categorias WHERE id = $1", [id]);
+    await pool.query("DELETE FROM gastos_categorias WHERE id = $1 AND comercio_id = $2", [id, req.user.comercio_id]);
     res.json({ message: "Eliminado con éxito" });
   } catch (error) {
     console.error("Error al eliminar categoría de gastos:", error);

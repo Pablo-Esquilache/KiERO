@@ -69,9 +69,10 @@ export const getVentaDetalle = async (req, res) => {
       SELECT vd.*, p.nombre AS producto_nombre
       FROM ventas_detalle vd
       LEFT JOIN productos p ON vd.producto_id = p.id
-      WHERE vd.venta_id = $1
+      JOIN ventas v ON vd.venta_id = v.id
+      WHERE vd.venta_id = $1 AND v.comercio_id = $2
       `,
-      [id],
+      [id, req.user.comercio_id],
     );
 
     res.json(rows);

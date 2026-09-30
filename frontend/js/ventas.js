@@ -1235,7 +1235,6 @@ cerrarModalDevolucion?.addEventListener("click", () => {
 });
 
 cerrarModalProductosDevolucion?.addEventListener("click", () => {
-  modalProductosDevolucion.style.display = "none";
 });
 
 window.addEventListener("click", (e) => {
