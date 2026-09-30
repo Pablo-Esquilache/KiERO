@@ -86,7 +86,7 @@ export const getVentaDetalle = async (req, res) => {
    POST crear venta
 ===================================================== */
 export const createVenta = async (req, res) => {
-  const {
+  let {
     fecha,
       cliente_id,
       metodo_pago,
