@@ -33,7 +33,7 @@ export const getGastos = async (req, res) => {
    POST - CREAR GASTO
    ========================== */
 export const createGasto = async (req, res) => {
-  const { fecha, descripcion, tipo, importe } = req.body;
+  let { fecha, descripcion, tipo, importe } = req.body;
   const comercio_id = req.user.comercio_id;
   const fechaFinal = resolverFechaMovimiento(fecha);
 
@@ -63,7 +63,7 @@ export const createGasto = async (req, res) => {
    ========================== */
 export const updateGasto = async (req, res) => {
   const { id } = req.params;
-  const { fecha, descripcion, tipo, importe } = req.body;
+  let { fecha, descripcion, tipo, importe } = req.body;
   const comercio_id = req.user.comercio_id;
   const fechaFinal = resolverFechaMovimiento(fecha);
 
