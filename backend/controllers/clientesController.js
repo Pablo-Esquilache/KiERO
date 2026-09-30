@@ -14,12 +14,7 @@ export const getClientes = async (req, res) => {
     const { rows } = await db.query(
       `
       SELECT c.*,
-      COALESCE(SUM(
-        CASE
-          WHEN m.tipo = 'venta' THEN m.monto
-          WHEN m.tipo = 'pago' THEN -m.monto
-        END
-      ),0) AS saldo
+      (COALESCE(SUM(CASE WHEN m.tipo = 'venta' THEN m.monto WHEN m.tipo = 'pago' THEN -m.monto END),0) - COALESCE((SELECT SUM(d.total) FROM devoluciones d WHERE d.cliente_id = c.id AND d.comercio_id = c.comercio_id), 0)) AS saldo
       FROM clientes c
       LEFT JOIN cuenta_corriente_movimientos m
         ON c.id = m.cliente_id
@@ -181,12 +176,7 @@ export const getSaldoCliente = async (req, res) => {
   try {
     const { rows } = await db.query(
       `
-      SELECT COALESCE(SUM(
-        CASE
-          WHEN tipo = 'venta' THEN monto
-          WHEN tipo = 'pago' THEN -monto
-        END
-      ),0) AS saldo
+      SELECT (COALESCE(SUM(CASE WHEN tipo = 'venta' THEN monto WHEN tipo = 'pago' THEN -monto END),0) - COALESCE((SELECT SUM(total) FROM devoluciones WHERE cliente_id = $1 AND comercio_id = $2), 0)) AS saldo
       FROM cuenta_corriente_movimientos
       WHERE cliente_id = $1
         AND comercio_id = $2
