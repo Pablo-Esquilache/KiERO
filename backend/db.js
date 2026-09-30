@@ -42,7 +42,8 @@ try {
 function toPositional(sql, originalParams) {
   let newParams = [];
   let newSql = sql.replace(/FOR UPDATE/gi, '');
-  newSql = newSql.replace(/\bNOW\(\)/gi, 'CURRENT_TIMESTAMP');
+  newSql = newSql.replace(/\bNOW\(\)/gi, "CURRENT_TIMESTAMP");
+  newSql = newSql.replace(/::\w+/g, ''); // Strip postgres casts like ::integer or ::date
   newSql = newSql.replace(/\$(\d+)/g, (match, p1) => {
     const index = parseInt(p1, 10) - 1;
     let val = originalParams[index];
@@ -51,6 +52,7 @@ function toPositional(sql, originalParams) {
     return '?';
   });
   return { sql: newSql, params: newParams };
+}
 }
 
 // Emulador del pool de pg
