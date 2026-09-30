@@ -584,7 +584,7 @@ function procesarAgregarProducto(productoId, cantidadAgregada, precioCustom = nu
   const producto = productosCache.find((p) => p.id == productoId);
   if (!producto) return;
 
-  const esPrecioAbierto = producto.precio_abierto === true;
+  const esPrecioAbierto = (producto.precio_abierto == true || producto.precio_abierto == 1);
 
   if (esPrecioAbierto && (precioCustom === null || isNaN(precioCustom) || precioCustom === 0)) {
     toastWarning("Este producto requiere ingresar un precio.");

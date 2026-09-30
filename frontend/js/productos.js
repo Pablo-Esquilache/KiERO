@@ -111,7 +111,7 @@ btnNuevoProducto.addEventListener("click", () => {
   if (currentUser.role === "admin" && document.getElementById("containerPrecioAbierto")) {
     document.getElementById("containerPrecioAbierto").style.display = "flex";
     if (typeof p !== 'undefined' && p && document.getElementById("precioAbiertoProducto")) {
-       document.getElementById("precioAbiertoProducto").checked = p.precio_abierto === true;
+       document.getElementById("precioAbiertoProducto").checked = (p.precio_abierto == true || p.precio_abierto == 1);
     }
   }
   modalProducto.style.display = "flex";
@@ -321,7 +321,7 @@ function editarProducto(id) {
   if (currentUser.role === "admin" && document.getElementById("containerPrecioAbierto")) {
     document.getElementById("containerPrecioAbierto").style.display = "flex";
     if (typeof p !== 'undefined' && p && document.getElementById("precioAbiertoProducto")) {
-       document.getElementById("precioAbiertoProducto").checked = p.precio_abierto === true;
+       document.getElementById("precioAbiertoProducto").checked = (p.precio_abierto == true || p.precio_abierto == 1);
     }
   }
   modalProducto.style.display = "flex";
