@@ -230,9 +230,14 @@ export const registrarPagoCliente = async (req, res) => {
     return res.status(400).json({ error: "comercio_id requerido" });
 
   try {
-    const { rows } = await db.query(
-      `
-      INSERT INTO cuenta_corriente_movimientos
+      const { rows: cli } = await db.query(
+        "SELECT 1 FROM clientes WHERE id = $1 AND comercio_id = $2", [id, comercio_id]
+      );
+      if (!cli.length) return res.status(404).json({ error: "Cliente no encontrado" });
+
+      const { rows } = await db.query(
+        `
+        INSERT INTO cuenta_corriente_movimientos
         (cliente_id, comercio_id, tipo, monto)
         VALUES ($1, $2, 'pago', $3)
         RETURNING *
