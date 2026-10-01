@@ -829,13 +829,15 @@ if (formVenta) {
         modalTicketExito.style.display = "flex";
       }
     } catch (err) {
-      toastError(err.message || "Error guardando venta");
-      return;
-    }
+        toastError(err.message || "Error guardando venta");
+        if (submitBtn) submitBtn.disabled = false;
+        return;
+      }
 
     // 🔹 Reset estado
-    ventaEnEdicionId = null;
-    clienteVenta.disabled = false;
+    if (submitBtn) submitBtn.disabled = false;
+      ventaEnEdicionId = null;
+      clienteVenta.disabled = false;
 
     modalVenta.style.display = "none";
     limpiarFormulario();
@@ -1752,7 +1754,11 @@ formDevolucionNuevo?.addEventListener("submit", async (e) => {
     return;
   }
   
-  const cliId = document.getElementById("clienteDevolucion")?.value || null;
+  let cliId = document.getElementById("clienteDevolucion")?.value || null;
+    if (!cliId) {
+      const cf = allClientes.find(c => c.nombre && c.nombre.toLowerCase().includes('consumidor'));
+      if (cf) cliId = cf.id;
+    }
   // metPago removed
   
   const payload = {
