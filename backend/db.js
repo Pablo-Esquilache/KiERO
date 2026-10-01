@@ -53,7 +53,6 @@ function toPositional(sql, originalParams) {
   });
   return { sql: newSql, params: newParams };
 }
-}
 
 // Emulador del pool de pg
 const pool = {
