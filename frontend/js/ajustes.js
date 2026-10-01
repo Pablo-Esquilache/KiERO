@@ -503,7 +503,7 @@ if (backupBtn) {
       const session = JSON.parse(localStorage.getItem("session"));
       const comercioId = session?.comercio_id;
 
-      const res = await fetch(API_BASE_URL + '/exportar-tabla/sql?comercio_id=${comercioId}`, {
+      const res = await fetch(API_BASE_URL + `/exportar-tabla/sql?comercio_id=${comercioId}`, {
         headers: { "Authorization": `Bearer ${session?.token || ''}` }
       });
       if (!res.ok) throw new Error("Error al descargar backup");
