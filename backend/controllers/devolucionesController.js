@@ -85,7 +85,7 @@ export const registrarDevolucion = async (req, res) => {
     // 3. Insert cabecera
     const devolucionInsert = await client.query(
       `INSERT INTO devoluciones (venta_id, cliente_id, total, comercio_id, fecha)
-       VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) RETURNING *`,
+       VALUES ($1, $2, $3, $4, NOW()) RETURNING *`,
       [venta_id || null, cliente_id || null, totalDevolucion, comercio_id]
     );
     const devolucion = devolucionInsert.rows[0];

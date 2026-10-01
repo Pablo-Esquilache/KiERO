@@ -829,13 +829,15 @@ if (formVenta) {
         modalTicketExito.style.display = "flex";
       }
     } catch (err) {
-      toastError(err.message || "Error guardando venta");
-      return;
-    }
+        toastError(err.message || "Error guardando venta");
+        if (submitBtn) submitBtn.disabled = false;
+        return;
+      }
 
     // 🔹 Reset estado
-    ventaEnEdicionId = null;
-    clienteVenta.disabled = false;
+    if (submitBtn) submitBtn.disabled = false;
+      ventaEnEdicionId = null;
+      clienteVenta.disabled = false;
 
     modalVenta.style.display = "none";
     limpiarFormulario();
