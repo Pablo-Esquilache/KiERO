@@ -35,7 +35,17 @@ const app = express();
 
 /* ===== TEST CONEXIÓN DB ===== */
 pool.query("SELECT CURRENT_TIMESTAMP")
-  .then(res => console.log("✅ Base conectada en la NUBE:", res.rows[0]))
+  .then(res => {
+    console.log("✅ Base conectada en la NUBE:", res.rows[0]);
+    // Asegurar que exista "Consumidor Final" para todos los comercios
+    return pool.query(`
+      INSERT INTO clientes (nombre, comercio_id)
+      SELECT 'Consumidor Final', id FROM comercios c
+      WHERE NOT EXISTS (
+        SELECT 1 FROM clientes cl WHERE cl.nombre LIKE '%Consumidor Final%' AND cl.comercio_id = c.id
+      )
+    `);
+  })
   .catch(err => console.error("❌ Error conexión DB:", err));
 
 /* ===== MIDDLEWARES ===== */
