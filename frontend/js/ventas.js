@@ -1994,6 +1994,10 @@ clienteVentaNombreV?.addEventListener("input", debounce(async (e) => {
   if(autocompleteClientesV) autocompleteClientesV.style.display = "block";
 }, 300));
 
+clienteVentaNombreV?.addEventListener("focus", () => {
+  clienteVentaNombreV.select();
+});
+
 clienteVentaNombreV?.addEventListener("blur", () => {
   setTimeout(() => {
     if (autocompleteClientesV) autocompleteClientesV.style.display = "none";
@@ -2120,6 +2124,15 @@ let currentFocus = -1;
 document.addEventListener("keydown", (e) => {
   if (e.target && e.target.tagName && e.target.tagName.toLowerCase() === "textarea") return;
 
+  if (e.key === "F1") {
+    e.preventDefault();
+    const cInput = document.getElementById("clienteVentaNombre");
+    if (cInput) {
+      cInput.focus();
+      cInput.select();
+    }
+  }
+  
   if (e.key === "F2") {
     e.preventDefault();
     const pInput = document.getElementById("productoVentaNombre");
