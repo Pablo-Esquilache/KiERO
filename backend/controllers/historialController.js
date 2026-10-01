@@ -51,7 +51,6 @@ export const getDetalleVenta = async (req, res) => {
       FROM ventas_detalle vd
       INNER JOIN productos p ON p.id = vd.producto_id
       INNER JOIN ventas v ON v.id = vd.venta_id
-      INNER JOIN ventas v ON v.id = vd.venta_id
       WHERE vd.venta_id = $1 AND v.comercio_id = $2
       ORDER BY vd.id ASC
       `,

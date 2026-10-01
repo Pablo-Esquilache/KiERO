@@ -43,8 +43,8 @@ router.put("/metodos_pago/:id/toggle", requireAdmin, async (req, res) => {
   const { activo } = req.body;
   try {
     const result = await pool.query(
-      "UPDATE metodos_pago SET activo = $1 WHERE id = $2 RETURNING *",
-      [activo, id]
+      "UPDATE metodos_pago SET activo = $1 WHERE id = $2 AND comercio_id = $3 RETURNING *",
+      [activo, id, req.user.comercio_id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: "No encontrado" });
     res.json(result.rows[0]);
@@ -105,8 +105,8 @@ router.put("/descuentos/:id/toggle", requireAdmin, async (req, res) => {
   const { activo } = req.body;
   try {
     const result = await pool.query(
-      "UPDATE descuentos_config SET activo = $1 WHERE id = $2 RETURNING *",
-      [activo, id]
+      "UPDATE descuentos_config SET activo = $1 WHERE id = $2 AND comercio_id = $3 RETURNING *",
+      [activo, id, req.user.comercio_id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: "No encontrado" });
     res.json(result.rows[0]);
@@ -164,8 +164,8 @@ router.put("/gastos_categorias/:id/toggle", requireAdmin, async (req, res) => {
   const { activo } = req.body;
   try {
     const result = await pool.query(
-      "UPDATE gastos_categorias SET activo = $1 WHERE id = $2 RETURNING *",
-      [activo, id]
+      "UPDATE gastos_categorias SET activo = $1 WHERE id = $2 AND comercio_id = $3 RETURNING *",
+      [activo, id, req.user.comercio_id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: "No encontrado" });
     res.json(result.rows[0]);
