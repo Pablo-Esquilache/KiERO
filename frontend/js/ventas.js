@@ -1774,7 +1774,11 @@ formDevolucionNuevo?.addEventListener("submit", async (e) => {
     return;
   }
   
-  const cliId = document.getElementById("clienteDevolucion")?.value || null;
+  let cliId = document.getElementById("clienteDevolucion")?.value || null;
+    if (!cliId) {
+      const cf = allClientes.find(c => c.nombre && c.nombre.toLowerCase().includes('consumidor'));
+      if (cf) cliId = cf.id;
+    }
   // metPago removed
   
   const payload = {
