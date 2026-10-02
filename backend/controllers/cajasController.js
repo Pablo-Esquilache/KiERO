@@ -40,7 +40,7 @@ export const abrirCaja = async (req, res) => {
 
     res.json(rows[0]);
   } catch (err) {
-      if (err.code === '23505') {
+      if (err.code === 'SQLITE_CONSTRAINT_UNIQUE' || (err.code || '').startsWith('SQLITE_CONSTRAINT')) {
           return res.status(400).json({ error: "Ya hay una caja abierta para este comercio." });
       }
       console.error("Error abriendo caja:", err);

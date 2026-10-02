@@ -36,7 +36,7 @@ const app = express();
 /* ===== TEST CONEXIÓN DB ===== */
 pool.query("SELECT CURRENT_TIMESTAMP")
   .then(res => {
-    console.log("✅ Base conectada en la NUBE:", res.rows[0]);
+    console.log("✅ Base SQLite local conectada:", res.rows[0]);
     // Asegurar que exista "Consumidor Final" para todos los comercios
     return pool.query(`
       INSERT INTO clientes (nombre, comercio_id)
@@ -50,7 +50,7 @@ pool.query("SELECT CURRENT_TIMESTAMP")
 
 /* ===== MIDDLEWARES ===== */
 app.use(helmet());
-app.use(cors({ origin: ["https://kiero-appventas.netlify.app"] }));
+app.use(cors());
 app.use(express.json());
 
 /* ===== RUTAS API ===== */

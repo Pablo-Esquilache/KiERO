@@ -175,3 +175,6 @@ VALUES (1, 1, 'admin', '$2a$10$L0/T7b8pLqI.3z7j6sVwG.xQ3Q4x5H2xXQjO/j3q5X5QOQ5jQ
 INSERT OR IGNORE INTO metodos_pago (comercio_id, nombre) VALUES (1, 'Efectivo'), (1, 'Dbito'), (1, 'QR'), (1, 'Transferencia'), (1, 'Cuenta Corriente');
 INSERT OR IGNORE INTO descuentos_config (comercio_id, porcentaje) VALUES (1, 0), (1, 5), (1, 10), (1, 15), (1, 20);
 
+
+
+CREATE UNIQUE INDEX IF NOT EXISTS unica_caja_abierta_por_comercio ON cajas (comercio_id) WHERE estado = 'abierta';
