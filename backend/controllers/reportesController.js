@@ -14,10 +14,10 @@ export const getVentasGastosTiempo = async (req, res) => {
   let groupBy;
   switch (agrupacion) {
     case "mes":
-      groupBy = "DATE_TRUNC('month', fecha)";
+      groupBy = "strftime('%Y-%m', fecha)";
       break;
     case "semana":
-      groupBy = "DATE_TRUNC('week', fecha)";
+      groupBy = "strftime('%Y-%W', fecha)";
       break;
     default:
       groupBy = "DATE(fecha)";
@@ -196,7 +196,7 @@ export const getEdadEtarioGenero = async (req, res) => {
       SELECT
         v.id,
         v.total,
-        EXTRACT(YEAR FROM AGE(CURRENT_DATE, c.fecha_nacimiento))::int AS edad,
+        CAST((julianday('now') - julianday(c.fecha_nacimiento)) / 365.25 AS INTEGER) AS edad,
         CASE
           WHEN UPPER(c.genero) IN ('M', 'MASCULINO') THEN 'Masculino'
           WHEN UPPER(c.genero) IN ('F', 'FEMENINO') THEN 'Femenino'
