@@ -273,7 +273,7 @@ export const getHistorial = async (req, res) => {
     const { rows } = await pool.query(
       `SELECT * FROM cajas 
        WHERE comercio_id = $1 
-       ORDER BY fecha DESC`,
+       ORDER BY hora_apertura DESC`,
       [comercioId]
     );
 
