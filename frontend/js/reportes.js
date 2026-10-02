@@ -1,4 +1,4 @@
-import { ReportesAPI, ExportarAPI } from "./api.js";
+import { ReportesAPI, ExportarAPI, API_BASE_URL } from "./api.js";
 
 // ============================
 // reportes.js completo con etiquetas y paleta de colores
@@ -890,8 +890,7 @@ document
 
     try {
       // Usaremos fetch directo aca por la lógica de blob particular
-      import { API_BASE_URL } from "./api.js";
-const API_BASE = API_BASE_URL;
+      const API_BASE = API_BASE_URL;
       const session = JSON.parse(localStorage.getItem("session"));
       const comercioId = session?.comercio_id;
       const res = await fetch(`${API_BASE}/exportar-tabla?tabla=${tabla}&comercio_id=${comercioId}`, {

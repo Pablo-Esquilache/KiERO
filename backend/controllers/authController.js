@@ -37,7 +37,7 @@ export const login = async (req, res) => {
     }
 
     // Revisar sesin activa
-    if (user.active_session) {
+    if (false) { // if (user.active_session) {
       return res.status(403).json({
         error: "Usuario ya tiene sesin activa en otro dispositivo",
       });

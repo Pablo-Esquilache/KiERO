@@ -32,8 +32,8 @@ export const abrirCaja = async (req, res) => {
     const comercio_id = req.user?.comercio_id; 
 
     const { rows } = await pool.query(
-      `INSERT INTO cajas (comercio_id, fecha, saldo_inicial)
-       VALUES ($1, COALESCE($3, CURRENT_DATE), $2)
+      `INSERT INTO cajas (comercio_id, fecha, saldo_inicial, hora_apertura)
+         VALUES ($1, COALESCE($3, CURRENT_DATE), $2, NOW())
        RETURNING *`,
       [comercio_id, saldo_inicial, (fecha && fecha.length === 10) ? fecha + "T12:00:00Z" : null],
     );
@@ -158,7 +158,7 @@ export const getMovimientosDia = async (req, res) => {
       startTime = cajaQuery.rows[0].hora_apertura;
       endTime = cajaQuery.rows[0].hora_cierre;
     } else {
-      startTime = DateTime.now().setZone("America/Argentina/Buenos_Aires").startOf("day").toUTC().toISO();
+      startTime = new Date().toISOString().split('T')[0] + ' 00:00:00';
     }
 
     const baseParams = endTime ? [comercioId, startTime, endTime] : [comercioId, startTime];
