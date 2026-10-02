@@ -216,7 +216,7 @@ export const getEdadEtarioGenero = async (req, res) => {
         ELSE 'Adultos mayores (60+)'
       END AS grupo_etario,
       genero,
-      AVG(edad)::numeric(10,2) AS edad_promedio,
+      ROUND(AVG(edad), 2) AS edad_promedio,
       SUM(total) AS importe_total,
       COUNT(id) AS cantidad_compras
     FROM edades
