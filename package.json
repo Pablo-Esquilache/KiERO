@@ -1,54 +1,58 @@
 {
-  "name": "app-ventas-web",
-  "version": "1.0.0",
-  "description": "Sistema de ventas web",
-  "type": "module",
-  "author": "Pablo Esquilache",
-  "license": "ISC",
-  "dependencies": {
-    "bcryptjs": "^3.0.3",
-    "better-sqlite3": "^13.0.3",
-    "chart.js": "^4.5.1",
-    "chartjs-plugin-datalabels": "^2.2.0",
-    "cors": "^2.8.6",
-    "dotenv": "^18.0.3",
-    "express": "^5.2.1",
-    "express-rate-limit": "^8.7.0",
-    "helmet": "^8.3.0",
-    "html2canvas": "^1.4.1",
-    "jsonwebtoken": "^9.0.3",
-    "jspdf": "^4.2.0",
-    "luxon": "^3.7.2",
-    "uuid": "^14.0.2",
-    "xlsx": "^0.18.5"
-  },
-  "devDependencies": {
-    "electron": "^44.4.5",
-    "electron-builder": "^26.15.3"
-  },
-  "main": "main.js",
-  "scripts": {
-    "build": "electron-builder",
-    "start": "electron ."
-  },
-  "build": {
-    "directories": {
-      "output": "dist"
+    "name": "app-ventas-web",
+    "version": "1.0.0",
+    "description": "Sistema de ventas web",
+    "type": "module",
+    "author": "Pablo Esquilache",
+    "license": "ISC",
+    "dependencies": {
+        "bcryptjs": "^3.0.3",
+        "better-sqlite3": "^13.0.3",
+        "chart.js": "^4.5.1",
+        "chartjs-plugin-datalabels": "^2.2.0",
+        "cors": "^2.8.6",
+        "dotenv": "^18.0.3",
+        "express": "^5.2.1",
+        "express-rate-limit": "^8.7.0",
+        "helmet": "^8.3.0",
+        "html2canvas": "^1.4.1",
+        "jiti": "^2.7.0",
+        "jsonwebtoken": "^9.0.3",
+        "jspdf": "^4.2.0",
+        "luxon": "^3.7.2",
+        "uuid": "^14.0.2",
+        "xlsx": "^0.18.5"
     },
-    "asarUnpack": [
-      "**/node_modules/better-sqlite3/**"
-    ],
-    "files": [
-      "main.js",
-      "backend/**/*",
-      "!backend/node_modules/**",
-      "frontend/**/*",
-      "package.json"
-    ],
-    "productName": "KiERO",
-    "win": {
-      "target": "nsis"
+    "devDependencies": {
+        "electron": "^30.0.0",
+        "electron-builder": "^26.15.3"
     },
-    "appId": "com.kiero.pos"
-  }
+    "main": "main.js",
+    "scripts": {
+        "build": "electron-builder",
+        "start": "electron ."
+    },
+    "build": {
+        "directories": {
+            "output": "dist"
+        },
+        "asarUnpack": [
+            "**/node_modules/better-sqlite3/**"
+        ],
+        "files": [
+            "main.js",
+            "backend/**/*",
+            "!backend/node_modules/**",
+            "frontend/**/*",
+            "package.json"
+        ],
+        "productName": "KiERO",
+        "win": {
+            "target": "nsis"
+        },
+        "appId": "com.kiero.pos"
+    },
+    "overrides": {
+        "node-abi": "latest"
+    }
 }
