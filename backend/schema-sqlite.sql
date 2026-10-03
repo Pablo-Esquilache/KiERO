@@ -171,7 +171,7 @@ CREATE TABLE IF NOT EXISTS turnos (
 
 INSERT OR IGNORE INTO comercios (id, nombre) VALUES (1, 'Mi Comercio Local');
 INSERT OR IGNORE INTO usuarios (id, comercio_id, usuario, password, role) 
-VALUES (1, 1, 'admin', '$2a$10$L0/T7b8pLqI.3z7j6sVwG.xQ3Q4x5H2xXQjO/j3q5X5QOQ5jQ4', 'admin');
+VALUES (1, 1, 'admin', '$2b$10$Iyf14PoXsnpOREC4uar4zugF5Y.Wo.KrL7V0qqdVObrg8lUggjtU6', 'admin');
 INSERT OR IGNORE INTO metodos_pago (comercio_id, nombre) VALUES (1, 'Efectivo'), (1, 'Dbito'), (1, 'QR'), (1, 'Transferencia'), (1, 'Cuenta Corriente');
 INSERT OR IGNORE INTO descuentos_config (comercio_id, porcentaje) VALUES (1, 0), (1, 5), (1, 10), (1, 15), (1, 20);
 
