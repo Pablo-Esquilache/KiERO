@@ -34,7 +34,7 @@ export const registrarDevolucion = async (req, res) => {
           throw new Error("Cantidad inválida. Debe ser un entero positivo.");
         }
         const detalleRes = await client.query(
-          "SELECT cantidad, precio_unitario FROM ventas_detalle WHERE venta_id = $1 AND producto_id = $2 FOR UPDATE",
+          "SELECT cantidad, precio_unitario, producto_nombre FROM ventas_detalle WHERE venta_id = $1 AND producto_id = $2 FOR UPDATE",
           [venta_id, item.producto_id]
         );
         if (!detalleRes.rows.length) throw new Error("Producto no pertenece a la venta");
@@ -51,10 +51,12 @@ export const registrarDevolucion = async (req, res) => {
           throw new Error(`Cantidad mayor a la disponible. Quedan: ${cantidadDisponibleParaDevolver}.`);
         }
         item.precio = Number(detalleRes.rows[0].precio_unitario);
+        item.nombre_db = detalleRes.rows[0].producto_nombre;
         totalDevolucion += item.precio * Number(item.cantidad);
         
         // Determinar si es de precio abierto para no sumar stock
-        const prodRes = await client.query("SELECT precio_abierto FROM productos WHERE id = $1 AND comercio_id = $2", [item.producto_id, comercio_id]);
+        const prodRes = await client.query("SELECT precio_abierto, nombre FROM productos WHERE id = $1 AND comercio_id = $2", [item.producto_id, comercio_id]);
+        if (!item.nombre_db && prodRes.rows.length) item.nombre_db = prodRes.rows[0].nombre;
         if (prodRes.rows.length && prodRes.rows[0].precio_abierto) {
            item.esPrecioAbierto = true;
         }
@@ -63,7 +65,7 @@ export const registrarDevolucion = async (req, res) => {
       // Devolucion Libre (modelo nuevo)
       for (const item of items) {
         const prodRes = await client.query(
-          "SELECT precio, precio_abierto FROM productos WHERE id = $1 AND comercio_id = $2",
+          "SELECT precio, precio_abierto, nombre FROM productos WHERE id = $1 AND comercio_id = $2",
           [item.producto_id, comercio_id]
         );
         if (!prodRes.rows.length) throw new Error("Producto no encontrado en el catalogo");
@@ -77,6 +79,7 @@ export const registrarDevolucion = async (req, res) => {
           item.precio = Number(prodRes.rows[0].precio);
           item.esPrecioAbierto = false;
         }
+        item.nombre_db = prodRes.rows[0].nombre;
         
         totalDevolucion += item.precio * Number(item.cantidad);
       }
@@ -94,8 +97,8 @@ export const registrarDevolucion = async (req, res) => {
     for (const item of items) {
       const subtotal = item.precio * Number(item.cantidad);
       await client.query(
-        "INSERT INTO devoluciones_detalle (devolucion_id, producto_id, cantidad, precio_unitario, subtotal) VALUES ($1,$2,$3,$4,$5)",
-        [devolucion.id, item.producto_id, item.cantidad, item.precio, subtotal]
+        "INSERT INTO devoluciones_detalle (devolucion_id, producto_id, cantidad, precio_unitario, subtotal, producto_nombre) VALUES ($1,$2,$3,$4,$5,$6)",
+        [devolucion.id, item.producto_id, item.cantidad, item.precio, subtotal, item.nombre_db]
       );
       if (!item.esPrecioAbierto) {
             await client.query(
@@ -150,7 +153,7 @@ export const getDetalleDevolucion = async (req, res) => {
 
   try {
     const { rows } = await db.query(
-      `SELECT dd.*, p.nombre AS producto_nombre
+      `SELECT dd.*, COALESCE(dd.producto_nombre, p.nombre) AS producto_nombre
       FROM devoluciones_detalle dd
       LEFT JOIN productos p ON dd.producto_id = p.id
       JOIN devoluciones d ON dd.devolucion_id = d.id

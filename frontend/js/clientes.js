@@ -596,14 +596,10 @@ ccRegistrarPago.addEventListener("click", async () => {
 
 function formatearFecha(fechaISO) {
   if (!fechaISO) return "—";
-
-  const fecha = new Date(fechaISO);
-
-  const dia = String(fecha.getDate()).padStart(2, "0");
-  const mes = String(fecha.getMonth() + 1).padStart(2, "0");
-  const año = fecha.getFullYear();
-
-  return `${dia}/${mes}/${año}`;
+  const str = String(fechaISO).split('T')[0].split(' ')[0];
+  const partes = str.split('-');
+  if (partes.length === 3) return `${partes[2]}/${partes[1]}/${partes[0]}`;
+  return String(fechaISO);
 }
 
 // ===========================================================
