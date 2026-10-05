@@ -1,4 +1,6 @@
-import Database from 'better-sqlite3';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const Database = require('better-sqlite3');
 import path from 'path';
 import electronPkg from 'electron';
 const { app } = electronPkg;
@@ -26,6 +28,11 @@ try {
   db = new Database(dbPath);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
+
+  // Migraciones automáticas silenciosas
+  try { db.prepare("ALTER TABLE ventas_detalle ADD COLUMN producto_nombre TEXT").run(); } catch(e) {}
+  try { db.prepare("ALTER TABLE devoluciones_detalle ADD COLUMN producto_nombre TEXT").run(); } catch(e) {}
+
 
   // Comprobar si la tabla comercios existe, si no, ejecutar schema-sqlite.sql
   const check = db.prepare("SELECT count(*) as count FROM sqlite_master WHERE type='table' AND name='comercios'").get();

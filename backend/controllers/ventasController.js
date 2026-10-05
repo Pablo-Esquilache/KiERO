@@ -66,7 +66,7 @@ export const getVentaDetalle = async (req, res) => {
   try {
     const { rows } = await db.query(
       `
-      SELECT vd.*, p.nombre AS producto_nombre
+      SELECT vd.*, COALESCE(vd.producto_nombre, p.nombre) AS producto_nombre
       FROM ventas_detalle vd
       LEFT JOIN productos p ON vd.producto_id = p.id
       WHERE vd.venta_id = $1
@@ -129,7 +129,7 @@ export const createVenta = async (req, res) => {
           throw new Error("Precio abierto inválido. No puede ser negativo.");
         }
       const { rows } = await client.query(
-        `SELECT stock, precio, precio_abierto FROM productos 
+        `SELECT stock, precio, precio_abierto, nombre FROM productos 
            WHERE id = $1 AND comercio_id = $2`,
         [item.producto_id, comercio_id],
       );

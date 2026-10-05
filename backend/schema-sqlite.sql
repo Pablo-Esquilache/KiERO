@@ -61,7 +61,8 @@ CREATE TABLE IF NOT EXISTS devoluciones_detalle (
     producto_id INTEGER NOT NULL,
     cantidad INTEGER NOT NULL,
     precio_unitario REAL NOT NULL,
-    subtotal REAL NOT NULL
+    subtotal REAL NOT NULL,
+    producto_nombre TEXT
 );
 
 CREATE TABLE IF NOT EXISTS gastos (
@@ -115,7 +116,8 @@ CREATE TABLE IF NOT EXISTS ventas_detalle (
     producto_id INTEGER NOT NULL,
     cantidad INTEGER NOT NULL,
     precio_unitario REAL NOT NULL,
-    subtotal REAL NOT NULL
+    subtotal REAL NOT NULL,
+    producto_nombre TEXT
 );
 
 CREATE TABLE IF NOT EXISTS configuracion_sync (
