@@ -1,5 +1,6 @@
 import express from "express";
 import pool from "../db.js";
+import { requireAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -21,7 +22,7 @@ router.get("/metodos_pago/:comercioId", async (req, res) => {
 });
 
 // Agregar método de pago
-router.post("/metodos_pago", async (req, res) => {
+router.post("/metodos_pago", requireAdmin, async (req, res) => {
   const { comercio_id, nombre } = req.body;
   try {
     const result = await pool.query(
@@ -36,7 +37,7 @@ router.post("/metodos_pago", async (req, res) => {
 });
 
 // Toggle activo método de pago
-router.put("/metodos_pago/:id/toggle", async (req, res) => {
+router.put("/metodos_pago/:id/toggle", requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { activo } = req.body;
   try {
@@ -53,7 +54,7 @@ router.put("/metodos_pago/:id/toggle", async (req, res) => {
 });
 
 // Eliminar método de pago
-router.delete("/metodos_pago/:id", async (req, res) => {
+router.delete("/metodos_pago/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
   try {
     await pool.query("DELETE FROM metodos_pago WHERE id = $1", [id]);
@@ -82,7 +83,7 @@ router.get("/descuentos/:comercioId", async (req, res) => {
 });
 
 // Agregar descuento
-router.post("/descuentos", async (req, res) => {
+router.post("/descuentos", requireAdmin, async (req, res) => {
   const { comercio_id, porcentaje } = req.body;
   try {
     const result = await pool.query(
@@ -97,7 +98,7 @@ router.post("/descuentos", async (req, res) => {
 });
 
 // Toggle activo descuento
-router.put("/descuentos/:id/toggle", async (req, res) => {
+router.put("/descuentos/:id/toggle", requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { activo } = req.body;
   try {
@@ -114,7 +115,7 @@ router.put("/descuentos/:id/toggle", async (req, res) => {
 });
 
 // Eliminar descuento
-router.delete("/descuentos/:id", async (req, res) => {
+router.delete("/descuentos/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
   try {
     await pool.query("DELETE FROM descuentos_config WHERE id = $1", [id]);
@@ -141,7 +142,7 @@ router.get("/gastos_categorias/:comercioId", async (req, res) => {
   }
 });
 
-router.post("/gastos_categorias", async (req, res) => {
+router.post("/gastos_categorias", requireAdmin, async (req, res) => {
   const { comercio_id, nombre } = req.body;
   try {
     const result = await pool.query(
@@ -155,7 +156,7 @@ router.post("/gastos_categorias", async (req, res) => {
   }
 });
 
-router.put("/gastos_categorias/:id/toggle", async (req, res) => {
+router.put("/gastos_categorias/:id/toggle", requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { activo } = req.body;
   try {
@@ -171,7 +172,7 @@ router.put("/gastos_categorias/:id/toggle", async (req, res) => {
   }
 });
 
-router.delete("/gastos_categorias/:id", async (req, res) => {
+router.delete("/gastos_categorias/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
   try {
     await pool.query("DELETE FROM gastos_categorias WHERE id = $1", [id]);
@@ -184,7 +185,7 @@ router.delete("/gastos_categorias/:id", async (req, res) => {
 
 // --- UMBRAL STOCK ---
 
-router.put("/umbral_stock/:comercioId", async (req, res) => {
+router.put("/umbral_stock/:comercioId", requireAdmin, async (req, res) => {
   const { comercioId } = req.params;
   const { umbral_stock } = req.body;
   try {
@@ -216,7 +217,7 @@ router.get("/turnos_config/:comercioId", async (req, res) => {
   }
 });
 
-router.put("/turnos_config/:comercioId", async (req, res) => {
+router.put("/turnos_config/:comercioId", requireAdmin, async (req, res) => {
   const { comercioId } = req.params;
   const { modulo_habilitado, hora_inicio_laboral, hora_fin_laboral, intervalo_minutos, permitir_solapamiento } = req.body;
   try {
