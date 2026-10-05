@@ -135,6 +135,8 @@ export const createVenta = async (req, res) => {
       );
 
       if (!rows[0]) throw new Error("Producto no encontrado");
+        item.nombre_db = rows[0].nombre;
+      item.nombre_db = rows[0].nombre;
       if (rows[0].precio_abierto) {
           const precioCliente = Number(item.precio_unitario);
           if (!Number.isFinite(precioCliente) || precioCliente === 0) throw new Error(`Precio inv�lido para "${item.nombre}"`);
@@ -186,8 +188,8 @@ RETURNING *
       await client.query(
         `
         INSERT INTO ventas_detalle
-        (venta_id, producto_id, cantidad, precio_unitario, subtotal)
-        VALUES ($1,$2,$3,$4,$5)
+        (venta_id, producto_id, cantidad, precio_unitario, subtotal, producto_nombre)
+        VALUES ($1,$2,$3,$4,$5,$6)
         `,
         [
           venta.id,
@@ -195,6 +197,7 @@ RETURNING *
           item.cantidad,
           item.precio_unitario,
           subtotal,
+          item.nombre_db,
         ],
       );
 
@@ -311,12 +314,13 @@ export const updateVenta = async (req, res) => {
           throw new Error("Precio abierto inválido. No puede ser negativo.");
         }
         const { rows } = await client.query(
-          `SELECT stock, precio, precio_abierto FROM productos
+          `SELECT stock, precio, precio_abierto, nombre FROM productos
            WHERE id = $1 AND comercio_id = $2`,
           [item.producto_id, comercio_id],
         );
   
         if (!rows[0]) throw new Error("Producto no encontrado");
+        item.nombre_db = rows[0].nombre;
         
         if (rows[0].precio_abierto) {
             item.esPrecioAbierto = true;
@@ -376,10 +380,10 @@ export const updateVenta = async (req, res) => {
       await client.query(
         `
         INSERT INTO ventas_detalle
-        (venta_id, producto_id, cantidad, precio_unitario, subtotal)
-        VALUES ($1,$2,$3,$4,$5)
+        (venta_id, producto_id, cantidad, precio_unitario, subtotal, producto_nombre)
+        VALUES ($1,$2,$3,$4,$5,$6)
         `,
-        [id, item.producto_id, item.cantidad, item.precio_unitario, subtotal],
+        [id, item.producto_id, item.cantidad, item.precio_unitario, subtotal, item.nombre_db],
       );
 
       if (!item.esPrecioAbierto) {

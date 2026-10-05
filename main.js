@@ -1,5 +1,14 @@
 import electronPkg from 'electron';
-const { app, BrowserWindow } = electronPkg;
+const { app, BrowserWindow, dialog } = electronPkg;
+
+
+process.on('uncaughtException', (err) => {
+  import('fs').then(fs => {
+    fs.writeFileSync('CRASH_LOG.txt', err.stack || err.message || String(err));
+  });
+  console.error("CRASH:", err);
+});
+
 import server from './backend/app.js'; // El Express existente
 import path from 'path';
 import { fileURLToPath } from 'url';
