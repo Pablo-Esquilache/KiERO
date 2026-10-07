@@ -1,8 +1,8 @@
-/* =================================================
+﻿/* =================================================
    LOGIN CONTAINER
    ================================================= */
 
-body.login-body {
+.login-body {
   display: flex;
   align-items: center;
   justify-content: center;
