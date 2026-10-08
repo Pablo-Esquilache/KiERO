@@ -2,10 +2,13 @@
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuth, AuthProvider } from '../shared/auth/AuthContext';
+import { useCajaHoy } from '../features/caja/useCajaApi';
+import { useCajaStore } from '../shared/store/useCajaStore';
 import Login from '../shared/auth/Login';
 import Productos from '../features/productos/Productos';
 import Clientes from '../features/clientes/Clientes';
 import Gastos from '../features/gastos/Gastos';
+import Caja from '../features/caja/Caja';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -16,8 +19,15 @@ const queryClient = new QueryClient({
   },
 });
 
+function GlobalCajaLoader() {
+  const { session } = useAuth();
+  useCajaHoy(); // Se ejecuta si hay session
+  return null;
+}
+
 function Navbar() {
   const { session, logout } = useAuth();
+  const cajaAbierta = useCajaStore(state => state.cajaAbierta);
   const location = useLocation();
 
   const menuItems = [
@@ -59,7 +69,7 @@ function Navbar() {
       </ul>
 
       <div className="app-navbar-user">
-        <span id="nav-user-name">Usuario: {session?.usuario}</span>
+        <span id="nav-user-name" style={{ display: "flex", alignItems: "center", gap: "10px" }}>`n          {cajaAbierta ? <span style={{ color: "#10b981", fontSize: "0.8rem", border: "1px solid #10b981", padding: "2px 6px", borderRadius: "4px" }}>CAJA ABIERTA</span> : <span style={{ color: "#ef4444", fontSize: "0.8rem", border: "1px solid #ef4444", padding: "2px 6px", borderRadius: "4px" }}>CAJA CERRADA</span>}`n          Usuario: {session?.usuario}`n        </span>
         <button id="btn-logout" className="app-btn-danger" onClick={logout}>Salir</button>
       </div>
     </nav>
@@ -69,6 +79,7 @@ function Navbar() {
 function Layout({ children }) {
   return (
     <div>
+      <GlobalCajaLoader />
       <Navbar />
       <div>
         {children}
@@ -92,7 +103,7 @@ export default function App() {
             
             <Route path="/" element={<Navigate to="/productos" />} />
             
-            <Route path="/caja" element={<PrivateRoute><h2>Caja (Próximamente)</h2></PrivateRoute>} />
+            <Route path="/caja" element={<PrivateRoute><Caja /></PrivateRoute>} />
             <Route path="/ventas" element={<PrivateRoute><h2>Ventas (Próximamente)</h2></PrivateRoute>} />
             <Route path="/productos" element={<PrivateRoute><Productos /></PrivateRoute>} />
             <Route path="/clientes" element={<PrivateRoute><Clientes /></PrivateRoute>} />
@@ -108,6 +119,9 @@ export default function App() {
     </QueryClientProvider>
   );
 }
+
+
+
 
 
 
