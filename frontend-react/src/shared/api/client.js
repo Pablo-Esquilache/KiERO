@@ -23,7 +23,7 @@ export async function apiFetch(endpoint, options = {}) {
 
   const response = await fetch(url, config);
 
-  if (response.status === 401) {
+  if (response.status === 401 && !url.includes("/login")) {
     localStorage.removeItem("session");
     // Emit an event so AuthContext can handle logout without hard window reload
     window.dispatchEvent(new Event("auth-unauthorized"));
@@ -47,3 +47,4 @@ export async function apiFetch(endpoint, options = {}) {
 
   return data;
 }
+
