@@ -4,7 +4,7 @@ import styles from './Productos.module.css';
 
 export default function Productos() {
   const { data: productos, isLoading, isError } = useProductos();
-  const { data: categorias } = useCategorias();
+  const { data: categorias } = useCategorias(); // Array of strings
   
   const mutCrear = useCrearProducto();
   const mutActualizar = useActualizarProducto();
@@ -21,26 +21,27 @@ export default function Productos() {
   const [formData, setFormData] = useState({
     nombre: '',
     categoria: '',
+    nueva_categoria: '',
     codigo_barras: '',
     precio: '',
     stock: '',
     precio_abierto: false
   });
 
-  if (isLoading) return <div className="app-container">Cargando productos...</div>;
-  if (isError) return <div className="app-container" style={{color: 'red'}}>Error al cargar productos</div>;
+  if (isLoading) return <main className="app-container">Cargando productos...</main>;
+  if (isError) return <main className="app-container" style={{color: 'red'}}>Error al cargar productos</main>;
 
   // Filtrado
   const filtrados = (productos || []).filter(p => {
     const matchNombre = p.nombre.toLowerCase().includes(filtro.toLowerCase()) || (p.codigo_barras && p.codigo_barras.includes(filtro));
-    const matchCat = filtroCategoria ? p.categoria_id === parseInt(filtroCategoria) : true;
+    const matchCat = filtroCategoria ? p.categoria === filtroCategoria : true;
     return matchNombre && matchCat;
   });
 
   const abrirModalNuevo = () => {
     setModoEdicion(false);
     setProductoEditando(null);
-    setFormData({ nombre: '', categoria: '', codigo_barras: '', precio: '', stock: '', precio_abierto: false });
+    setFormData({ nombre: '', categoria: '', nueva_categoria: '', codigo_barras: '', precio: '', stock: '', precio_abierto: false });
     setModalAbierto(true);
   };
 
@@ -49,7 +50,8 @@ export default function Productos() {
     setProductoEditando(prod);
     setFormData({
       nombre: prod.nombre,
-      categoria: prod.categoria_id || '',
+      categoria: prod.categoria || '',
+      nueva_categoria: '',
       codigo_barras: prod.codigo_barras || '',
       precio: prod.precio,
       stock: prod.stock,
@@ -60,8 +62,11 @@ export default function Productos() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const categoriaFinal = formData.categoria === 'NUEVA' ? formData.nueva_categoria.trim() : formData.categoria;
+
     const dataToSend = {
       ...formData,
+      categoria: categoriaFinal,
       precio: parseFloat(formData.precio),
       stock: parseInt(formData.stock)
     };
@@ -78,7 +83,10 @@ export default function Productos() {
     <main className="app-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 className="app-title">Gestión de Productos</h1>
-        <button onClick={abrirModalNuevo} className="app-btn-primary">Nuevo Producto</button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button className="app-btn-secondary">Importar Excel</button>
+          <button onClick={abrirModalNuevo} className="app-btn-primary">Nuevo Producto</button>
+        </div>
       </div>
 
       <div className="app-controls" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '15px', alignItems: 'center', justifyContent: 'flex-start' }}>
@@ -98,8 +106,8 @@ export default function Productos() {
           style={{ marginBottom: 0 }}
         >
           <option value="">Todas las categorías</option>
-          {(categorias || []).map(cat => (
-            <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+          {(categorias || []).map((cat, i) => (
+            <option key={i} value={cat}>{cat}</option>
           ))}
         </select>
         
@@ -165,17 +173,29 @@ export default function Productos() {
                 <input type="text" className="app-input" value={formData.codigo_barras} onChange={e => setFormData({...formData, codigo_barras: e.target.value})} />
               </div>
               <div className="app-form-group">
-                <label>Categoría (ID temporal)</label>
+                <label>Categoría</label>
                 <select className="app-input" value={formData.categoria} onChange={e => setFormData({...formData, categoria: e.target.value})}>
                   <option value="">Sin categoría</option>
-                  {(categorias || []).map(cat => (
-                    <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+                  {(categorias || []).map((cat, i) => (
+                    <option key={i} value={cat}>{cat}</option>
                   ))}
+                  <option value="NUEVA">+ Nueva Categoría...</option>
                 </select>
+                {formData.categoria === 'NUEVA' && (
+                  <input 
+                    type="text" 
+                    className="app-input" 
+                    placeholder="Escribí la nueva categoría" 
+                    value={formData.nueva_categoria} 
+                    onChange={e => setFormData({...formData, nueva_categoria: e.target.value})} 
+                    style={{ marginTop: '10px' }}
+                    required 
+                  />
+                )}
               </div>
               <div className="app-form-group">
                 <label>Precio</label>
-                <input required type="number" className="app-input" value={formData.precio} onChange={e => setFormData({...formData, precio: e.target.value})} />
+                <input required type="number" step="0.01" className="app-input" value={formData.precio} onChange={e => setFormData({...formData, precio: e.target.value})} />
               </div>
               <div className="app-form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <input type="checkbox" id="precio_abierto" checked={formData.precio_abierto} onChange={e => setFormData({...formData, precio_abierto: e.target.checked})} />

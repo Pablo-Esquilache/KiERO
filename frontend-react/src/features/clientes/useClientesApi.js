@@ -53,3 +53,12 @@ export function useRegistrarPagoCliente() {
     }
   });
 }
+
+export function useLocalidades() {
+  const { session } = useAuth();
+  return useQuery({
+    queryKey: ['clientes-localidades', session?.comercio_id],
+    queryFn: () => apiFetch(/clientes/localidades/lista?comercio_id=${session.comercio_id}),
+    enabled: !!session?.comercio_id,
+  });
+}

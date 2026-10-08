@@ -1,13 +1,16 @@
 ﻿import React, { useState } from 'react';
-import { useClientes, useCrearCliente, useActualizarCliente } from './useClientesApi';
+import { useClientes, useLocalidades, useCrearCliente, useActualizarCliente } from './useClientesApi';
 import styles from './Clientes.module.css';
 
 export default function Clientes() {
   const { data: clientes, isLoading, isError } = useClientes();
+  const { data: localidades } = useLocalidades(); // Array of strings
+  
   const mutCrear = useCrearCliente();
   const mutActualizar = useActualizarCliente();
 
   const [filtro, setFiltro] = useState('');
+  const [filtroLocalidad, setFiltroLocalidad] = useState('');
   
   // Estado del Modal
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -20,6 +23,7 @@ export default function Clientes() {
     telefono: '',
     email: '',
     localidad: '',
+    nueva_localidad: '',
     fecha_nacimiento: '',
     genero: '',
     comentarios: ''
@@ -28,14 +32,16 @@ export default function Clientes() {
   if (isLoading) return <main className="app-container">Cargando clientes...</main>;
   if (isError) return <main className="app-container" style={{color: 'red'}}>Error al cargar clientes</main>;
 
-  const filtrados = (clientes || []).filter(c => 
-    c.nombre.toLowerCase().includes(filtro.toLowerCase())
-  );
+  const filtrados = (clientes || []).filter(c => {
+    const matchNombre = c.nombre.toLowerCase().includes(filtro.toLowerCase());
+    const matchLoc = filtroLocalidad ? c.localidad === filtroLocalidad : true;
+    return matchNombre && matchLoc;
+  });
 
   const abrirModalNuevo = () => {
     setModoEdicion(false);
     setClienteEditando(null);
-    setFormData({ nombre: '', telefono: '', email: '', localidad: '', fecha_nacimiento: '', genero: '', comentarios: '' });
+    setFormData({ nombre: '', telefono: '', email: '', localidad: '', nueva_localidad: '', fecha_nacimiento: '', genero: '', comentarios: '' });
     setModalAbierto(true);
   };
 
@@ -47,6 +53,7 @@ export default function Clientes() {
       telefono: cli.telefono || '',
       email: cli.email || '',
       localidad: cli.localidad || '',
+      nueva_localidad: '',
       fecha_nacimiento: cli.fecha_nacimiento ? cli.fecha_nacimiento.split('T')[0] : '',
       genero: cli.genero || '',
       comentarios: cli.comentarios || ''
@@ -56,8 +63,11 @@ export default function Clientes() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const dataToSend = { ...formData };
+    const locFinal = formData.localidad === 'NUEVA' ? formData.nueva_localidad.trim() : formData.localidad;
     
+    const dataToSend = { ...formData, localidad: locFinal };
+    delete dataToSend.nueva_localidad;
+
     // Convertir campos vacíos a null
     Object.keys(dataToSend).forEach(k => {
       if (dataToSend[k] === '') dataToSend[k] = null;
@@ -87,7 +97,20 @@ export default function Clientes() {
           className="app-input"
           style={{ marginBottom: 0 }}
         />
-        <button className="app-btn-secondary" onClick={() => setFiltro('')} style={{ marginBottom: 0 }}>
+        
+        <select 
+          className="app-input" 
+          value={filtroLocalidad} 
+          onChange={(e) => setFiltroLocalidad(e.target.value)}
+          style={{ marginBottom: 0 }}
+        >
+          <option value="">Todas las localidades</option>
+          {(localidades || []).map((loc, i) => (
+            <option key={i} value={loc}>{loc}</option>
+          ))}
+        </select>
+
+        <button className="app-btn-secondary" onClick={() => {setFiltro(''); setFiltroLocalidad('');}} style={{ marginBottom: 0 }}>
           Limpiar filtros
         </button>
       </div>
@@ -149,7 +172,24 @@ export default function Clientes() {
                 </div>
                 <div className="app-form-group" style={{ flex: 1 }}>
                   <label>Localidad</label>
-                  <input type="text" className="app-input" value={formData.localidad} onChange={e => setFormData({...formData, localidad: e.target.value})} />
+                  <select className="app-input" value={formData.localidad} onChange={e => setFormData({...formData, localidad: e.target.value})}>
+                    <option value="">Seleccionar Localidad</option>
+                    {(localidades || []).map((loc, i) => (
+                      <option key={i} value={loc}>{loc}</option>
+                    ))}
+                    <option value="NUEVA">+ Nueva Localidad...</option>
+                  </select>
+                  {formData.localidad === 'NUEVA' && (
+                    <input 
+                      type="text" 
+                      className="app-input" 
+                      placeholder="Escribí la nueva localidad" 
+                      value={formData.nueva_localidad} 
+                      onChange={e => setFormData({...formData, nueva_localidad: e.target.value})} 
+                      style={{ marginTop: '10px' }}
+                      required 
+                    />
+                  )}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '15px' }}>
