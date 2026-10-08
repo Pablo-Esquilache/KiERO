@@ -5,6 +5,7 @@ import { useAuth, AuthProvider } from '../shared/auth/AuthContext';
 import Login from '../shared/auth/Login';
 import Productos from '../features/productos/Productos';
 import Clientes from '../features/clientes/Clientes';
+import Gastos from '../features/gastos/Gastos';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -95,7 +96,7 @@ export default function App() {
             <Route path="/ventas" element={<PrivateRoute><h2>Ventas (Próximamente)</h2></PrivateRoute>} />
             <Route path="/productos" element={<PrivateRoute><Productos /></PrivateRoute>} />
             <Route path="/clientes" element={<PrivateRoute><Clientes /></PrivateRoute>} />
-            <Route path="/gastos" element={<PrivateRoute><h2>Gastos (Próximamente)</h2></PrivateRoute>} />
+            <Route path="/gastos" element={<PrivateRoute><Gastos /></PrivateRoute>} />
             <Route path="/reportes" element={<PrivateRoute><h2>Reportes (Próximamente)</h2></PrivateRoute>} />
             <Route path="/turnos" element={<PrivateRoute><h2>Turnos (Próximamente)</h2></PrivateRoute>} />
             <Route path="/ajustes" element={<PrivateRoute><h2>Ajustes (Próximamente)</h2></PrivateRoute>} />
@@ -107,5 +108,6 @@ export default function App() {
     </QueryClientProvider>
   );
 }
+
 
 
