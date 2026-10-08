@@ -1,13 +1,15 @@
-import pkg from "pg";
+﻿import pkg from "pg";
 import dotenv from "dotenv";
 
 dotenv.config();
 
 const { Pool } = pkg;
 
+const isLocal = process.env.DATABASE_URL && process.env.DATABASE_URL.includes("127.0.0.1");
+
 const poolConfig = { 
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+  ...(isLocal ? {} : { ssl: { rejectUnauthorized: false } }),
   max: 10,
   idleTimeoutMillis: 10000
 };
