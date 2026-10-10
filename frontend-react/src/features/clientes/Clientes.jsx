@@ -1,6 +1,6 @@
 ﻿import React, { useState } from 'react';
 import { useClientes, useLocalidades, useCrearCliente, useActualizarCliente } from './useClientesApi';
-import styles from './Clientes.module.css';
+import './Clientes.css';
 
 export default function Clientes() {
   const { data: clientes, isLoading, isError } = useClientes();
@@ -225,3 +225,4 @@ export default function Clientes() {
     </main>
   );
 }
+

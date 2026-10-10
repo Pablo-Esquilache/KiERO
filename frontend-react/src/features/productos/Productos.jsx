@@ -1,6 +1,6 @@
 ﻿import React, { useState } from 'react';
 import { useProductos, useCategorias, useCrearProducto, useActualizarProducto } from './useProductosApi';
-import styles from './Productos.module.css';
+import './Productos.css';
 
 export default function Productos() {
   const { data: productos, isLoading, isError } = useProductos();
@@ -215,3 +215,4 @@ export default function Productos() {
     </main>
   );
 }
+

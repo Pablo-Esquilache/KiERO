@@ -4,6 +4,7 @@ import { useCajaHoy, useMovimientosCaja, useHistorialCajas, useAbrirCaja, useCer
 import { useCajaStore } from '../../shared/store/useCajaStore';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
+import './Caja.css';
 
 export default function Caja() {
   const { session } = useAuth();
@@ -256,6 +257,7 @@ function HistorialModal({ onClose, historial }) {
     </div>
   );
 }
+
 
 
 

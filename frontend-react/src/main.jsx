@@ -1,5 +1,6 @@
 ﻿import React from 'react'
 import ReactDOM from 'react-dom/client'
+import './app/normalize.css';
 import './app/globals.css'
 import App from './app/App.jsx'
 
@@ -8,3 +9,4 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <App />
   </React.StrictMode>,
 )
+

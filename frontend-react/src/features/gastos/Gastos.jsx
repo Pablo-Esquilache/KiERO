@@ -1,6 +1,6 @@
 ﻿import React, { useState } from 'react';
 import { useGastos, useCategoriasGastos, useCrearGasto, useActualizarGasto, useEliminarGasto } from './useGastosApi';
-import styles from './Gastos.module.css';
+import './Gastos.css';
 
 function formatFecha(fechaISO) {
   if (!fechaISO) return "-";
@@ -217,3 +217,4 @@ export default function Gastos() {
     </main>
   );
 }
+
