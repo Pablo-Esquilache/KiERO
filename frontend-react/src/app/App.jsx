@@ -21,13 +21,12 @@ const queryClient = new QueryClient({
 
 function GlobalCajaLoader() {
   const { session } = useAuth();
-  useCajaHoy(); // Se ejecuta si hay session
+  useCajaHoy();
   return null;
 }
 
 function Navbar() {
   const { session, logout } = useAuth();
-  const cajaAbierta = useCajaStore(state => state.cajaAbierta);
   const location = useLocation();
 
   const menuItems = [
@@ -41,8 +40,6 @@ function Navbar() {
     { path: '/ajustes', label: 'Ajustes', id: 'tab-ajustes' }
   ];
 
-  // Filtramos ajustes si no es admin (asumiendo que en el viejo sistema se ocultaba)
-  // o lo dejamos y adentro verificamos. Lo dejamos por ahora.
   const filteredMenu = menuItems.filter(item => 
     item.path !== '/ajustes' || session?.rol === 'admin'
   );
@@ -66,16 +63,16 @@ function Navbar() {
             </li>
           );
         })}
-              <li>
+        
+        {/* Usamos margin-left auto para separar el logout hacia la derecha si fuera necesario,
+            pero como el nav es space-between, todo el ul estara a la derecha. 
+            Si las pestanas deben estar a la izquierda y el logout a la derecha, 
+            el ul debe ocupar el ancho restante. */}
+        <li style={{ marginLeft: "auto", paddingLeft: "15px" }}>
           <span className="user-role-badge">{session?.rol}</span>
           <button id="logout-btn" onClick={logout}>Cerrar Sesión</button>
         </li>
       </ul>
-
-      <li style={{ marginLeft: "auto", paddingLeft: "20px" }}>
-            <span className="user-role-badge">{session?.rol}</span>
-            <button id="logout-btn" onClick={logout}>Cerrar Sesión</button>
-          </li>
     </nav>
   );
 }
@@ -123,12 +120,3 @@ export default function App() {
     </QueryClientProvider>
   );
 }
-
-
-
-
-
-
-
-
-
