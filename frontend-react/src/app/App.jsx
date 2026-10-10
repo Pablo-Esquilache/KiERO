@@ -66,12 +66,16 @@ function Navbar() {
             </li>
           );
         })}
+              <li>
+          <span className="user-role-badge">{session?.rol}</span>
+          <button id="logout-btn" onClick={logout}>Cerrar Sesión</button>
+        </li>
       </ul>
 
-      <div className="app-navbar-user">
-        <span className="user-role-badge">{session?.rol}</span>
-        <button id="logout-btn" onClick={logout}>Cerrar Sesión</button>
-      </div>
+      <li style={{ marginLeft: "auto", paddingLeft: "20px" }}>
+            <span className="user-role-badge">{session?.rol}</span>
+            <button id="logout-btn" onClick={logout}>Cerrar Sesión</button>
+          </li>
     </nav>
   );
 }
@@ -119,6 +123,8 @@ export default function App() {
     </QueryClientProvider>
   );
 }
+
+
 
 
 
