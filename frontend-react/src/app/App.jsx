@@ -45,7 +45,7 @@ function Navbar() {
   );
 
   return (
-    <nav className="app-navbar">
+    <nav className="app-navbar" style={{ boxSizing: "border-box" }}>
       <div className="app-navbar-logo">
         <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>
           KiERO
@@ -120,3 +120,4 @@ export default function App() {
     </QueryClientProvider>
   );
 }
+

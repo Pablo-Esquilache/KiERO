@@ -72,7 +72,7 @@ export default function Caja() {
   return (
     <main className="app-container">
       <div className="app-controls" style={{ marginBottom: "20px", display: "flex", justifyContent: "flex-start", alignItems: "center", gap: "15px" }}>
-        <h1 className="app-title" style={{ marginBottom: 0 }}>Caja del Día</h1>
+        <h1 className="app-title" style={{ margin: 0, lineHeight: "1" }}>Caja del Día</h1>
         <button onClick={() => setModalHistorial(true)} className="app-btn-secondary">Ver Historial de Cajas</button>
       </div>
 
@@ -83,7 +83,7 @@ export default function Caja() {
         </div>
 
         {!cajaAbierta && (
-          <div className="caja-apertura">
+          <div className="caja-apertura" style={{ gap: "30px" }}>
             <input
               type="number"
               className="app-input"
@@ -256,5 +256,6 @@ function HistorialModal({ onClose, historial }) {
     </div>
   );
 }
+
 
 
