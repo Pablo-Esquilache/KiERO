@@ -67,7 +67,7 @@ export default function Caja() {
   };
 
   const fechaHoyStr = new Date().toLocaleDateString('es-AR');
-  const estadoStr = cajaAbierta ? "ABIERTA" : "CERRADA";
+  const estadoStr = cajaAbierta ? "Abierta" : "Sin abrir";
 
   return (
     <main className="app-container">
@@ -87,12 +87,12 @@ export default function Caja() {
             <input
               type="number"
               className="app-input"
-              placeholder="Saldo inicial"
+              placeholder="Saldo inicial" id="saldoInicial"
               value={saldoInicialInput}
               onChange={e => setSaldoInicialInput(e.target.value)}
               step="0.01"
             />
-            <button onClick={handleAbrirCaja} className="app-btn-primary" disabled={mutAbrir.isPending}>
+            <button onClick={handleAbrirCaja} className="app-btn-primary" id="btnAbrirCaja" disabled={mutAbrir.isPending}>
               Abrir Caja
             </button>
           </div>
@@ -256,3 +256,4 @@ function HistorialModal({ onClose, historial }) {
     </div>
   );
 }
+

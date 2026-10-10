@@ -69,8 +69,8 @@ function Navbar() {
       </ul>
 
       <div className="app-navbar-user">
-        <span id="nav-user-name" style={{ display: "flex", alignItems: "center", gap: "10px" }}>`n          {cajaAbierta ? <span style={{ color: "#10b981", fontSize: "0.8rem", border: "1px solid #10b981", padding: "2px 6px", borderRadius: "4px" }}>CAJA ABIERTA</span> : <span style={{ color: "#ef4444", fontSize: "0.8rem", border: "1px solid #ef4444", padding: "2px 6px", borderRadius: "4px" }}>CAJA CERRADA</span>}`n          Usuario: {session?.usuario}`n        </span>
-        <button id="btn-logout" className="app-btn-danger" onClick={logout}>Salir</button>
+        <span className="user-role-badge">{session?.rol}</span>
+        <button id="logout-btn" onClick={logout}>Cerrar Sesión</button>
       </div>
     </nav>
   );
@@ -119,6 +119,7 @@ export default function App() {
     </QueryClientProvider>
   );
 }
+
 
 
 
