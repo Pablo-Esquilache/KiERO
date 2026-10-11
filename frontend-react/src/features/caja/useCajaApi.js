@@ -13,7 +13,7 @@ export function useCajaHoy() {
     queryFn: async () => {
       // Usar la misma fecha que usaba Vanilla JS (sv-SE = YYYY-MM-DD local)
       const data = await apiFetch(`/cajas/hoy/${session.comercio_id}?fecha=${new Date().toLocaleDateString("sv-SE")}`);
-      if (data && data.estado === 'ABIERTA') {
+      if (data && data.estado?.toLowerCase() === 'abierta') {
         setCaja(data);
         setCajaAbierta(true);
       } else {
@@ -67,3 +67,4 @@ export function useCerrarCaja() {
     }
   });
 }
+

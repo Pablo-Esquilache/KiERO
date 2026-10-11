@@ -48,7 +48,7 @@ export default function Caja() {
       saldo_inicial: Number(saldoInicialInput) || 0,
       fecha: new Date().toLocaleDateString('sv-SE')
     });
-    navigate('/ventas');
+    // navigate('/ventas');
   };
 
   const handleCerrarCaja = async () => {
@@ -100,7 +100,7 @@ export default function Caja() {
         )}
 
         {cajaAbierta && (
-          <div className="caja-resumen">
+          <div className="caja-resumen" id="bloqueResumen">
             <div className="dashboard-cards">
               <div className="card-caja card-inicial">
                 <h4>Saldo Inicial</h4>
@@ -257,6 +257,7 @@ function HistorialModal({ onClose, historial }) {
     </div>
   );
 }
+
 
 
 
