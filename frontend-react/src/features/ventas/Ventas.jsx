@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../shared/auth/AuthContext';
 import { useProductos, useCrearProducto } from '../productos/useProductosApi';
 import { useClientes, useCrearCliente } from '../clientes/useClientesApi';
@@ -216,7 +216,9 @@ export default function Ventas() {
   return (
     <main className="app-container">
       {/* VISTA POS */}
-      {!vistaHistorial && (`n        <>`n          <div className="pos-header"><h1 className="app-title">Punto de Venta</h1></div>
+      {!vistaHistorial && (
+        <>
+          <div className="pos-header"><h1 className="app-title">Punto de Venta</h1></div>
         <div id="pos-container" className="pos-layout">
           <form className="app-form-venta" onSubmit={handleCobrarVenta}>
             
@@ -481,7 +483,10 @@ export default function Ventas() {
             </div>
           </form>
         </div>
-      </>`n      )}`n`n      {/* VISTA HISTORIAL VENTAS */}
+      </>
+    )}
+
+      {/* VISTA HISTORIAL VENTAS */}
       {vistaHistorial && (
         <div id="history-container">
           <div className="app-controls" style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
