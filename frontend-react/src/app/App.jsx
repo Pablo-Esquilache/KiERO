@@ -9,6 +9,7 @@ import Productos from '../features/productos/Productos';
 import Clientes from '../features/clientes/Clientes';
 import Gastos from '../features/gastos/Gastos';
 import Caja from '../features/caja/Caja';
+import Ventas from '../features/ventas/Ventas';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -116,7 +117,7 @@ export default function App() {
             <Route path="/" element={<Navigate to="/productos" />} />
             
             <Route path="/caja" element={<PrivateRoute><Caja /></PrivateRoute>} />
-            <Route path="/ventas" element={<PrivateRoute><h2>Ventas (Próximamente)</h2></PrivateRoute>} />
+            <Route path="/ventas" element={<PrivateRoute><Ventas /></PrivateRoute>} />
             <Route path="/productos" element={<PrivateRoute><Productos /></PrivateRoute>} />
             <Route path="/clientes" element={<PrivateRoute><Clientes /></PrivateRoute>} />
             <Route path="/gastos" element={<PrivateRoute><Gastos /></PrivateRoute>} />
@@ -131,6 +132,7 @@ export default function App() {
     </QueryClientProvider>
   );
 }
+
 
 
 
