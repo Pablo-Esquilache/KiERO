@@ -1,4 +1,4 @@
-/* =========================================================
+﻿/* =========================================================
    TARJETA PRINCIPAL CAJA
 ========================================================= */
 
@@ -11,7 +11,7 @@
 }
 
 /* =========================================================
-   INFORMACIÓN SUPERIOR
+   INFORMACIÃ“N SUPERIOR
 ========================================================= */
 
 .caja-info {
@@ -118,7 +118,7 @@
   color: #1e293b;
 }
 
-/* Colores específicos por tarjeta */
+/* Colores especÃ­ficos por tarjeta */
 .card-inicial { border-left-color: #64748b; }       /* Gris oscuro */
 .card-efectivo { border-left-color: #10b981; }      /* Verde */
 .card-digital { border-left-color: #3b82f6; }       /* Azul */
@@ -134,7 +134,7 @@
 }
 
 /* =========================================================
-   BOTÓN CIERRE DE CAJA
+   BOTÃ“N CIERRE DE CAJA
 ========================================================= */
 
 #btnCerrarCaja {
@@ -223,4 +223,29 @@
 #btnCerrarCaja {
   padding: 12px 25px !important;
   font-size: 1.05em !important;
+}
+
+/* Force 6 cards in a single row without wrapping */
+.dashboard-cards {
+  display: grid !important;
+  grid-template-columns: repeat(6, 1fr) !important;
+  gap: 10px !important;
+  margin-bottom: 15px !important;
+}
+
+.card-caja {
+  padding: 8px 12px !important;
+}
+
+.card-caja h4 {
+  font-size: 11px !important;
+  margin: 0 0 4px 0 !important;
+  white-space: nowrap;
+}
+
+.card-caja p {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  margin: 0 !important;
+  white-space: nowrap;
 }
