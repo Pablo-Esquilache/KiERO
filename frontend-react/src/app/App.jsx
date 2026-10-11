@@ -19,6 +19,18 @@ const queryClient = new QueryClient({
   },
 });
 
+function BodyRoleManager() {
+  const { session } = useAuth();
+  React.useEffect(() => {
+    if (session?.rol === 'admin' || session?.role === 'admin' || session?.usuario === 'admin') {
+      document.body.classList.add('role-admin');
+    } else {
+      document.body.classList.remove('role-admin');
+    }
+  }, [session]);
+  return null;
+}
+
 function GlobalCajaLoader() {
   const { session } = useAuth();
   useCajaHoy();
@@ -40,9 +52,7 @@ function Navbar() {
     { path: '/ajustes', label: 'Ajustes', id: 'tab-ajustes' }
   ];
 
-  const filteredMenu = menuItems.filter(item => 
-    item.path !== '/ajustes' || session?.rol === 'admin' || session?.role === 'admin' || session?.usuario === 'admin'
-  );
+  const filteredMenu = menuItems;
 
   return (
     <nav className="app-navbar" style={{ boxSizing: "border-box" }}>
@@ -69,7 +79,7 @@ function Navbar() {
             Si las pestanas deben estar a la izquierda y el logout a la derecha, 
             el ul debe ocupar el ancho restante. */}
         <li style={{ marginLeft: "auto", paddingLeft: "15px" }}>
-          <span className="user-role-badge">{session?.rol}</span>
+          <span className="user-role-badge"></span>
           <button id="logout-btn" onClick={logout}>Cerrar Sesión</button>
         </li>
       </ul>
@@ -80,6 +90,7 @@ function Navbar() {
 function Layout({ children }) {
   return (
     <div>
+      <BodyRoleManager />
       <GlobalCajaLoader />
       <Navbar />
       <div>
@@ -120,5 +131,6 @@ export default function App() {
     </QueryClientProvider>
   );
 }
+
 
 
