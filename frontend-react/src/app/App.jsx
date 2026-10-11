@@ -41,7 +41,7 @@ function Navbar() {
   ];
 
   const filteredMenu = menuItems.filter(item => 
-    item.path !== '/ajustes' || session?.rol === 'admin'
+    item.path !== '/ajustes' || session?.rol === 'admin' || session?.role === 'admin' || session?.usuario === 'admin'
   );
 
   return (
@@ -120,4 +120,5 @@ export default function App() {
     </QueryClientProvider>
   );
 }
+
 
