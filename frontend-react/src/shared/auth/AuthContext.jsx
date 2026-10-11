@@ -27,8 +27,9 @@ export function AuthProvider({ children }) {
       });
       const newSession = {
         token: data.token,
-        usuario: data.usuario,
-        rol: data.rol,
+        session_token: data.session_token,
+        usuario: usuario,
+        rol: data.role || data.rol,
         comercio_id: data.comercio_id,
         comercio_nombre: data.comercio_nombre
       };
@@ -42,9 +43,14 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-      await apiFetch('/auth/logout', { method: 'POST' });
+      if (session?.session_token) {
+        await apiFetch('/auth/logout', {
+          method: 'POST',
+          body: { session_token: session.session_token }
+        });
+      }
     } catch (e) {
-      // Ignorar error al hacer logout
+      console.error("Error al cerrar sesión en el servidor:", e);
     }
     localStorage.removeItem('session');
     setSession(null);
