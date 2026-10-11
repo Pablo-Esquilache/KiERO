@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../shared/auth/AuthContext';
 import { useProductos, useCrearProducto } from '../productos/useProductosApi';
 import { useClientes, useCrearCliente } from '../clientes/useClientesApi';
@@ -51,7 +51,7 @@ export default function Ventas() {
   const [modalTicketExito, setModalTicketExito] = useState(false);
   const [ticketData, setTicketData] = useState(null);
 
-  // Modales de Devolución
+  // Modales de DevoluciÃ³n
   const [modalVerDevoluciones, setModalVerDevoluciones] = useState(false);
   const [modalCrearDevolucion, setModalCrearDevolucion] = useState(false);
   const [carritoDevolucion, setCarritoDevolucion] = useState([]);
@@ -64,7 +64,7 @@ export default function Ventas() {
   const [filtroHistorialTexto, setFiltroHistorialTexto] = useState('');
   const [filtroHistorialFecha, setFiltroHistorialFecha] = useState(new Date().toLocaleDateString('sv-SE'));
 
-  // Form Nuevo Cliente Rápido
+  // Form Nuevo Cliente RÃ¡pido
   const [nuevoCliData, setNuevoCliData] = useState({ nombre: '', telefono: '', email: '', localidad: '' });
 
   const barcodeRef = useRef(null);
@@ -83,14 +83,14 @@ export default function Ventas() {
     }
   }, [clientes]);
 
-  // Autofocus lector de código de barras
+  // Autofocus lector de cÃ³digo de barras
   useEffect(() => {
     if (cajaAbierta && !vistaHistorial) {
       barcodeRef.current?.focus();
     }
   }, [cajaAbierta, vistaHistorial]);
 
-  // Cálculos del Carrito
+  // CÃ¡lculos del Carrito
   const subtotal = carrito.reduce((acc, item) => acc + item.subtotal, 0);
   const totalFinal = subtotal - (subtotal * descuentoPorc) / 100;
 
@@ -99,7 +99,7 @@ export default function Ventas() {
     if (!prod) return;
     const precio = precioPersonalizado !== null ? Number(precioPersonalizado) : Number(prod.precio);
     
-    // Verificar si ya está en el carrito
+    // Verificar si ya estÃ¡ en el carrito
     setCarrito(prev => {
       const idx = prev.findIndex(item => item.producto_id === prod.id && !prod.precio_abierto);
       if (idx !== -1) {
@@ -148,7 +148,7 @@ export default function Ventas() {
           agregarAlCarrito(found, 1);
         }
       } else {
-        alert('Producto no encontrado con el código: ' + code);
+        alert('Producto no encontrado con el cÃ³digo: ' + code);
       }
       setBarcodeInput('');
     }
@@ -198,12 +198,12 @@ export default function Ventas() {
     }
   };
 
-  // Si la caja está cerrada, mostrar aviso obligatorio
+  // Si la caja estÃ¡ cerrada, mostrar aviso obligatorio
   if (!cajaAbierta) {
     return (
       <main className="app-container">
         <div style={{ textAlign: 'center', padding: '60px 20px', background: '#fff', borderRadius: '10px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', maxWidth: '500px', margin: '40px auto' }}>
-          <h2 style={{ color: '#ef4444', marginBottom: '15px' }}>🔒 Caja Cerrada</h2>
+          <h2 style={{ color: '#ef4444', marginBottom: '15px' }}>ðŸ”’ Caja Cerrada</h2>
           <p style={{ color: '#64748b', marginBottom: '25px', fontSize: '1.1em' }}>Debes abrir la caja para poder operar en el Punto de Venta.</p>
           <Link to="/caja" className="app-btn-primary" style={{ textDecoration: 'none', padding: '12px 25px', display: 'inline-block' }}>
             Ir a Abrir Caja
@@ -216,9 +216,9 @@ export default function Ventas() {
   return (
     <main className="app-container">
       {/* VISTA POS */}
-      {!vistaHistorial && (
-        <div id="pos-container" className="pos-layout" style={{ display: 'grid' }}>
-          <form className="app-form-venta" onSubmit={handleCobrarVenta} style={{ display: 'contents' }}>
+      {!vistaHistorial && (`n        <>`n          <div className="pos-header"><h1 className="app-title">Punto de Venta</h1></div>
+        <div id="pos-container" className="pos-layout">
+          <form className="app-form-venta" onSubmit={handleCobrarVenta}>
             
             {/* LEFT COLUMN (20%) */}
             <div className="pos-left">
@@ -264,7 +264,7 @@ export default function Ventas() {
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button type="button" onClick={() => setModalBuscarCliente(true)} className="app-btn-secondary" style={{ flex: 1, padding: '10px' }}>
-                    🔍 Buscar
+                    ðŸ” Buscar
                   </button>
                   <button type="button" onClick={() => setModalNuevoCliente(true)} className="app-btn-primary" style={{ flex: 1, padding: '10px', margin: 0 }}>
                     + Nuevo
@@ -276,10 +276,10 @@ export default function Ventas() {
               <div className="pos-info-box" style={{ marginTop: 'auto', border: '1px dashed #f59e0b', background: '#fffbeb', padding: '10px' }}>
                 <div style={{ display: 'flex', gap: '8px', flexDirection: 'row' }}>
                   <button type="button" onClick={() => setModalVerDevoluciones(true)} className="app-btn-secondary" style={{ flex: 1, padding: '10px', color: '#b45309', borderColor: '#fcd34d', fontSize: '0.9em' }}>
-                    Historial Devolución
+                    Historial DevoluciÃ³n
                   </button>
                   <button type="button" onClick={() => setModalCrearDevolucion(true)} className="app-btn-primary" style={{ flex: 1, padding: '10px', backgroundColor: '#f59e0b', border: 'none', fontWeight: 'bold', fontSize: '0.9em' }}>
-                    Generar Devolución
+                    Generar DevoluciÃ³n
                   </button>
                 </div>
               </div>
@@ -293,7 +293,7 @@ export default function Ventas() {
                   type="text"
                   ref={barcodeRef}
                   className="app-input"
-                  placeholder="🔍 Escanear con pistola..."
+                  placeholder="ðŸ” Escanear con pistola..."
                   value={barcodeInput}
                   onChange={e => setBarcodeInput(e.target.value)}
                   onKeyDown={handleBarcodeSubmit}
@@ -334,8 +334,8 @@ export default function Ventas() {
                   )}
                 </div>
 
-                <button type="button" onClick={() => setModalBuscarProducto(true)} className="app-btn-secondary" style={{ padding: '0 15px' }} title="Búsqueda Avanzada">
-                  🔍
+                <button type="button" onClick={() => setModalBuscarProducto(true)} className="app-btn-secondary" style={{ padding: '0 15px' }} title="BÃºsqueda Avanzada">
+                  ðŸ”
                 </button>
 
                 <input
@@ -418,7 +418,7 @@ export default function Ventas() {
                             className="app-btn-danger"
                             style={{ padding: '2px 8px' }}
                           >
-                            ×
+                            Ã—
                           </button>
                         </td>
                       </tr>
@@ -426,7 +426,7 @@ export default function Ventas() {
                     {carrito.length === 0 && (
                       <tr>
                         <td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: '#888' }}>
-                          El carrito está vacío. Escanee un producto o búsquelo arriba.
+                          El carrito estÃ¡ vacÃ­o. Escanee un producto o bÃºsquelo arriba.
                         </td>
                       </tr>
                     )}
@@ -455,7 +455,7 @@ export default function Ventas() {
                     </select>
                   </div>
                   <div className="pos-tot-col">
-                    <label>Método de pago</label>
+                    <label>MÃ©todo de pago</label>
                     <select
                       className="app-input"
                       value={metodoPago}
@@ -481,14 +481,12 @@ export default function Ventas() {
             </div>
           </form>
         </div>
-      )}
-
-      {/* VISTA HISTORIAL VENTAS */}
+      </>`n      )}`n`n      {/* VISTA HISTORIAL VENTAS */}
       {vistaHistorial && (
         <div id="history-container">
           <div className="app-controls" style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
             <button onClick={() => setVistaHistorial(false)} className="app-btn-secondary">
-              ← Volver al Punto de Venta
+              â† Volver al Punto de Venta
             </button>
             <input
               type="text"
@@ -511,10 +509,10 @@ export default function Ventas() {
             <table className="app-tabla">
               <thead>
                 <tr>
-                  <th>N° Venta</th>
+                  <th>NÂ° Venta</th>
                   <th>Fecha</th>
                   <th>Cliente</th>
-                  <th>Método Pago</th>
+                  <th>MÃ©todo Pago</th>
                   <th>Total</th>
                 </tr>
               </thead>
@@ -545,7 +543,7 @@ export default function Ventas() {
         <div className="app-modal" style={{ display: 'flex', zIndex: 12000 }}>
           <div className="app-modal-content" style={{ maxWidth: '400px', padding: 0 }}>
             <div style={{ padding: '15px', borderBottom: '1px dashed #ccc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', borderRadius: '8px 8px 0 0' }}>
-              <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#10b981' }}>¡Venta Exitosa!</h2>
+              <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#10b981' }}>Â¡Venta Exitosa!</h2>
               <button
                 type="button"
                 onClick={() => {
@@ -559,13 +557,13 @@ export default function Ventas() {
                 className="app-btn-secondary"
                 style={{ padding: '5px 10px', fontSize: '0.9em' }}
               >
-                🖨️ Imprimir
+                ðŸ–¨ï¸ Imprimir
               </button>
             </div>
 
             <div id="ticketExitoContenido" style={{ padding: '20px', maxHeight: '50vh', overflowY: 'auto', fontFamily: 'monospace', fontSize: '14px' }}>
               <div style={{ marginBottom: '5px' }}><strong>Cliente:</strong> {ticketData.cliente}</div>
-              <div style={{ marginBottom: '5px' }}><strong>Método de pago:</strong> {ticketData.metodo_pago}</div>
+              <div style={{ marginBottom: '5px' }}><strong>MÃ©todo de pago:</strong> {ticketData.metodo_pago}</div>
               <div style={{ borderTop: '1px dashed #ccc', margin: '10px 0' }}></div>
               {ticketData.items.map((it, i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
@@ -601,7 +599,7 @@ export default function Ventas() {
             <div className="app-tabla-container" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
               <table className="app-tabla">
                 <thead>
-                  <tr><th>Cód.</th><th>Nombre</th><th>Precio</th><th>Stock</th><th></th></tr>
+                  <tr><th>CÃ³d.</th><th>Nombre</th><th>Precio</th><th>Stock</th><th></th></tr>
                 </thead>
                 <tbody>
                   {productos.map(p => (
@@ -648,7 +646,7 @@ export default function Ventas() {
             <div className="app-tabla-container" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
               <table className="app-tabla">
                 <thead>
-                  <tr><th>Nombre</th><th>Teléfono</th><th>Localidad</th><th></th></tr>
+                  <tr><th>Nombre</th><th>TelÃ©fono</th><th>Localidad</th><th></th></tr>
                 </thead>
                 <tbody>
                   {clientes.map(c => (
@@ -683,7 +681,7 @@ export default function Ventas() {
         <div className="app-modal" style={{ display: 'flex', zIndex: 11000 }}>
           <div className="app-modal-content" style={{ maxWidth: '500px' }}>
             <div className="app-modal-header">
-              <h2 className="app-subtitle">Nuevo Cliente Rápido</h2>
+              <h2 className="app-subtitle">Nuevo Cliente RÃ¡pido</h2>
               <button onClick={() => setModalNuevoCliente(false)} className="app-close">Cerrar</button>
             </div>
             <form onSubmit={async (e) => {
@@ -703,7 +701,7 @@ export default function Ventas() {
                 <input required type="text" className="app-input" value={nuevoCliData.nombre} onChange={e => setNuevoCliData({...nuevoCliData, nombre: e.target.value})} />
               </div>
               <div className="app-form-group">
-                <label>Teléfono</label>
+                <label>TelÃ©fono</label>
                 <input type="text" className="app-input" value={nuevoCliData.telefono} onChange={e => setNuevoCliData({...nuevoCliData, telefono: e.target.value})} />
               </div>
               <div className="app-form-group">
@@ -755,7 +753,7 @@ export default function Ventas() {
         <div className="app-modal" style={{ display: 'flex', zIndex: 10000 }}>
           <div className="app-modal-content" style={{ maxWidth: '750px' }}>
             <div className="app-modal-header">
-              <h2 className="app-subtitle">Generar Devolución</h2>
+              <h2 className="app-subtitle">Generar DevoluciÃ³n</h2>
               <button onClick={() => setModalCrearDevolucion(false)} className="app-close">Cerrar</button>
             </div>
             <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
@@ -812,7 +810,7 @@ export default function Ventas() {
                       <td>${it.subtotal.toFixed(2)}</td>
                       <td>
                         <button onClick={() => setCarritoDevolucion(prev => prev.filter((_, i) => i !== idx))} className="app-btn-danger" style={{ padding: '2px 8px' }}>
-                          ×
+                          Ã—
                         </button>
                       </td>
                     </tr>
@@ -831,7 +829,7 @@ export default function Ventas() {
               </div>
               <button
                 onClick={async () => {
-                  if (carritoDevolucion.length === 0) return alert('Agregue productos a la devolución');
+                  if (carritoDevolucion.length === 0) return alert('Agregue productos a la devoluciÃ³n');
                   try {
                     await mutCrearDevolucion.mutateAsync({
                       cliente_id: clienteSeleccionado?.id || null,
@@ -844,18 +842,18 @@ export default function Ventas() {
                         producto_nombre: i.nombre
                       }))
                     });
-                    alert('Devolución registrada con éxito');
+                    alert('DevoluciÃ³n registrada con Ã©xito');
                     setCarritoDevolucion([]);
                     setModalCrearDevolucion(false);
                   } catch (e) {
-                    alert('Error en devolución: ' + e.message);
+                    alert('Error en devoluciÃ³n: ' + e.message);
                   }
                 }}
                 className="app-btn-primary"
                 style={{ backgroundColor: '#f59e0b' }}
                 disabled={carritoDevolucion.length === 0 || mutCrearDevolucion.isPending}
               >
-                Confirmar Devolución
+                Confirmar DevoluciÃ³n
               </button>
             </div>
           </div>
@@ -864,3 +862,5 @@ export default function Ventas() {
     </main>
   );
 }
+
+
