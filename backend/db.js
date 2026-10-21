@@ -3,7 +3,7 @@ const require = createRequire(import.meta.url);
 const Database = require('better-sqlite3');
 import path from 'path';
 import electronPkg from 'electron';
-const { app } = electronPkg;
+const { app, dialog } = electronPkg || {};
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 
@@ -21,18 +21,65 @@ try {
 
 const dbPath = path.join(userDataPath, 'kiero.db');
 
-// Si la DB no existe, podríamos copiar una base inicial o crearla desde el schema.
-// Para hacerlo fácil, simplemente ejecutamos el schema si está vacía.
+// Runner de migraciones versionadas de SQLite usando PRAGMA user_version
+function runMigrations(database, dataDir, databaseFilePath) {
+  const currentVersion = database.pragma('user_version', { simple: true });
+
+  // Lista de migraciones versionadas
+  // IMPORTANTE: Cada migración se agrega de forma secuencial con su feature correspondiente.
+  // Una vez desplegada a clientes, una migración no se modifica ni se reordena.
+  const migrations = [
+    // Las migraciones se incorporarán aquí a partir de la Fase 1 (v: 1)
+  ];
+
+  const maxVersion = migrations.length > 0 ? Math.max(...migrations.map(m => m.v)) : 0;
+
+  // Verificación de seguridad: si la base fue abierta previamente por una versión más nueva del sistema
+  if (currentVersion > maxVersion) {
+    throw new Error(
+      `La base de datos tiene la versión de esquema ${currentVersion}, pero esta versión del sistema solo soporta hasta la versión ${maxVersion}. Actualice la aplicación.`
+    );
+  }
+
+  // Filtrar migraciones pendientes
+  const pending = migrations.filter(m => m.v > currentVersion);
+
+  if (pending.length > 0) {
+    console.log(`[MIGRACIONES] Se detectaron ${pending.length} migraciones pendientes. Versión actual: ${currentVersion}.`);
+
+    // Backup de seguridad obligatorio antes de aplicar cualquier cambio
+    try {
+      const backupPath = path.join(dataDir, 'kiero.db.bak');
+      fs.copyFileSync(databaseFilePath, backupPath);
+      console.log(`[MIGRACIONES] Backup de seguridad creado exitosamente en: ${backupPath}`);
+    } catch (bErr) {
+      throw new Error(`No se pudo crear el backup de seguridad previo a la migración: ${bErr.message}`);
+    }
+
+    // Ejecutar cada migración en su propia transacción atómica
+    for (const m of pending) {
+      console.log(`[MIGRACIONES] Aplicando migración v${m.v} (${m.name || 'Sin nombre'})...`);
+      database.transaction(() => {
+        database.exec(m.sql);
+        database.pragma(`user_version = ${m.v}`);
+      })();
+      console.log(`[MIGRACIONES] Migración v${m.v} aplicada exitosamente.`);
+    }
+
+    const finalVersion = database.pragma('user_version', { simple: true });
+    console.log(`[MIGRACIONES] Todas las migraciones fueron aplicadas. Versión final: ${finalVersion}.`);
+  }
+}
+
 let db;
 try {
   db = new Database(dbPath);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
 
-  // Migraciones automáticas silenciosas
+  // Migraciones automáticas silenciosas heredadas
   try { db.prepare("ALTER TABLE ventas_detalle ADD COLUMN producto_nombre TEXT").run(); } catch(e) {}
   try { db.prepare("ALTER TABLE devoluciones_detalle ADD COLUMN producto_nombre TEXT").run(); } catch(e) {}
-
 
   // Comprobar si la tabla comercios existe, si no, ejecutar schema-sqlite.sql
   const check = db.prepare("SELECT count(*) as count FROM sqlite_master WHERE type='table' AND name='comercios'").get();
@@ -41,8 +88,22 @@ try {
     db.exec(schemaSql);
     console.log('Base de datos inicializada desde el esquema.');
   }
+
+  // Ejecución del runner de migraciones versionadas
+  runMigrations(db, userDataPath, dbPath);
 } catch (error) {
-  console.error('Error inicializando SQLite:', error);
+  console.error('ERROR CRÍTICO: Fallo al inicializar o migrar la base de datos:', error);
+  if (dialog && typeof dialog.showErrorBox === 'function') {
+    try {
+      dialog.showErrorBox(
+        'Error crítico en la base de datos',
+        'Ocurrió un error al inicializar o migrar la base de datos local:\n\n' +
+        (error.message || String(error)) +
+        '\n\nLa aplicación se detendrá para proteger sus datos.'
+      );
+    } catch (dErr) {}
+  }
+  throw error;
 }
 
 // Convertidor de posicionales tipo Postgres ($1, $2) a SQLite (?)
@@ -122,4 +183,3 @@ const pool = {
 };
 
 export default pool;
-
