@@ -157,6 +157,8 @@ export const ProductosAPI = {
   },
   getCategorias: (comercioId) =>
     apiFetch(`/productos/categorias/lista?comercio_id=${comercioId}`),
+  getProveedores: (comercioId) =>
+    apiFetch(`/productos/proveedores/lista`),
   create: async (data) => {
     const res = await apiFetch("/productos", { method: "POST", body: data });
     localStorage.removeItem(`productos_cache_${JSON.parse(localStorage.getItem("session"))?.comercio_id}`);

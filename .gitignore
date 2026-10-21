@@ -36,3 +36,4 @@ __pycache__/
 backend/firebaseServiceAccount.json
 
 firebaseServiceAccount.json
+*.db.bak

@@ -97,6 +97,51 @@
             <button id="btnGuardarUmbral" class="app-btn-secondary">Guardar</button>
           </div>
         </section>
+        
+        <!-- AUMENTO DE PRECIOS MASIVO -->
+        <section class="ajustes-card" style="grid-column: span 2;">
+          <h2 class="app-subtitle">Aumento de Precios Masivo</h2>
+          <p style="font-size: 0.9em; margin-bottom: 12px; color: #64748b;">
+            Aplica un porcentaje de aumento en lote a todos los productos o filtrado por proveedor.
+          </p>
+          
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+            <div class="app-form-group" style="flex: 1; min-width: 160px; margin-bottom: 0;">
+              <label>Proveedor</label>
+              <select id="selectProveedorAumento" class="app-input" style="width: 100%;">
+                <option value="TODOS">Todos los proveedores</option>
+              </select>
+            </div>
+
+            <div class="app-form-group" style="width: 110px; margin-bottom: 0;">
+              <label>% Aumento</label>
+              <input type="number" id="inputPorcentajeAumento" class="app-input" placeholder="Ej: 15" step="0.1" min="0.1" style="width: 100%;" />
+            </div>
+
+            <div class="app-form-group" style="flex: 1; min-width: 150px; margin-bottom: 0;">
+              <label>Redondeo</label>
+              <select id="selectRedondeoAumento" class="app-input" style="width: 100%;">
+                <option value="centavo">Al centavo ($10.45)</option>
+                <option value="peso">Al peso entero ($10)</option>
+                <option value="decena">A la decena ($10, $20)</option>
+              </select>
+            </div>
+
+            <button id="btnAplicarAumento" class="app-btn-primary" style="height: 38px; padding: 0 16px; margin: 0; background-color: #e07a5f;">
+              Aplicar Aumento
+            </button>
+          </div>
+
+          <div id="containerUltimoAumento" style="margin-top: 15px; padding-top: 12px; border-top: 1px dashed #e2e8f0; display: none; justify-content: space-between; align-items: center;">
+            <div style="font-size: 0.85em; color: #475569;">
+              <strong>Último aumento:</strong> <span id="textoDetalleUltimoAumento">-</span>
+            </div>
+            <button id="btnRevertirAumento" class="app-btn-secondary" style="font-size: 0.85em; padding: 4px 10px; color: #e74c3c; border-color: #e74c3c;">
+              ↩ Revertir último aumento
+            </button>
+          </div>
+        </section>
+
         <!-- TURNERO CONFIG -->
         <section class="ajustes-card">
           <h2 class="app-subtitle">Módulo Turnero</h2>

@@ -40,6 +40,11 @@ const codigoBarrasProducto = document.getElementById("codigoBarrasProducto");
 const stockProducto = document.getElementById("stockProducto");
 const precioProducto = document.getElementById("precioProducto");
 
+const proveedorProducto = document.getElementById("proveedorProducto");
+const nuevoProveedorProducto = document.getElementById("nuevoProveedorProducto");
+const btnNuevoProveedor = document.getElementById("btnNuevoProveedor");
+
+
 const tablaProductosBody = document.getElementById("tablaProductosBody");
 
 const btnImportarExcel = document.getElementById("btnImportarExcel");
@@ -97,11 +102,44 @@ async function cargarCategorias() {
   }
 }
 
+
+// ------------------------------
+// CARGAR PROVEEDORES (POR COMERCIO)
+// ------------------------------
+async function cargarProveedores() {
+  if (!comercioId) return;
+
+  try {
+    const proveedores = await ProductosAPI.getProveedores(comercioId);
+    if (proveedorProducto) {
+      proveedorProducto.innerHTML = `<option value="">Seleccionar proveedor</option>`;
+      proveedores.forEach((prov) => {
+        proveedorProducto.innerHTML += `<option value="${escapeHtml(prov)}">${escapeHtml(prov)}</option>`;
+      });
+    }
+  } catch (error) {
+    console.error("Error cargando proveedores:", error);
+  }
+}
+
+function mostrarInputNuevoProveedor(mostrar) {
+  if (!proveedorProducto || !nuevoProveedorProducto) return;
+  if (mostrar) {
+    nuevoProveedorProducto.style.display = "block";
+    proveedorProducto.style.display = "none";
+  } else {
+    nuevoProveedorProducto.style.display = "none";
+    proveedorProducto.style.display = "inline-block";
+    nuevoProveedorProducto.value = "";
+  }
+}
+
 // ------------------------------
 // ABRIR MODAL
 // ------------------------------
 btnNuevoProducto.addEventListener("click", () => {
   mostrarInputNuevaCategoria(false);
+  mostrarInputNuevoProveedor(false);
   modoEdicion = false;
   productoEditandoId = null;
 
@@ -137,6 +175,14 @@ function mostrarInputNuevaCategoria(mostrar) {
   }
 }
 
+
+if (btnNuevoProveedor) {
+  btnNuevoProveedor.addEventListener("click", () => {
+    mostrarInputNuevoProveedor(true);
+    nuevoProveedorProducto?.focus();
+  });
+}
+
 btnNuevaCategoria.addEventListener("click", () => {
   mostrarInputNuevaCategoria(true);
   document.getElementById("nuevaCategoriaProducto").focus();
@@ -165,6 +211,13 @@ function limpiarFormulario() {
   stockProducto.value = "";
   document.getElementById("stockIngresarProducto").value = "";
   precioProducto.value = "";
+
+  if (proveedorProducto) proveedorProducto.value = "";
+  if (nuevoProveedorProducto) {
+    nuevoProveedorProducto.value = "";
+    nuevoProveedorProducto.style.display = "none";
+  }
+
   nuevaCategoriaProducto.style.display = "none";
 
   document.getElementById("stockProducto").readOnly = false;
@@ -185,10 +238,13 @@ document
 
     const categoriaFinal =
       nuevaCategoriaProducto.value.trim() || categoriaProducto.value;
+    const proveedorFinal =
+      nuevoProveedorProducto?.value.trim() || proveedorProducto?.value || null;
 
     const data = {
     nombre: nombreProducto.value.trim(),
     categoria: categoriaFinal,
+      proveedor: proveedorFinal,
     codigo_barras: codigoBarrasProducto.value.trim() || null,
     stock: modoEdicion 
       ? (parseInt(document.getElementById("stockIngresarProducto").value) || 0) 
@@ -212,6 +268,8 @@ document
     limpiarFormulario();
     await cargarProductos();
     await cargarCategorias();
+  await cargarProveedores();
+    await cargarProveedores();
   });
 
 // ------------------------------
@@ -253,6 +311,7 @@ function renderTablaProductos() {
       <tr>
         <td>${escapeHtml(p.nombre)}</td>
         <td>${escapeHtml(p.categoria) || "-"}</td>
+        <td>${escapeHtml(p.proveedor) || "-"}</td>
         <td>${p.codigo_barras || "-"}</td>
         <td style="${colorStock}">${p.stock}</td>
         <td>$${p.precio.toFixed(2)}</td>
@@ -307,7 +366,20 @@ function editarProducto(id) {
     mostrarInputNuevaCategoria(false);
     categoriaProducto.value = "";
   }
-  codigoBarrasProducto.value = p.codigo_barras || "";
+  
+  const proveedoresExistentes = Array.from(proveedorProducto?.options || []).map(opt => opt.value);
+  if (p.proveedor && proveedoresExistentes.includes(p.proveedor)) {
+    mostrarInputNuevoProveedor(false);
+    proveedorProducto.value = p.proveedor;
+  } else if (p.proveedor) {
+    mostrarInputNuevoProveedor(true);
+    if (nuevoProveedorProducto) nuevoProveedorProducto.value = p.proveedor;
+  } else {
+    mostrarInputNuevoProveedor(false);
+    if (proveedorProducto) proveedorProducto.value = "";
+  }
+
+codigoBarrasProducto.value = p.codigo_barras || "";
   stockProducto.value = p.stock;
   precioProducto.value = p.precio;
 

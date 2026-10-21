@@ -2,6 +2,7 @@ import express from "express";
 import {
   getProductos,
   getCategorias,
+  getProveedores,
   getProductoById,
   createProducto,
   updateProducto,
@@ -12,6 +13,7 @@ const router = express.Router();
 
 router.get("/", getProductos);
 router.get("/categorias/lista", getCategorias);
+router.get("/proveedores/lista", getProveedores);
 router.get("/:id", getProductoById);
 router.post("/", createProducto);
 router.put("/:id", updateProducto);

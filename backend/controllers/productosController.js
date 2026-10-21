@@ -62,6 +62,38 @@ export const getCategorias = async (req, res) => {
 /* ==========================
    GET - PRODUCTO POR ID (SEGURO)
    ========================== */
+
+/* ==========================
+   GET - LISTA DE PROVEEDORES POR COMERCIO
+   ========================== */
+export const getProveedores = async (req, res) => {
+  const comercio_id = req.user.comercio_id;
+
+  if (!comercio_id) {
+    return res.status(400).json({ error: "comercio_id requerido" });
+  }
+
+  try {
+    const { rows } = await db.query(
+      `
+      SELECT DISTINCT proveedor
+      FROM productos
+      WHERE comercio_id = $1
+        AND proveedor IS NOT NULL
+        AND TRIM(proveedor) <> ''
+      ORDER BY proveedor ASC
+      `,
+      [comercio_id]
+    );
+
+    const proveedores = rows.map((r) => r.proveedor);
+    res.json(proveedores);
+  } catch (error) {
+    console.error("Error cargando proveedores:", error);
+    res.status(500).json({ error: "Error al obtener proveedores" });
+  }
+};
+
 export const getProductoById = async (req, res) => {
   const { id } = req.params;
   const comercio_id = req.user.comercio_id;
@@ -93,7 +125,7 @@ export const getProductoById = async (req, res) => {
 export const createProducto = async (req, res) => {
   const isAdmin = req.user.role === 'admin';
   const precio_abierto = isAdmin ? (req.body.precio_abierto || false) : false;
-  const { nombre, categoria, precio, stock,  codigo_barras } = req.body;
+  const { nombre, categoria, precio, stock, codigo_barras, proveedor } = req.body;
   const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {
@@ -103,8 +135,8 @@ export const createProducto = async (req, res) => {
   try {
     const query = `
       INSERT INTO productos
-        (nombre, categoria, precio, stock, codigo_barras, comercio_id, precio_abierto)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        (nombre, categoria, precio, stock, codigo_barras, comercio_id, precio_abierto, proveedor)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
     `;
 
@@ -115,7 +147,8 @@ export const createProducto = async (req, res) => {
         stock ?? 0,
         codigo_barras || null,
         comercio_id,
-        precio_abierto
+        precio_abierto,
+        proveedor ? proveedor.trim() : null
       ]);
 
     const finalProduct = rows[0];
@@ -171,7 +204,7 @@ export const createProducto = async (req, res) => {
 export const updateProducto = async (req, res) => {
   const isAdmin = req.user.role === 'admin';
   const { id } = req.params;
-  const { nombre, categoria, precio, stock, codigo_barras } = req.body;
+  const { nombre, categoria, precio, stock, codigo_barras, proveedor } = req.body;
   const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {
@@ -188,7 +221,8 @@ export const updateProducto = async (req, res) => {
             precio = $3,
             stock = stock + COALESCE($4::integer, 0),
             codigo_barras = $7,
-            precio_abierto = $8
+            precio_abierto = $8,
+            proveedor = $9
         WHERE id = $5 AND comercio_id = $6
         RETURNING *
       `;
@@ -200,7 +234,8 @@ export const updateProducto = async (req, res) => {
         id,
         comercio_id,
         codigo_barras || null,
-        req.body.precio_abierto
+        req.body.precio_abierto,
+        proveedor !== undefined ? (proveedor ? proveedor.trim() : null) : null
       ];
     } else {
       query = `
@@ -209,7 +244,8 @@ export const updateProducto = async (req, res) => {
             categoria = $2,
             precio = $3,
             stock = stock + COALESCE($4::integer, 0),
-            codigo_barras = $7
+            codigo_barras = $7,
+            proveedor = $8
         WHERE id = $5 AND comercio_id = $6
         RETURNING *
       `;
@@ -220,7 +256,8 @@ export const updateProducto = async (req, res) => {
         stock,
         id,
         comercio_id,
-        codigo_barras || null
+        codigo_barras || null,
+        proveedor !== undefined ? (proveedor ? proveedor.trim() : null) : null
       ];
     }
 
@@ -317,10 +354,10 @@ export const importarProductos = async (req, res) => {
       await client.query(
         `
         INSERT INTO productos
-        (nombre, categoria, precio, stock, comercio_id)
-        VALUES ($1,$2,$3,$4,$5)
+        (nombre, categoria, precio, stock, comercio_id, proveedor)
+        VALUES ($1,$2,$3,$4,$5,$6)
         `,
-        [p.nombre, p.categoria || null, p.precio || 0, p.stock || 0, comercio_id]
+        [p.nombre, p.categoria || null, p.precio || 0, p.stock || 0, comercio_id, p.proveedor ? p.proveedor.trim() : null]
       );
 
       insertados++;

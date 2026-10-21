@@ -29,7 +29,35 @@ function runMigrations(database, dataDir, databaseFilePath) {
   // IMPORTANTE: Cada migración se agrega de forma secuencial con su feature correspondiente.
   // Una vez desplegada a clientes, una migración no se modifica ni se reordena.
   const migrations = [
-    // Las migraciones se incorporarán aquí a partir de la Fase 1 (v: 1)
+    {
+      v: 1,
+      name: "Agregar columna proveedor a productos",
+      sql: `ALTER TABLE productos ADD COLUMN proveedor TEXT;`
+    },
+    {
+      v: 2,
+      name: "Crear tablas de log de aumentos masivos de precios",
+      sql: `
+        CREATE TABLE IF NOT EXISTS log_aumentos_precios (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          comercio_id INTEGER NOT NULL,
+          usuario_id INTEGER,
+          proveedor TEXT,
+          porcentaje REAL NOT NULL,
+          tipo_redondeo TEXT DEFAULT 'centavo',
+          cantidad_productos INTEGER NOT NULL,
+          revertido INTEGER DEFAULT 0,
+          fecha TEXT DEFAULT (datetime('now','localtime'))
+        );
+        CREATE TABLE IF NOT EXISTS log_aumentos_precios_detalle (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          log_id INTEGER NOT NULL REFERENCES log_aumentos_precios(id),
+          producto_id INTEGER NOT NULL,
+          precio_anterior REAL NOT NULL,
+          precio_nuevo REAL NOT NULL
+        );
+      `
+    }
   ];
 
   const maxVersion = migrations.length > 0 ? Math.max(...migrations.map(m => m.v)) : 0;

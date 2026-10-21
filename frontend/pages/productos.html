@@ -82,6 +82,7 @@
             <tr>
               <th>Nombre</th>
               <th>Categoría</th>
+              <th>Proveedor</th>
               <th>Cód. Barras</th>
               <th>Stock</th>
               <th>Precio</th>
@@ -115,6 +116,18 @@
               </select>
               <input type="text" id="nuevaCategoriaProducto" class="app-input" placeholder="Escribí nueva categoría" style="display: none; flex: 1;" />
               <button type="button" id="btnNuevaCategoria" class="app-btn-secondary" style="flex-shrink: 0;">Nueva</button>
+            </div>
+          </div>
+
+          
+          <div class="app-form-group">
+            <label>Proveedor (Opcional)</label>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <select id="proveedorProducto" class="app-input" style="flex: 1;">
+                <option value="">Seleccionar proveedor</option>
+              </select>
+              <input type="text" id="nuevoProveedorProducto" class="app-input" placeholder="Escribí nuevo proveedor" style="display: none; flex: 1;" />
+              <button type="button" id="btnNuevoProveedor" class="app-btn-secondary" style="flex-shrink: 0;">Nuevo</button>
             </div>
           </div>
 

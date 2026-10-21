@@ -543,4 +543,173 @@ if (backupBtn) {
       backupBtn.textContent = "💾 Descargar Backup";
     }
   });
+
+  // ==========================================
+  // AUMENTO MASIVO DE PRECIOS
+  // ==========================================
+  const selectProveedorAumento = document.getElementById("selectProveedorAumento");
+  const inputPorcentajeAumento = document.getElementById("inputPorcentajeAumento");
+  const selectRedondeoAumento = document.getElementById("selectRedondeoAumento");
+  const btnAplicarAumento = document.getElementById("btnAplicarAumento");
+  const containerUltimoAumento = document.getElementById("containerUltimoAumento");
+  const textoDetalleUltimoAumento = document.getElementById("textoDetalleUltimoAumento");
+  const btnRevertirAumento = document.getElementById("btnRevertirAumento");
+
+  let ultimoAumentoActivo = null;
+
+  async function cargarProveedoresAjustes() {
+    if (!selectProveedorAumento) return;
+    try {
+      const res = await authFetch("/api/productos/proveedores/lista");
+      if (res.ok) {
+        const proveedores = await res.json();
+        selectProveedorAumento.innerHTML = '<option value="TODOS">Todos los proveedores</option>';
+        proveedores.forEach((prov) => {
+          const opt = document.createElement("option");
+          opt.value = prov;
+          opt.textContent = prov;
+          selectProveedorAumento.appendChild(opt);
+        });
+      }
+    } catch (e) {
+      console.error("Error cargando proveedores para aumento:", e);
+    }
+  }
+
+  async function verificarUltimoAumento() {
+    if (!containerUltimoAumento) return;
+    try {
+      const res = await authFetch(`/api/ajustes/ultimo-aumento/${cid}`);
+      if (res.ok) {
+        const data = await res.json();
+        ultimoAumentoActivo = data;
+        if (data && data.revertido === 0) {
+          containerUltimoAumento.style.display = "flex";
+          const provText = data.proveedor === "TODOS" ? "Todos los proveedores" : `"${data.proveedor}"`;
+          textoDetalleUltimoAumento.textContent = `+${data.porcentaje}% en ${data.cantidad_productos} producto(s) (${provText}) el ${data.fecha}`;
+        } else {
+          containerUltimoAumento.style.display = "none";
+        }
+      }
+    } catch (e) {
+      console.error("Error verificando último aumento:", e);
+    }
+  }
+
+  if (btnAplicarAumento) {
+    btnAplicarAumento.addEventListener("click", async () => {
+      const prov = selectProveedorAumento.value;
+      const pct = parseFloat(inputPorcentajeAumento.value);
+      const redondeo = selectRedondeoAumento.value;
+
+      if (isNaN(pct) || pct <= 0) {
+        alert("Por favor ingrese un porcentaje de aumento válido mayor a 0.");
+        inputPorcentajeAumento.focus();
+        return;
+      }
+
+      btnAplicarAumento.disabled = true;
+      btnAplicarAumento.textContent = "Calculando...";
+
+      try {
+        // Previsualizar cantidad real
+        const prevRes = await authFetch(`/api/ajustes/aumento-masivo/previsualizar/${cid}?proveedor=${encodeURIComponent(prov)}`);
+        if (!prevRes.ok) throw new Error("Error al consultar productos");
+        const { count } = await prevRes.json();
+
+        if (count === 0) {
+          alert(`No se encontraron productos activos con precio para el criterio seleccionado ("${prov}").`);
+          btnAplicarAumento.disabled = false;
+          btnAplicarAumento.textContent = "Aplicar Aumento";
+          return;
+        }
+
+        const nombreProv = prov === "TODOS" ? "todos los proveedores" : `el proveedor "${prov}"`;
+        const confirmacion = confirm(
+          `⚠️ ATENCIÓN:\n\nEsta acción aumentará un ${pct}% el precio de ${count} producto(s) correspondientes a ${nombreProv}.\n\nTipo de redondeo: ${redondeo}.\n\n¿Desea continuar y aplicar el aumento ahora?`
+        );
+
+        if (!confirmacion) {
+          btnAplicarAumento.disabled = false;
+          btnAplicarAumento.textContent = "Aplicar Aumento";
+          return;
+        }
+
+        btnAplicarAumento.textContent = "Aplicando...";
+        const res = await authFetch("/api/ajustes/aumento-masivo", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            comercio_id: cid,
+            proveedor: prov,
+            porcentaje: pct,
+            tipo_redondeo: redondeo
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Error al aplicar aumento");
+
+        // Invalida caché local del POS para actualización inmediata
+        localStorage.removeItem(`productos_cache_${cid}`);
+
+        alert(`✅ ${data.mensaje}`);
+        inputPorcentajeAumento.value = "";
+        await verificarUltimoAumento();
+        await cargarProveedoresAjustes();
+      } catch (err) {
+        console.error("Error en aumento masivo:", err);
+        alert(`❌ Error: ${err.message}`);
+      } finally {
+        btnAplicarAumento.disabled = false;
+        btnAplicarAumento.textContent = "Aplicar Aumento";
+      }
+    });
+  }
+
+  if (btnRevertirAumento) {
+    btnRevertirAumento.addEventListener("click", async () => {
+      if (!ultimoAumentoActivo) return;
+
+      const confirmacion = confirm(
+        `⚠️ ¿Está seguro de revertir el último aumento del ${ultimoAumentoActivo.porcentaje}%?\n\nSe restaurarán los precios que no hayan sido modificados manualmente luego del aumento.`
+      );
+
+      if (!confirmacion) return;
+
+      btnRevertirAumento.disabled = true;
+      btnRevertirAumento.textContent = "Revirtiendo...";
+
+      try {
+        const res = await authFetch("/api/ajustes/revertir-aumento", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            comercio_id: cid,
+            log_id: ultimoAumentoActivo.id
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Error al revertir aumento");
+
+        // Invalida caché local
+        localStorage.removeItem(`productos_cache_${cid}`);
+
+        alert(`✅ ${data.mensaje}`);
+        await verificarUltimoAumento();
+      } catch (err) {
+        console.error("Error revirtiendo aumento:", err);
+        alert(`❌ Error: ${err.message}`);
+      } finally {
+        btnRevertirAumento.disabled = false;
+        btnRevertirAumento.textContent = "↩ Revertir último aumento";
+      }
+    });
+  }
+
+  // Cargar aumento masivo al abrir Ajustes
+  cargarProveedoresAjustes();
+  verificarUltimoAumento();
+
 }
