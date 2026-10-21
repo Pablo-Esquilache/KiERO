@@ -663,29 +663,145 @@ if (btnAgregarProducto) {
   });
 }
 
+// ==========================================
+// ESCÁNER DE CÓDIGO DE BARRAS GLOBAL (POS)
+// ==========================================
+
+function playScanBeep(success = true) {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.type = "sine";
+    osc.frequency.value = success ? 1200 : 350;
+    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.1);
+  } catch (e) {}
+}
+
+let lastProcessedCode = "";
+let lastProcessedTime = 0;
+
+function procesarCodigoEscaneado(scannedCode) {
+  if (!scannedCode) return;
+  scannedCode = scannedCode.trim();
+
+  const now = Date.now();
+  if (scannedCode === lastProcessedCode && (now - lastProcessedTime < 300)) {
+    return; // Evitar doble ejecución accidental
+  }
+  lastProcessedCode = scannedCode;
+  lastProcessedTime = now;
+
+  // 1. Validar que estemos en la vista POS y que la caja esté abierta
+  const posContainer = document.getElementById("pos-container");
+  const isPosActive = posContainer && posContainer.style.display !== "none";
+
+  // 2. Comprobar si hay algún modal abierto
+  const anyModalOpen = Array.from(document.querySelectorAll(".app-modal, .modal")).some((m) => {
+    const disp = window.getComputedStyle(m).display;
+    return disp === "flex" || disp === "block";
+  });
+
+  if (!isPosActive || anyModalOpen) {
+    return;
+  }
+
+  // 3. Limpiar residuos que la pistola haya escrito en el input activo
+  if (document.activeElement && document.activeElement.tagName === "INPUT") {
+    const activeInput = document.activeElement;
+    if (activeInput.id !== "barcodeVenta" && typeof activeInput.value === "string") {
+      if (activeInput.value.endsWith(scannedCode)) {
+        activeInput.value = activeInput.value.slice(0, -scannedCode.length);
+      } else if (activeInput.value === scannedCode) {
+        activeInput.value = "";
+      }
+    }
+  }
+
+  const barcodeInput = document.getElementById("barcodeVenta");
+  if (barcodeInput) {
+    barcodeInput.value = "";
+  }
+
+  // 4. Buscar producto en caché por código de barras
+  const producto = (productosCache || []).find(
+    (p) => p.codigo_barras && p.codigo_barras.trim() === scannedCode
+  );
+
+  if (!producto) {
+    playScanBeep(false);
+    toastWarning(`Código no encontrado: ${scannedCode}`);
+    return;
+  }
+
+  // 5. Manejo de Comodines (Precio Variable / Abierto)
+  if (producto.precio_abierto) {
+    playScanBeep(true);
+    const productoVenta = document.getElementById("productoVenta");
+    const productoVentaNombre = document.getElementById("productoVentaNombre");
+    const precioCustomInput = document.getElementById("precioCustomVenta");
+
+    if (productoVenta) productoVenta.value = producto.id;
+    if (productoVentaNombre) productoVentaNombre.value = producto.nombre;
+    if (precioCustomInput) {
+      precioCustomInput.style.display = "block";
+      precioCustomInput.focus();
+      precioCustomInput.select();
+    }
+    toastInfo(`Comodín "${producto.nombre}": ingrese el precio.`);
+    return;
+  }
+
+  // 6. Producto estándar: agregar 1 unidad directo al carrito
+  playScanBeep(true);
+  procesarAgregarProducto(producto.id, 1);
+  toastOk(`Agregado: ${producto.nombre}`);
+}
+
+// Listener manual sobre el input por si el cajero escribe a mano
 if (barcodeVenta) {
   barcodeVenta.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
       const code = barcodeVenta.value.trim();
       if (!code) return;
-
-      const producto = productosCache.find((p) => p.codigo_barras && p.codigo_barras.trim() === code);
-      
-      if (!producto) {
-        toastWarning("Producto no encontrado con ese código.");
-        barcodeVenta.value = "";
-        return;
-      }
-
-      // Add 1 by default when scanning
-      procesarAgregarProducto(producto.id, 1);
-      
       barcodeVenta.value = "";
-      barcodeVenta.focus();
+      procesarCodigoEscaneado(code);
     }
   });
 }
+
+// Listener global en document con buffer temporal (< 50ms = pistola lectora)
+let barcodeBuffer = "";
+let lastKeyTime = 0;
+
+document.addEventListener("keydown", (e) => {
+  const now = Date.now();
+  if (now - lastKeyTime > 50) {
+    barcodeBuffer = ""; // Pasó demasiado tiempo: no es la pistola
+  }
+  lastKeyTime = now;
+
+  if (e.key === "Enter") {
+    if (barcodeBuffer.length >= 4) {
+      e.preventDefault();
+      const codeToProcess = barcodeBuffer;
+      barcodeBuffer = "";
+      procesarCodigoEscaneado(codeToProcess);
+    }
+    barcodeBuffer = "";
+    return;
+  }
+
+  if (e.key.length === 1) {
+    barcodeBuffer += e.key;
+  }
+});
 
 // ==============================
 function renderCarrito() {
