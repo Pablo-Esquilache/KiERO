@@ -39,6 +39,7 @@ const btnNuevaCategoria = document.getElementById("btnNuevaCategoria");
 const codigoBarrasProducto = document.getElementById("codigoBarrasProducto");
 const stockProducto = document.getElementById("stockProducto");
 const precioProducto = document.getElementById("precioProducto");
+const alicuotaIvaProducto = document.getElementById("alicuotaIvaProducto");
 
 const proveedorProducto = document.getElementById("proveedorProducto");
 const nuevoProveedorProducto = document.getElementById("nuevoProveedorProducto");
@@ -211,6 +212,7 @@ function limpiarFormulario() {
   stockProducto.value = "";
   document.getElementById("stockIngresarProducto").value = "";
   precioProducto.value = "";
+  if (alicuotaIvaProducto) alicuotaIvaProducto.value = "21.0";
 
   if (proveedorProducto) proveedorProducto.value = "";
   if (nuevoProveedorProducto) {
@@ -250,6 +252,7 @@ document
       ? (parseInt(document.getElementById("stockIngresarProducto").value) || 0) 
       : parseInt(stockProducto.value),
     precio: parseFloat(precioProducto.value),
+    alicuota_iva: alicuotaIvaProducto ? parseFloat(alicuotaIvaProducto.value) : 21.0,
     comercio_id: comercioId,
     precio_abierto: document.getElementById("precioAbiertoProducto")?.checked || false,
   };
@@ -382,6 +385,7 @@ function editarProducto(id) {
 codigoBarrasProducto.value = p.codigo_barras || "";
   stockProducto.value = p.stock;
   precioProducto.value = p.precio;
+  if (alicuotaIvaProducto) alicuotaIvaProducto.value = String(p.alicuota_iva !== undefined && p.alicuota_iva !== null ? Number(p.alicuota_iva).toFixed(1) : "21.0");
 
   // Lógica stock a ingresar
   document.getElementById("stockProducto").readOnly = true;

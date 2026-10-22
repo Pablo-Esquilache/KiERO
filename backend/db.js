@@ -85,6 +85,27 @@ function runMigrations(database, dataDir, databaseFilePath) {
           updated_at TEXT DEFAULT (datetime('now','localtime'))
         );
       `
+    },
+    {
+      v: 5,
+      name: "Agregar columnas fiscales a ventas",
+      sql: `
+        ALTER TABLE ventas ADD COLUMN tipo_comprobante TEXT DEFAULT 'Ticket';
+        ALTER TABLE ventas ADD COLUMN punto_venta INTEGER;
+        ALTER TABLE ventas ADD COLUMN numero_comprobante INTEGER;
+        ALTER TABLE ventas ADD COLUMN cae TEXT;
+        ALTER TABLE ventas ADD COLUMN vto_cae TEXT;
+        ALTER TABLE ventas ADD COLUMN resultado_afip TEXT;
+        ALTER TABLE ventas ADD COLUMN observaciones_afip TEXT;
+        ALTER TABLE ventas ADD COLUMN codigo_qr_afip TEXT;
+      `
+    },
+    {
+      v: 6,
+      name: "Agregar columna alicuota_iva a productos",
+      sql: `
+        ALTER TABLE productos ADD COLUMN alicuota_iva REAL DEFAULT 21.0;
+      `
     }
   ];
 

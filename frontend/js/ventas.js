@@ -298,6 +298,116 @@ let modalVisibleCount = 20;
 let ventasVisibleCount = 15;
 let currentFilteredVentas = [];
 
+// ===========================================================
+// CONFIGURACIÓN FISCAL / FACTURACIÓN ELECTRÓNICA
+// ===========================================================
+let configFiscalComercio = null;
+const chkFacturarAfip = document.getElementById("chkFacturarAfip");
+const infoFacturaPreview = document.getElementById("infoFacturaPreview");
+
+async function cargarConfiguracionFiscalVentas() {
+  if (!comercioId) return;
+  try {
+    const data = await FiscalAPI.getConfig(comercioId);
+    configFiscalComercio = data;
+    if (chkFacturarAfip) {
+      if (!data.configurado) {
+        chkFacturarAfip.checked = false;
+        if (infoFacturaPreview) {
+          infoFacturaPreview.innerHTML = '<span style="color: #94a3b8;">(Sin certificados AFIP configurados en Ajustes)</span>';
+        }
+      } else {
+        actualizarPreviewFactura();
+      }
+    }
+  } catch (err) {
+    console.warn("No se pudo cargar la configuración fiscal en ventas:", err);
+  }
+}
+
+function actualizarPreviewFactura() {
+  if (!infoFacturaPreview || !chkFacturarAfip) return;
+
+  if (!chkFacturarAfip.checked) {
+    infoFacturaPreview.textContent = "Comprobante no fiscal (Ticket interno)";
+    infoFacturaPreview.style.color = "#64748b";
+    return;
+  }
+
+  if (!configFiscalComercio || !configFiscalComercio.configurado) {
+    infoFacturaPreview.innerHTML = '<span style="color: #ef4444;">⚠ No hay certificados AFIP cargados en Ajustes.</span>';
+    return;
+  }
+
+  // Verificar cliente seleccionado
+  const cliId = clienteVenta ? clienteVenta.value : null;
+  const clienteObj = clientes.find(c => c.id == cliId);
+  const emisorIva = (configFiscalComercio.condicion_iva || "Monotributo").toLowerCase();
+
+  if (emisorIva.includes("monotribut") || emisorIva.includes("exento")) {
+    infoFacturaPreview.innerHTML = '<strong style="color: #10b981;">Factura C</strong> oficial AFIP (Emisor Monotributista)';
+  } else {
+    // Responsable Inscripto
+    const cliIva = (clienteObj?.condicion_iva || "Consumidor Final").toLowerCase();
+    if (cliIva.includes("inscripto") && clienteObj?.cuit) {
+      infoFacturaPreview.innerHTML = `<strong style="color: #10b981;">Factura A</strong> oficial AFIP (Cliente RI: ${clienteObj.cuit})`;
+    } else {
+      infoFacturaPreview.innerHTML = '<strong style="color: #10b981;">Factura B</strong> oficial AFIP (Consumidor Final)';
+    }
+  }
+}
+
+if (chkFacturarAfip) {
+  chkFacturarAfip.addEventListener("change", actualizarPreviewFactura);
+}
+
+if (clienteVenta) {
+  clienteVenta.addEventListener("change", actualizarPreviewFactura);
+}
+
+// Plantilla universal para imprimir ticket térmico (58mm / 80mm)
+function imprimirTicket(contenidoHtml) {
+  const ventana = window.open("", "_blank", "width=380,height=600");
+  if (!ventana) {
+    alert("Por favor permita las ventanas emergentes para imprimir.");
+    return;
+  }
+  ventana.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Ticket de Venta</title>
+      <style>
+        @media print {
+          @page { margin: 0; size: auto; }
+          body { margin: 0; padding: 4px; width: 100%; max-width: 80mm; }
+        }
+        body {
+          font-family: 'Courier New', Courier, monospace;
+          font-size: 12px;
+          line-height: 1.3;
+          margin: 0;
+          padding: 8px;
+          color: #000;
+          background: #fff;
+        }
+        img { max-width: 130px; height: auto; display: block; margin: 6px auto; }
+      </style>
+    </head>
+    <body>
+      ${contenidoHtml}
+    </body>
+    </html>
+  `);
+  ventana.document.close();
+  ventana.onload = () => {
+    ventana.print();
+    ventana.close();
+  };
+}
+
+
 let currentFilteredClientes = [];
 
 const renderClientesBuscadorLazy = (append = false) => {
@@ -906,14 +1016,20 @@ if (formVenta) {
         producto_id: i.producto_id,
         cantidad: i.cantidad,
         precio_unitario: i.precio_unitario,
+        alicuota_iva: i.alicuota_iva || 21.0
       })),
+      facturar_afip: chkFacturarAfip ? chkFacturarAfip.checked : false,
     };
 
     try {
+      let ventaResultado = null;
       if (ventaEnEdicionId) {
-        await VentasAPI.update(ventaEnEdicionId, payload);
+        ventaResultado = await VentasAPI.update(ventaEnEdicionId, payload);
       } else {
-        await VentasAPI.create(payload);
+        if (chkFacturarAfip && chkFacturarAfip.checked && submitBtn) {
+          submitBtn.textContent = "Autorizando en AFIP...";
+        }
+        ventaResultado = await VentasAPI.create(payload);
       }
       
       // Show ticket
@@ -931,15 +1047,40 @@ if (formVenta) {
             const tot = sub - (sub * desc / 100);
             const pago = metodoPagoVenta.value;
             
+            const isFiscal = !!(ventaResultado?.cae);
+            const ptoVta = String(ventaResultado?.punto_venta || configFiscalComercio?.punto_venta || 1).padStart(5, "0");
+            const nroCmp = String(ventaResultado?.numero_comprobante || ventaResultado?.id || 0).padStart(8, "0");
+            const tipoCbte = ventaResultado?.tipo_comprobante || (isFiscal ? "Factura Electrónica" : "Ticket de Venta");
+            const qrSrc = ventaResultado?.qr_data_url || (ventaResultado?.codigo_qr_afip ? `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(ventaResultado.codigo_qr_afip)}` : "");
+
             ticketContent.innerHTML = `
+                <div style="text-align: center; margin-bottom: 8px;">
+                  <div style="font-weight: bold; font-size: 15px;">${escapeHtml(configFiscalComercio?.nombre_fantasia || "KiERO POS")}</div>
+                  ${configFiscalComercio?.cuit ? `<div style="font-size: 12px; color: #475569;">CUIT: ${configFiscalComercio.cuit}</div>` : ""}
+                  ${configFiscalComercio?.condicion_iva ? `<div style="font-size: 12px; color: #475569;">IVA: ${configFiscalComercio.condicion_iva}</div>` : ""}
+                  <div style="border-top: 1px dashed #cbd5e1; margin: 6px 0;"></div>
+                  <div style="font-weight: bold; font-size: 14px; color: #1e293b;">${tipoCbte}</div>
+                  <div style="font-size: 12px; color: #334155;">P.V.: ${ptoVta} - N°: ${nroCmp}</div>
+                </div>
+
                 <div style="margin-bottom: 5px;"><strong>Cliente:</strong> ${clienteName}</div>
-                <div style="margin-bottom: 5px;"><strong>Mtodo de pago:</strong> ${pago}</div>
+                <div style="margin-bottom: 5px;"><strong>Método de pago:</strong> ${pago}</div>
                 <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
                 ${itemsHtml}
                 <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
                 <div style="text-align: right;">Subtotal: ${sub.toFixed(2)}</div>
                 <div style="text-align: right;">Descuento: ${desc}%</div>
                 <div style="text-align: right; font-weight: bold; font-size: 1.2em; margin-top: 5px;">Total: ${tot.toFixed(2)}</div>
+
+                ${isFiscal ? `
+                  <div style="border-top: 1px dashed #cbd5e1; margin: 8px 0;"></div>
+                  <div style="text-align: center; font-size: 12px; background: #f8fafc; padding: 6px; border-radius: 6px;">
+                    <div style="font-weight: bold; color: #1e293b;">CAE: ${ventaResultado.cae}</div>
+                    <div style="color: #64748b;">Vto. CAE: ${ventaResultado.vto_cae ? formatearFecha(ventaResultado.vto_cae) : "N/D"}</div>
+                    ${qrSrc ? `<img src="${qrSrc}" alt="QR AFIP" style="display: block; margin: 8px auto; width: 120px; height: 120px;" />` : ""}
+                    <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">Comprobante Autorizado por AFIP/ARCA</div>
+                  </div>
+                ` : ""}
             `;
         }
         modalTicketExito.style.display = "flex";
@@ -958,6 +1099,7 @@ if (formVenta) {
     modalVenta.style.display = "none";
     limpiarFormulario();
     await cargarVentas();
+  await cargarConfiguracionFiscalVentas();
   });
 }
 
@@ -1000,6 +1142,10 @@ const renderVentasPrincipalLazy = (append = false) => {
     const fila = document.createElement("tr");
     fila.innerHTML = `
       <td>${formatearFecha(v.fecha)}</td>
+      <td>
+        <strong>${escapeHtml(v.tipo_comprobante || "Ticket")}</strong>
+        ${v.cae ? `<br/><span style="color: #10b981; font-size: 0.8em; font-weight: bold;">CAE: ${v.cae}</span>` : ""}
+      </td>
       <td>${escapeHtml(v.cliente_nombre) || "-"}</td>
       <td>${Number(v.total_bruto).toFixed(2)}</td>
       <td>${Number(v.descuento_monto).toFixed(2)}</td>
@@ -1213,16 +1359,43 @@ function activarBotonesVerTicket() {
             descHtml = `<div style="display:flex; justify-content:space-between; color: #e63946;"><span>Descuento (${venta.descuento_porcentaje}%)</span><span>-${Number(venta.descuento_monto).toFixed(2)}</span></div>`;
           }
 
+          const isFiscal = !!(venta.cae);
+          const ptoVta = String(venta.punto_venta || configFiscalComercio?.punto_venta || 1).padStart(5, "0");
+          const nroCmp = String(venta.numero_comprobante || venta.id || 0).padStart(8, "0");
+          const tipoCbte = venta.tipo_comprobante || (isFiscal ? "Factura Electrónica" : "Ticket de Venta");
+          const qrSrc = venta.codigo_qr_afip ? `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(venta.codigo_qr_afip)}` : "";
+
           const ticketHTML = `
+            <div style="text-align: center; margin-bottom: 8px;">
+              <div style="font-weight: bold; font-size: 15px;">${escapeHtml(configFiscalComercio?.nombre_fantasia || "KiERO POS")}</div>
+              ${configFiscalComercio?.cuit ? `<div style="font-size: 12px; color: #475569;">CUIT: ${configFiscalComercio.cuit}</div>` : ""}
+              ${configFiscalComercio?.condicion_iva ? `<div style="font-size: 12px; color: #475569;">IVA: ${configFiscalComercio.condicion_iva}</div>` : ""}
+              <div style="border-top: 1px dashed #cbd5e1; margin: 6px 0;"></div>
+              <div style="font-weight: bold; font-size: 14px; color: #1e293b;">${tipoCbte}</div>
+              <div style="font-size: 12px; color: #334155;">P.V.: ${ptoVta} - N°: ${nroCmp}</div>
+            </div>
+
             <div style="margin-bottom: 5px;"><strong>ID Venta:</strong> ${venta.id}</div>
             <div style="margin-bottom: 5px;"><strong>Fecha:</strong> ${formatearFecha(venta.fecha)}</div>
             <div style="margin-bottom: 5px;"><strong>Cliente:</strong> ${escapeHtml(venta.cliente_nombre) || "Consumidor Final"}</div>
+            ${venta.cliente_cuit ? `<div style="margin-bottom: 5px;"><strong>CUIT/DNI:</strong> ${venta.cliente_cuit}</div>` : ""}
+            ${venta.cliente_condicion_iva ? `<div style="margin-bottom: 5px;"><strong>Cond. IVA:</strong> ${venta.cliente_condicion_iva}</div>` : ""}
             <div style="margin-bottom: 5px;"><strong>Método de pago:</strong> ${venta.metodo_pago}</div>
             <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
             ${itemsHtml}
             ${descHtml ? `<div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>${descHtml}` : ""}
             <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
             <div style="text-align: right; font-weight: bold; font-size: 1.2em; margin-top: 5px;">Total: ${Number(venta.total).toFixed(2)}</div>
+
+            ${isFiscal ? `
+              <div style="border-top: 1px dashed #cbd5e1; margin: 8px 0;"></div>
+              <div style="text-align: center; font-size: 12px; background: #f8fafc; padding: 6px; border-radius: 6px;">
+                <div style="font-weight: bold; color: #1e293b;">CAE: ${venta.cae}</div>
+                <div style="color: #64748b;">Vto. CAE: ${venta.vto_cae ? formatearFecha(venta.vto_cae) : "N/D"}</div>
+                ${qrSrc ? `<img src="${qrSrc}" alt="QR AFIP" style="display: block; margin: 8px auto; width: 120px; height: 120px;" />` : ""}
+                <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">Comprobante Autorizado por AFIP/ARCA</div>
+              </div>
+            ` : ""}
           `;
 
           document.getElementById("ticketHistorialContenido").innerHTML = ticketHTML;
@@ -2216,16 +2389,7 @@ productoVentaNombreV?.addEventListener("blur", () => {
   if(btnImprimirTicketHistorial) {
     btnImprimirTicketHistorial.addEventListener("click", () => {
       const contenido = document.getElementById("ticketHistorialContenido")?.innerHTML || "";
-      const ventana = window.open('', '_blank', 'width=300,height=500');
-      ventana.document.write('<html><head><title>Imprimir Ticket</title></head><body style="font-family: monospace;">');
-      ventana.document.write('<h3 style="text-align:center;">Comprobante de Venta</h3>');
-      ventana.document.write(contenido);
-      ventana.document.write('</body></html>');
-      ventana.document.close();
-      ventana.onload = () => {
-        ventana.print();
-        ventana.close();
-      };
+      imprimirTicket(contenido);
     });
   }
 // ==========================================
@@ -2244,16 +2408,7 @@ const btnImprimirTicketExito = document.getElementById("btnImprimirTicketExito")
 if (btnImprimirTicketExito) {
   btnImprimirTicketExito.addEventListener("click", () => {
     const contenido = document.getElementById("ticketExitoContenido")?.innerHTML || "";
-    const ventana = window.open('', '_blank', 'width=300,height=500');
-    ventana.document.write('<html><head><title>Imprimir Ticket</title></head><body style="font-family: monospace;">');
-    ventana.document.write('<h3 style="text-align:center;">Comprobante de Venta</h3>');
-    ventana.document.write(contenido);
-    ventana.document.write('</body></html>');
-    ventana.document.close();
-    ventana.onload = () => {
-      ventana.print();
-      ventana.close();
-    };
+    imprimirTicket(contenido);
   });
 }
 

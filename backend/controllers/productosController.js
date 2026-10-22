@@ -125,7 +125,8 @@ export const getProductoById = async (req, res) => {
 export const createProducto = async (req, res) => {
   const isAdmin = req.user.role === 'admin';
   const precio_abierto = isAdmin ? (req.body.precio_abierto || false) : false;
-  const { nombre, categoria, precio, stock, codigo_barras, proveedor } = req.body;
+  const { nombre, categoria, precio, stock, codigo_barras, proveedor, alicuota_iva } = req.body;
+  const alicuotaIvaFinal = alicuota_iva !== undefined ? Number(alicuota_iva) : 21.0;
   const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {
@@ -204,7 +205,8 @@ export const createProducto = async (req, res) => {
 export const updateProducto = async (req, res) => {
   const isAdmin = req.user.role === 'admin';
   const { id } = req.params;
-  const { nombre, categoria, precio, stock, codigo_barras, proveedor } = req.body;
+  const { nombre, categoria, precio, stock, codigo_barras, proveedor, alicuota_iva } = req.body;
+  const alicuotaIvaFinal = alicuota_iva !== undefined ? Number(alicuota_iva) : 21.0;
   const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {

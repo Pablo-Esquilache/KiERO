@@ -1,3 +1,4 @@
+import QRCode from "qrcode";
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
@@ -347,6 +348,342 @@ export async function verificarEstadoAfip(comercioId) {
     return {
       ok: false,
       message: `Error al probar conexión con AFIP: ${error.message}`
+    };
+  }
+}
+
+
+// ============================================================
+// GENERACIÓN DE CÓDIGO QR OFICIAL AFIP (RG 4291 / RG 4892)
+// ============================================================
+export async function generarQrAfip({
+  fecha,
+  cuit,
+  ptoVta,
+  tipoCmp,
+  nroCmp,
+  importe,
+  tipoDocRec,
+  nroDocRec,
+  codAut
+}) {
+  const qrObj = {
+    ver: 1,
+    fecha: String(fecha).slice(0, 10),
+    cuit: parseInt(String(cuit).replace(/\D/g, ""), 10),
+    ptoVta: parseInt(ptoVta, 10),
+    tipoCmp: parseInt(tipoCmp, 10),
+    nroCmp: parseInt(nroCmp, 10),
+    importe: parseFloat(Number(importe).toFixed(2)),
+    moneda: "PES",
+    ctz: 1,
+    tipoDocRec: parseInt(tipoDocRec, 10) || 99,
+    nroDocRec: parseInt(String(nroDocRec || 0).replace(/\D/g, ""), 10) || 0,
+    tipoCodAut: "E",
+    codAut: parseInt(String(codAut).replace(/\D/g, ""), 10)
+  };
+
+  const jsonStr = JSON.stringify(qrObj);
+  const base64 = Buffer.from(jsonStr, "utf8").toString("base64");
+  const qrUrl = `https://www.afip.gob.ar/fe/qr/?p=${base64}`;
+
+  let qrDataUrl = "";
+  try {
+    qrDataUrl = await QRCode.toDataURL(qrUrl, { margin: 1, width: 140 });
+  } catch (err) {
+    console.warn("[FISCAL] No se pudo generar imagen QR offline:", err.message);
+  }
+
+  return { qrUrl, qrDataUrl, qrObj };
+}
+
+// ============================================================
+// DETERMINAR TIPO DE COMPROBANTE SEGÚN EMISOR Y RECEPTOR
+// ============================================================
+export function determinarTipoComprobante(condicionEmisor, condicionReceptor) {
+  const emisorNorm = String(condicionEmisor || "").toLowerCase();
+  const receptorNorm = String(condicionReceptor || "").toLowerCase();
+
+  // Monotributistas y Exentos siempre emiten Factura C
+  if (emisorNorm.includes("monotribut") || emisorNorm.includes("exento")) {
+    return { tipo: 11, nombre: "Factura C", letra: "C" };
+  }
+
+  // Responsable Inscripto:
+  if (emisorNorm.includes("inscripto")) {
+    if (receptorNorm.includes("inscripto")) {
+      return { tipo: 1, nombre: "Factura A", letra: "A" };
+    }
+    // Consumidor final, Monotributista, Exento -> Factura B
+    return { tipo: 6, nombre: "Factura B", letra: "B" };
+  }
+
+  return { tipo: 11, nombre: "Factura C", letra: "C" };
+}
+
+// ============================================================
+// EMISIÓN OFICIAL DE FACTURA ELECTRÓNICA CON CAE EN AFIP/ARCA
+// ============================================================
+export async function emitirComprobanteAfip({
+  comercioId,
+  clienteId,
+  items,
+  descuentoPorcentaje = 0,
+  totalVenta
+}) {
+  const arcaInfo = await getArcaClient(comercioId);
+  if (!arcaInfo) {
+    throw new Error(
+      "No hay configuración fiscal o certificados cargados para este comercio. Puede emitir un Ticket común."
+    );
+  }
+
+  const { arca, config, certStatus } = arcaInfo;
+
+  if (certStatus.expirado) {
+    throw new Error(
+      "El certificado digital de AFIP se encuentra vencido. Renueve el certificado en Ajustes para poder facturar."
+    );
+  }
+
+  // Obtener cliente si existe
+  let cliente = null;
+  if (clienteId) {
+    const { rows: cliRows } = await pool.query(
+      "SELECT * FROM clientes WHERE id = $1 AND comercio_id = $2",
+      [clienteId, comercioId]
+    );
+    if (cliRows.length > 0) {
+      cliente = cliRows[0];
+    }
+  }
+
+  const condicionReceptor = cliente?.condicion_iva || "Consumidor Final";
+  const voucherInfo = determinarTipoComprobante(config.condicion_iva, condicionReceptor);
+  const cbteTipo = voucherInfo.tipo;
+
+  // Determinar documento del receptor
+  let docTipo = 99; // Consumidor Final
+  let docNro = 0;
+
+  if (cliente?.cuit) {
+    const cleanCuit = String(cliente.cuit).replace(/\D/g, "");
+    if (cleanCuit.length === 11) {
+      docTipo = 80; // CUIT
+      docNro = parseInt(cleanCuit, 10);
+    }
+  }
+
+  // Validación regulatoria Factura A
+  if (cbteTipo === 1 && docTipo !== 80) {
+    throw new Error("Para emitir Factura A es obligatorio que el cliente tenga un CUIT válido asignado.");
+  }
+
+  // Validación de tope consumidor final sin identificar (Res. AFIP)
+  const totalNum = parseFloat(Number(totalVenta).toFixed(2));
+  if (docTipo === 99 && totalNum >= 344488) {
+    throw new Error("Para ventas iguales o superiores a $344.488 la resolución de AFIP exige identificar al cliente con CUIT o DNI.");
+  }
+
+  const cbteFch = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const ptoVta = parseInt(config.punto_venta, 10) || 1;
+
+  // Matemática de importes en centavos enteros
+  let ImpTotal = totalNum;
+  let ImpNeto = totalNum;
+  let ImpIVA = 0;
+  let IvaList = [];
+
+  if (cbteTipo === 1 || cbteTipo === 6) {
+    // Responsable Inscripto discrimina IVA
+    const descFactor = 1 - (Number(descuentoPorcentaje) || 0) / 100;
+    const gruposIva = {};
+
+    for (const it of items) {
+      const itTotal = Math.round(Number(it.precio_unitario) * Number(it.cantidad) * descFactor * 100) / 100;
+      const ali = Number(it.alicuota_iva) || 21.0;
+      let aliId = 5; // 21%
+      if (ali === 10.5) aliId = 4;
+      else if (ali === 0) aliId = 3;
+      else if (ali === 27) aliId = 6;
+
+      const tasa = ali / 100;
+      const base = Math.round((itTotal / (1 + tasa)) * 100) / 100;
+      const iva = Math.round((itTotal - base) * 100) / 100;
+
+      if (!gruposIva[aliId]) {
+        gruposIva[aliId] = { Id: aliId, BaseImp: 0, Importe: 0 };
+      }
+      gruposIva[aliId].BaseImp += base;
+      gruposIva[aliId].Importe += iva;
+    }
+
+    let netoAcumulado = 0;
+    let ivaAcumulado = 0;
+    for (const k of Object.keys(gruposIva)) {
+      gruposIva[k].BaseImp = Math.round(gruposIva[k].BaseImp * 100) / 100;
+      gruposIva[k].Importe = Math.round(gruposIva[k].Importe * 100) / 100;
+      netoAcumulado += gruposIva[k].BaseImp;
+      ivaAcumulado += gruposIva[k].Importe;
+      IvaList.push(gruposIva[k]);
+    }
+
+    // Ajuste fino de redondeo al centavo
+    const diff = Math.round((ImpTotal - (netoAcumulado + ivaAcumulado)) * 100) / 100;
+    if (diff !== 0 && IvaList.length > 0) {
+      IvaList[0].BaseImp = Math.round((IvaList[0].BaseImp + diff) * 100) / 100;
+      netoAcumulado = Math.round((netoAcumulado + diff) * 100) / 100;
+    }
+
+    ImpNeto = Math.round(netoAcumulado * 100) / 100;
+    ImpIVA = Math.round(ivaAcumulado * 100) / 100;
+  }
+
+  const nextVoucherPayload = {
+    PtoVta: ptoVta,
+    CbteTipo: cbteTipo,
+    Concepto: 1, // Productos
+    DocTipo: docTipo,
+    DocNro: docNro,
+    CbteFch: cbteFch,
+    ImpTotal: ImpTotal,
+    ImpTotConc: 0,
+    ImpNeto: ImpNeto,
+    ImpOpEx: 0,
+    ImpIVA: ImpIVA,
+    ImpTrib: 0,
+    MonId: "PES",
+    MonCotiz: 1,
+    ...(IvaList.length > 0 ? { Iva: IvaList } : {})
+  };
+
+  // Timeout de 15 segundos con recuperación activa
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error("TimeoutAFIP")), 15000)
+  );
+
+  let voucherResult = null;
+  try {
+    voucherResult = await Promise.race([
+      arca.electronicBillingService.createNextVoucher(nextVoucherPayload),
+      timeoutPromise
+    ]);
+  } catch (err) {
+    if (err.message === "TimeoutAFIP") {
+      console.warn("[FISCAL] Timeout creando comprobante. Verificando estado en AFIP...");
+      try {
+        const lastVoucher = await arca.electronicBillingService.getLastVoucher(ptoVta, cbteTipo);
+        if (lastVoucher && lastVoucher.cbteNro) {
+          const voucherInfoRecover = await arca.electronicBillingService.getVoucherInfo(
+            lastVoucher.cbteNro,
+            ptoVta,
+            cbteTipo
+          );
+          if (
+            voucherInfoRecover &&
+            voucherInfoRecover.codAutorizacion &&
+            Math.abs(voucherInfoRecover.impTotal - ImpTotal) < 0.01
+          ) {
+            const nroCmp = lastVoucher.cbteNro;
+            const caeRec = voucherInfoRecover.codAutorizacion;
+            const vtoCaeRec = voucherInfoRecover.fchVto;
+            const { qrUrl, qrDataUrl } = await generarQrAfip({
+              fecha: cbteFch,
+              cuit: config.cuit,
+              ptoVta,
+              tipoCmp: cbteTipo,
+              nroCmp,
+              importe: ImpTotal,
+              tipoDocRec: docTipo,
+              nroDocRec: docNro,
+              codAut: caeRec
+            });
+
+            return {
+              ok: true,
+              resultado: "A",
+              tipo_comprobante: voucherInfo.nombre,
+              letra: voucherInfo.letra,
+              punto_venta: ptoVta,
+              numero_comprobante: nroCmp,
+              cae: caeRec,
+              vto_cae: vtoCaeRec,
+              codigo_qr_afip: qrUrl,
+              qr_data_url: qrDataUrl,
+              observaciones: "Recuperado tras reintento de conexión."
+            };
+          }
+        }
+      } catch (recoverErr) {
+        console.error("[FISCAL] Error al recuperar comprobante tras timeout:", recoverErr);
+      }
+
+      return {
+        ok: false,
+        indeterminate: true,
+        resultado: "INDETERMINADO",
+        error: "AFIP no respondió a tiempo (15s). Se guardará el comprobante en estado 'Indeterminado' para conciliar."
+      };
+    }
+    throw err;
+  }
+
+  // Procesar respuesta de AFIP
+  const resp = voucherResult.response || {};
+  const detResp = resp.FeDetResp?.FECAEDetResponse?.[0] || {};
+  const resultadoAfip = detResp.Resultado || (voucherResult.cae ? "A" : "R");
+
+  if (resultadoAfip === "A") {
+    const cae = voucherResult.cae || detResp.CAE;
+    const vtoCae = voucherResult.caeFchVto || detResp.CAEFchVto;
+    const nroCmp = detResp.CbteDesde || 0;
+
+    let obsTexto = "";
+    if (detResp.Observaciones?.Obs) {
+      const obsArr = Array.isArray(detResp.Observaciones.Obs) ? detResp.Observaciones.Obs : [detResp.Observaciones.Obs];
+      obsTexto = obsArr.map(o => `${o.Code || o.Codigo}: ${o.Msg || o.Mensaje}`).join("; ");
+    }
+
+    const { qrUrl, qrDataUrl } = await generarQrAfip({
+      fecha: cbteFch,
+      cuit: config.cuit,
+      ptoVta,
+      tipoCmp: cbteTipo,
+      nroCmp,
+      importe: ImpTotal,
+      tipoDocRec: docTipo,
+      nroDocRec: docNro,
+      codAut: cae
+    });
+
+    return {
+      ok: true,
+      resultado: "A",
+      tipo_comprobante: voucherInfo.nombre,
+      letra: voucherInfo.letra,
+      punto_venta: ptoVta,
+      numero_comprobante: nroCmp,
+      cae,
+      vto_cae: vtoCae,
+      codigo_qr_afip: qrUrl,
+      qr_data_url: qrDataUrl,
+      observaciones: obsTexto
+    };
+  } else {
+    let motivo = "Rechazado por AFIP";
+    if (detResp.Observaciones?.Obs) {
+      const obsArr = Array.isArray(detResp.Observaciones.Obs) ? detResp.Observaciones.Obs : [detResp.Observaciones.Obs];
+      motivo = obsArr.map(o => `${o.Code || o.Codigo}: ${o.Msg || o.Mensaje}`).join("; ");
+    } else if (resp.Errors?.Err) {
+      const errArr = Array.isArray(resp.Errors.Err) ? resp.Errors.Err : [resp.Errors.Err];
+      motivo = errArr.map(e => `${e.Code || e.Codigo}: ${e.Msg || e.Mensaje}`).join("; ");
+    }
+
+    return {
+      ok: false,
+      resultado: "R",
+      error: motivo,
+      observaciones: motivo
     };
   }
 }
