@@ -712,4 +712,245 @@ if (backupBtn) {
   cargarProveedoresAjustes();
   verificarUltimoAumento();
 
+
+  // ===========================================================
+  // CONFIGURACIÓN FISCAL AFIP / ARCA
+  // ===========================================================
+  const formConfigFiscal = document.getElementById("formConfigFiscal");
+  const fiscalCuitInput = document.getElementById("fiscalCuitInput");
+  const fiscalCondicionIvaSelect = document.getElementById("fiscalCondicionIvaSelect");
+  const fiscalPtoVtaInput = document.getElementById("fiscalPtoVtaInput");
+  const fiscalAmbienteSelect = document.getElementById("fiscalAmbienteSelect");
+  const fiscalCertFile = document.getElementById("fiscalCertFile");
+  const fiscalKeyFile = document.getElementById("fiscalKeyFile");
+  const badgeCertStatus = document.getElementById("badgeCertStatus");
+  const badgeKeyStatus = document.getElementById("badgeKeyStatus");
+  const badgeEstadoFiscal = document.getElementById("badgeEstadoFiscal");
+  const fiscalCertVencimiento = document.getElementById("fiscalCertVencimiento");
+  const fiscalFeedbackMsg = document.getElementById("fiscalFeedbackMsg");
+  const btnTestAfip = document.getElementById("btnTestAfip");
+  const btnGuardarFiscal = document.getElementById("btnGuardarFiscal");
+  const fiscalCuitValidationMsg = document.getElementById("fiscalCuitValidationMsg");
+
+  function validarCuitModulo11(cuitRaw) {
+    if (!cuitRaw) return { valid: false, error: "Vacío" };
+    const clean = String(cuitRaw).replace(/\D/g, "");
+    if (clean.length !== 11) return { valid: false, error: "Debe tener 11 dígitos" };
+    const prefijos = ["20", "23", "24", "27", "30", "33", "34"];
+    if (!prefijos.includes(clean.slice(0, 2))) return { valid: false, error: "Prefijo no válido" };
+    const mult = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+    let suma = 0;
+    for (let i = 0; i < 10; i++) suma += parseInt(clean[i], 10) * mult[i];
+    const mod = 11 - (suma % 11);
+    const digito = mod === 11 ? 0 : (mod === 10 ? 9 : mod);
+    if (parseInt(clean[10], 10) !== digito) return { valid: false, error: "Dígito verificador inválido" };
+    return {
+      valid: true,
+      clean,
+      formatted: `${clean.slice(0, 2)}-${clean.slice(2, 10)}-${clean.slice(10)}`
+    };
+  }
+
+  if (fiscalCuitInput) {
+    fiscalCuitInput.addEventListener("input", () => {
+      const val = fiscalCuitInput.value.trim();
+      if (!val) {
+        fiscalCuitValidationMsg.innerHTML = "";
+        return;
+      }
+      const check = validarCuitModulo11(val);
+      if (check.valid) {
+        fiscalCuitValidationMsg.innerHTML = '<span style="color: #10b981; font-weight: 500;">✓ CUIT válido</span>';
+      } else if (val.replace(/\D/g, "").length >= 11) {
+        fiscalCuitValidationMsg.innerHTML = `<span style="color: #ef4444;">⚠ ${check.error}</span>`;
+      } else {
+        fiscalCuitValidationMsg.innerHTML = '<span style="color: #64748b;">Ingrese los 11 dígitos</span>';
+      }
+    });
+  }
+
+  async function cargarConfigFiscal() {
+    if (!formConfigFiscal) return;
+
+    try {
+      const res = await authFetch(`/api/ajustes/fiscal/${cid}`);
+      if (!res.ok) return;
+      const data = await res.json();
+
+      if (data.cuit) fiscalCuitInput.value = data.cuit;
+      if (data.punto_venta) fiscalPtoVtaInput.value = data.punto_venta;
+      if (data.condicion_iva) fiscalCondicionIvaSelect.value = data.condicion_iva;
+      if (data.ambiente) fiscalAmbienteSelect.value = data.ambiente;
+
+      // Badge Certificado
+      if (data.certificado_cargado) {
+        badgeCertStatus.textContent = "Cargado ✓";
+        badgeCertStatus.style.background = "#dcfce7";
+        badgeCertStatus.style.color = "#15803d";
+      } else {
+        badgeCertStatus.textContent = "Sin cargar";
+        badgeCertStatus.style.background = "#fee2e2";
+        badgeCertStatus.style.color = "#dc2626";
+      }
+
+      // Badge Clave Privada
+      if (data.clave_privada_cargada) {
+        badgeKeyStatus.textContent = "Cargada ✓";
+        badgeKeyStatus.style.background = "#dcfce7";
+        badgeKeyStatus.style.color = "#15803d";
+      } else {
+        badgeKeyStatus.textContent = "Sin cargar";
+        badgeKeyStatus.style.background = "#fee2e2";
+        badgeKeyStatus.style.color = "#dc2626";
+      }
+
+      // Vencimiento
+      if (data.vencimiento_certificado) {
+        const vDate = new Date(data.vencimiento_certificado);
+        const vStr = vDate.toLocaleDateString("es-AR", { year: "numeric", month: "2-digit", day: "2-digit" });
+        if (data.expirado) {
+          fiscalCertVencimiento.innerHTML = `<strong style="color: #ef4444;">⚠ Venció el ${vStr}</strong>`;
+        } else {
+          fiscalCertVencimiento.innerHTML = `Vence: ${vStr}`;
+        }
+      } else {
+        fiscalCertVencimiento.textContent = "";
+      }
+
+      // Badge global estado
+      if (data.configurado && !data.expirado) {
+        badgeEstadoFiscal.textContent = "Listo para operar ✓";
+        badgeEstadoFiscal.style.background = "#dcfce7";
+        badgeEstadoFiscal.style.color = "#15803d";
+      } else if (data.expirado) {
+        badgeEstadoFiscal.textContent = "Certificado Vencido ⚠";
+        badgeEstadoFiscal.style.background = "#fee2e2";
+        badgeEstadoFiscal.style.color = "#dc2626";
+      } else {
+        badgeEstadoFiscal.textContent = "Incompleto";
+        badgeEstadoFiscal.style.background = "#fef9c3";
+        badgeEstadoFiscal.style.color = "#854d0e";
+      }
+    } catch (e) {
+      console.warn("No se pudo cargar la configuración fiscal:", e);
+    }
+  }
+
+  function leerArchivoTexto(file) {
+    return new Promise((resolve, reject) => {
+      if (!file) return resolve(null);
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = (e) => reject(new Error("Error leyendo archivo: " + e.target.error));
+      reader.readAsText(file);
+    });
+  }
+
+  if (formConfigFiscal) {
+    formConfigFiscal.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const cuit = fiscalCuitInput.value.trim();
+      const val = validarCuitModulo11(cuit);
+      if (!val.valid) {
+        alert(`El CUIT ingresado no es válido: ${val.error}`);
+        fiscalCuitInput.focus();
+        return;
+      }
+
+      const originalBtnText = btnGuardarFiscal.innerHTML;
+      btnGuardarFiscal.innerHTML = "Guardando...";
+      btnGuardarFiscal.disabled = true;
+      fiscalFeedbackMsg.innerHTML = '<span style="color: #3b82f6;">Procesando y almacenando certificados...</span>';
+
+      try {
+        let certText = null;
+        let keyText = null;
+
+        if (fiscalCertFile.files && fiscalCertFile.files[0]) {
+          certText = await leerArchivoTexto(fiscalCertFile.files[0]);
+        }
+        if (fiscalKeyFile.files && fiscalKeyFile.files[0]) {
+          keyText = await leerArchivoTexto(fiscalKeyFile.files[0]);
+        }
+
+        const payload = {
+          comercio_id: cid,
+          cuit: val.formatted,
+          punto_venta: parseInt(fiscalPtoVtaInput.value, 10) || 1,
+          condicion_iva: fiscalCondicionIvaSelect.value,
+          ambiente: fiscalAmbienteSelect.value,
+          certificado_texto: certText || undefined,
+          clave_privada_texto: keyText || undefined,
+        };
+
+        const res = await authFetch("/api/ajustes/fiscal", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Error al guardar configuración fiscal");
+
+        fiscalFeedbackMsg.innerHTML = '<span style="color: #10b981;">✓ Configuración fiscal guardada con éxito</span>';
+        alert("✅ Configuración fiscal guardada correctamente.");
+
+        // Limpiar inputs de archivo
+        fiscalCertFile.value = "";
+        fiscalKeyFile.value = "";
+
+        await cargarConfigFiscal();
+      } catch (err) {
+        fiscalFeedbackMsg.innerHTML = `<span style="color: #ef4444;">❌ Error: ${err.message}</span>`;
+        alert(`❌ Error: ${err.message}`);
+      } finally {
+        btnGuardarFiscal.innerHTML = originalBtnText;
+        btnGuardarFiscal.disabled = false;
+      }
+    });
+  }
+
+  if (btnTestAfip) {
+    btnTestAfip.addEventListener("click", async () => {
+      const originalText = btnTestAfip.innerHTML;
+      btnTestAfip.innerHTML = "Conectando...";
+      btnTestAfip.disabled = true;
+
+      try {
+        const res = await authFetch("/api/ajustes/fiscal/test", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ comercio_id: cid })
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          alert(`❌ No se pudo conectar con AFIP/ARCA:\n${data.message || data.error || "Error desconocido"}`);
+        } else {
+          const s = data.servidores || {};
+          alert(
+            `✅ Conexión con AFIP/ARCA exitosa!\n\n` +
+            `Ambiente: ${data.ambiente}\n` +
+            `CUIT: ${data.cuit}\n` +
+            `Punto de Venta: ${data.punto_venta}\n` +
+            `Vencimiento Certificado: ${data.vencimiento ? new Date(data.vencimiento).toLocaleDateString("es-AR") : "N/D"}\n\n` +
+            `Estado de Servidores:\n` +
+            `• AppServer: ${s.appserver || "OK"}\n` +
+            `• DbServer: ${s.dbserver || "OK"}\n` +
+            `• AuthServer: ${s.authserver || "OK"}`
+          );
+        }
+      } catch (err) {
+        alert(`❌ Error al probar conexión: ${err.message}`);
+      } finally {
+        btnTestAfip.innerHTML = originalText;
+        btnTestAfip.disabled = false;
+      }
+    });
+  }
+
+  // Cargar configuración fiscal al inicializar
+  cargarConfigFiscal();
+
 }

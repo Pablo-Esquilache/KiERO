@@ -130,6 +130,8 @@ export const ClientesAPI = {
     localStorage.removeItem(`clientes_cache_${JSON.parse(localStorage.getItem("session"))?.comercio_id}`);
     return res;
   },
+  consultarPadron: (cuit) =>
+    apiFetch(`/clientes/consulta-padron/${cuit}`),
   getLocalidades: (comercioId) =>
     apiFetch(`/clientes/localidades/lista?comercio_id=${comercioId}`),
   getSaldo: (id, comercioId) =>
@@ -282,4 +284,10 @@ export const TurnosAPI = {
 
 export const SystemAPI = {
   refreshDb: () => apiFetch("/system/refresh-db"),
+};
+
+export const FiscalAPI = {
+  getConfig: (comercioId) => apiFetch(`/ajustes/fiscal/${comercioId}`),
+  saveConfig: (data) => apiFetch(`/ajustes/fiscal`, { method: "POST", body: data }),
+  testConexion: (comercioId) => apiFetch(`/ajustes/fiscal/test`, { method: "POST", body: { comercio_id: comercioId } }),
 };

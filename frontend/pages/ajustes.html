@@ -142,6 +142,85 @@
           </div>
         </section>
 
+        <!-- CONFIGURACIÓN FISCAL AFIP / ARCA -->
+        <section class="ajustes-card" style="grid-column: span 2;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <h2 class="app-subtitle" style="display: flex; align-items: center; gap: 8px;">
+                <span>🏛️ Configuración Fiscal (AFIP / ARCA)</span>
+                <span id="badgeEstadoFiscal" style="font-size: 0.65em; font-weight: 600; padding: 2px 8px; border-radius: 9999px; background: #e2e8f0; color: #475569;">
+                  Verificando...
+                </span>
+              </h2>
+              <p style="font-size: 0.9em; margin-bottom: 12px; color: #64748b;">
+                Datos fiscales del comercio emisor para la consulta al padrón y facturación electrónica oficial.
+              </p>
+            </div>
+            <button type="button" id="btnTestAfip" class="app-btn-secondary" style="height: 36px; padding: 0 14px; font-size: 0.85em;">
+              🔌 Probar Conexión AFIP
+            </button>
+          </div>
+
+          <form id="formConfigFiscal" style="margin-top: 10px; display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <div class="app-form-group" style="flex: 1.5; min-width: 180px; margin-bottom: 0;">
+                <label>CUIT del Comercio Emisor</label>
+                <input type="text" id="fiscalCuitInput" class="app-input" placeholder="Ej: 20-12345678-9" maxlength="13" style="font-family: monospace;" required />
+                <span id="fiscalCuitValidationMsg" style="font-size: 0.75em; display: block; margin-top: 3px;"></span>
+              </div>
+
+              <div class="app-form-group" style="flex: 1.5; min-width: 180px; margin-bottom: 0;">
+                <label>Condición IVA Emisor</label>
+                <select id="fiscalCondicionIvaSelect" class="app-input">
+                  <option value="Monotributo">Monotributo (Factura C)</option>
+                  <option value="Responsable Inscripto">Responsable Inscripto (Facturas A y B)</option>
+                  <option value="Exento">Exento (Factura C)</option>
+                </select>
+              </div>
+
+              <div class="app-form-group" style="width: 120px; margin-bottom: 0;">
+                <label>Punto de Venta</label>
+                <input type="number" id="fiscalPtoVtaInput" class="app-input" min="1" max="99999" value="1" required />
+              </div>
+
+              <div class="app-form-group" style="flex: 1.5; min-width: 180px; margin-bottom: 0;">
+                <label>Entorno AFIP / ARCA</label>
+                <select id="fiscalAmbienteSelect" class="app-input">
+                  <option value="homologacion">Homologación (Testing / Pruebas)</option>
+                  <option value="produccion">Producción (Oficial)</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="app-form-group" style="flex: 1; min-width: 240px; margin-bottom: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                  <label style="margin: 0;">Certificado Digital (.crt)</label>
+                  <span id="badgeCertStatus" style="font-size: 0.75em; font-weight: 600; padding: 1px 6px; border-radius: 4px; background: #fee2e2; color: #dc2626;">Sin cargar</span>
+                </div>
+                <input type="file" id="fiscalCertFile" class="app-input" accept=".crt,.pem,.txt" style="padding: 6px;" />
+                <span id="fiscalCertVencimiento" style="font-size: 0.75em; color: #64748b; display: block; margin-top: 3px;"></span>
+              </div>
+
+              <div class="app-form-group" style="flex: 1; min-width: 240px; margin-bottom: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                  <label style="margin: 0;">Clave Privada (.key)</label>
+                  <span id="badgeKeyStatus" style="font-size: 0.75em; font-weight: 600; padding: 1px 6px; border-radius: 4px; background: #fee2e2; color: #dc2626;">Sin cargar</span>
+                </div>
+                <input type="file" id="fiscalKeyFile" class="app-input" accept=".key,.pem,.txt" style="padding: 6px;" />
+                <span style="font-size: 0.75em; color: #64748b; display: block; margin-top: 3px;">Se almacena de forma segura en userData local.</span>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <div id="fiscalFeedbackMsg" style="font-size: 0.85em; font-weight: 500;"></div>
+              <button type="submit" id="btnGuardarFiscal" class="app-btn-primary" style="height: 38px; padding: 0 20px;">
+                💾 Guardar Configuración Fiscal
+              </button>
+            </div>
+          </form>
+        </section>
+
         <!-- TURNERO CONFIG -->
         <section class="ajustes-card">
           <h2 class="app-subtitle">Módulo Turnero</h2>

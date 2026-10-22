@@ -1,4 +1,5 @@
 import db from "../db.js";
+import { validarCuit, consultarPadron } from "../services/fiscalService.js";
 
 // ==========================
 // GET - CLIENTES POR COMERCIO
@@ -44,7 +45,10 @@ export const createCliente = async (req, res) => {
     telefono,
     email,
     localidad,
-    comentarios, 
+    comentarios,
+    cuit,
+    condicion_iva,
+    domicilio_fiscal,
   } = req.body;
   const comercio_id = req.user.comercio_id;
 
@@ -52,12 +56,21 @@ export const createCliente = async (req, res) => {
     return res.status(400).json({ error: "Datos obligatorios faltantes" });
   }
 
+  let cuitFinal = null;
+  if (cuit && String(cuit).trim()) {
+    const val = validarCuit(cuit);
+    if (!val.valid) {
+      return res.status(400).json({ error: `CUIT inválido: ${val.error}` });
+    }
+    cuitFinal = val.formatted;
+  }
+
   try {
     const q = `
       INSERT INTO clientes
-        (nombre, fecha_nacimiento, genero, telefono, email, localidad, comentarios, comercio_id)
+        (nombre, fecha_nacimiento, genero, telefono, email, localidad, comentarios, comercio_id, cuit, condicion_iva, domicilio_fiscal)
       VALUES
-        ($1,$2,$3,$4,$5,$6,$7,$8)
+        ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
       RETURNING *
     `;
 
@@ -68,8 +81,11 @@ export const createCliente = async (req, res) => {
       telefono || "",
       email || "",
       localidad || "",
-      comentarios || "", 
-      comercio_id
+      comentarios || "",
+      comercio_id,
+      cuitFinal,
+      condicion_iva || "Consumidor Final",
+      domicilio_fiscal || "",
     ]);
 
     res.status(201).json(rows[0]);
@@ -91,12 +107,24 @@ export const updateCliente = async (req, res) => {
     telefono,
     email,
     localidad,
-    comentarios, 
+    comentarios,
+    cuit,
+    condicion_iva,
+    domicilio_fiscal,
   } = req.body;
   const comercio_id = req.user.comercio_id;
 
   if (!id || !comercio_id) {
     return res.status(400).json({ error: "Datos obligatorios faltantes" });
+  }
+
+  let cuitFinal = null;
+  if (cuit && String(cuit).trim()) {
+    const val = validarCuit(cuit);
+    if (!val.valid) {
+      return res.status(400).json({ error: `CUIT inválido: ${val.error}` });
+    }
+    cuitFinal = val.formatted;
   }
 
   try {
@@ -108,9 +136,12 @@ export const updateCliente = async (req, res) => {
         telefono = $4,
         email = $5,
         localidad = $6,
-        comentarios = $7
-      WHERE id = $8
-        AND comercio_id = $9
+        comentarios = $7,
+        cuit = $8,
+        condicion_iva = $9,
+        domicilio_fiscal = $10
+      WHERE id = $11
+        AND comercio_id = $12
       RETURNING *
     `;
 
@@ -122,7 +153,12 @@ export const updateCliente = async (req, res) => {
       email || "",
       localidad || "",
       comentarios || "",
-      id, comercio_id]);
+      cuitFinal,
+      condicion_iva || "Consumidor Final",
+      domicilio_fiscal || "",
+      id,
+      comercio_id,
+    ]);
 
     if (!rows[0]) {
       return res.status(404).json({ error: "Cliente no encontrado" });
@@ -132,6 +168,29 @@ export const updateCliente = async (req, res) => {
   } catch (error) {
     console.error("Error actualizando cliente:", error);
     res.status(500).json({ error: "Error al actualizar cliente" });
+  }
+};
+
+// ==========================
+// GET - CONSULTAR PADRÓN AFIP
+// ==========================
+export const consultarPadronCliente = async (req, res) => {
+  const { cuit } = req.params;
+  const comercio_id = req.user?.comercio_id || req.query.comercio_id;
+
+  if (!comercio_id) {
+    return res.status(400).json({ ok: false, error: "comercio_id requerido" });
+  }
+
+  try {
+    const resultado = await consultarPadron(comercio_id, cuit);
+    return res.json(resultado);
+  } catch (error) {
+    console.error("Error en consulta de padrón controller:", error);
+    return res.status(500).json({
+      ok: false,
+      message: `Error interno al consultar AFIP: ${error.message}`,
+    });
   }
 };
 
@@ -220,7 +279,7 @@ export const getCuentaCorriente = async (req, res) => {
 
 export const registrarPagoCliente = async (req, res) => {
   const { id } = req.params;
-  const {  monto } = req.body;
+  const { monto } = req.body;
   const comercio_id = req.user.comercio_id;
 
   if (!monto || monto <= 0)
@@ -230,19 +289,20 @@ export const registrarPagoCliente = async (req, res) => {
     return res.status(400).json({ error: "comercio_id requerido" });
 
   try {
-      const { rows: cli } = await db.query(
-        "SELECT 1 FROM clientes WHERE id = $1 AND comercio_id = $2", [id, comercio_id]
-      );
-      if (!cli.length) return res.status(404).json({ error: "Cliente no encontrado" });
+    const { rows: cli } = await db.query(
+      "SELECT 1 FROM clientes WHERE id = $1 AND comercio_id = $2",
+      [id, comercio_id]
+    );
+    if (!cli.length) return res.status(404).json({ error: "Cliente no encontrado" });
 
-      const { rows } = await db.query(
-        `
-        INSERT INTO cuenta_corriente_movimientos
-        (cliente_id, comercio_id, tipo, monto)
-        VALUES ($1, $2, 'pago', $3)
-        RETURNING *
-      `,
-      [id, comercio_id, monto],
+    const { rows } = await db.query(
+      `
+      INSERT INTO cuenta_corriente_movimientos
+      (cliente_id, comercio_id, tipo, monto)
+      VALUES ($1, $2, 'pago', $3)
+      RETURNING *
+    `,
+      [id, comercio_id, monto]
     );
 
     res.status(201).json(rows[0]);

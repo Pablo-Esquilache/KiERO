@@ -61,6 +61,7 @@
           <thead>
             <tr>
               <th>Nombre</th>
+              <th>CUIT / IVA</th>
               <th>Edad</th>
               <th>Género</th>
               <th>Teléfono</th>
@@ -94,10 +95,40 @@
               <input type="text" id="idCliente" class="app-input" readonly />
             </div>
 
-            <div class="app-form-group">
-              <label>Nombre</label>
-              <input type="text" id="nombre" class="app-input" required />
+            <div class="app-form-row" style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 12px; display: flex; gap: 12px; flex-wrap: wrap;">
+            <div class="app-form-group" style="flex: 2; min-width: 200px; margin-bottom: 0;">
+              <label>CUIT / CUIL (11 dígitos)</label>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <input type="text" id="cuitCliente" class="app-input" placeholder="Ej: 20-12345678-9" maxlength="13" style="font-family: monospace;" />
+                <button type="button" id="btnConsultarPadron" class="app-btn-secondary" style="white-space: nowrap; height: 38px; padding: 0 12px;">
+                  🔍 AFIP
+                </button>
+              </div>
+              <span id="cuitStatusMsg" style="font-size: 0.8em; margin-top: 3px; display: block;"></span>
             </div>
+
+            <div class="app-form-group" style="flex: 1.5; min-width: 180px; margin-bottom: 0;">
+              <label>Condición IVA</label>
+              <select id="condicionIva" class="app-input">
+                <option value="Consumidor Final">Consumidor Final</option>
+                <option value="Monotributo">Monotributo</option>
+                <option value="Responsable Inscripto">Responsable Inscripto</option>
+                <option value="Exento">Exento</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="app-form-row">
+            <div class="app-form-group" style="flex: 1;">
+              <label>Domicilio Fiscal</label>
+              <input type="text" id="domicilioFiscal" class="app-input" placeholder="Calle, número, piso/depto" />
+            </div>
+          </div>
+
+          <div class="app-form-group">
+            <label>Nombre / Razón Social</label>
+            <input type="text" id="nombre" class="app-input" required />
+          </div>
 
             <div class="app-form-group app-col">
               <label>Fecha de nacimiento</label>

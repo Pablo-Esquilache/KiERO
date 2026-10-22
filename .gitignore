@@ -37,3 +37,10 @@ backend/firebaseServiceAccount.json
 
 firebaseServiceAccount.json
 *.db.bak
+
+*.db-wal
+*.db-shm
+*.crt
+*.key
+fiscal/
+backend/fiscal/

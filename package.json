@@ -6,6 +6,7 @@
   "author": "Pablo Esquilache",
   "license": "ISC",
   "dependencies": {
+    "@arcasdk/core": "^2.0.2",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^13.0.3",
     "chart.js": "^4.5.1",

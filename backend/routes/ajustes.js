@@ -1,6 +1,12 @@
 import express from "express";
 import pool from "../db.js";
 import { requireAdmin } from "../middleware/auth.js";
+import {
+  validarCuit,
+  saveCertificates,
+  checkCertificates,
+  verificarEstadoAfip,
+} from "../services/fiscalService.js";
 
 const router = express.Router();
 
@@ -447,5 +453,153 @@ router.post("/revertir-aumento", requireAdmin, async (req, res) => {
   }
 });
 
+
+// --- CONFIGURACIÓN FISCAL AFIP / ARCA ---
+
+// Obtener configuración fiscal (sin exponer llaves privadas ni rutas locales)
+router.get("/fiscal/:comercioId", requireAdmin, async (req, res) => {
+  const { comercioId } = req.params;
+  try {
+    const { rows } = await pool.query(
+      `SELECT cuit, punto_venta, condicion_iva, ambiente, certificado_cargado, clave_privada_cargada, vencimiento_certificado, created_at, updated_at
+       FROM configuracion_fiscal
+       WHERE comercio_id = $1`,
+      [comercioId]
+    );
+
+    const certStatus = checkCertificates(comercioId);
+
+    if (rows.length === 0) {
+      return res.json({
+        cuit: "",
+        punto_venta: 1,
+        condicion_iva: "Monotributo",
+        ambiente: "homologacion",
+        certificado_cargado: certStatus.hasCert ? 1 : 0,
+        clave_privada_cargada: certStatus.hasKey ? 1 : 0,
+        vencimiento_certificado: certStatus.vencimiento,
+        expirado: certStatus.expirado,
+        configurado: false,
+      });
+    }
+
+    const row = rows[0];
+    res.json({
+      cuit: row.cuit || "",
+      punto_venta: row.punto_venta || 1,
+      condicion_iva: row.condicion_iva || "Monotributo",
+      ambiente: row.ambiente || "homologacion",
+      certificado_cargado: certStatus.hasCert ? 1 : (row.certificado_cargado ? 1 : 0),
+      clave_privada_cargada: certStatus.hasKey ? 1 : (row.clave_privada_cargada ? 1 : 0),
+      vencimiento_certificado: certStatus.vencimiento || row.vencimiento_certificado,
+      expirado: certStatus.expirado,
+      configurado: !!(row.cuit && certStatus.hasCert && certStatus.hasKey),
+    });
+  } catch (error) {
+    console.error("Error al obtener configuración fiscal:", error);
+    res.status(500).json({ error: "Error interno al obtener configuración fiscal" });
+  }
+});
+
+// Guardar configuración fiscal (guarda cert y key en userData/fiscal, guarda flags en DB)
+router.post("/fiscal", requireAdmin, async (req, res) => {
+  const {
+    comercio_id,
+    cuit,
+    punto_venta,
+    condicion_iva,
+    ambiente,
+    certificado_texto,
+    clave_privada_texto,
+  } = req.body;
+
+  if (!comercio_id || !cuit) {
+    return res.status(400).json({ error: "comercio_id y CUIT son obligatorios" });
+  }
+
+  const valCuit = validarCuit(cuit);
+  if (!valCuit.valid) {
+    return res.status(400).json({ error: `CUIT inválido: ${valCuit.error}` });
+  }
+
+  try {
+    let vencimiento = null;
+    if (certificado_texto || clave_privada_texto) {
+      const saveRes = saveCertificates(comercio_id, certificado_texto, clave_privada_texto);
+      vencimiento = saveRes.vencimiento;
+    }
+
+    const certStatus = checkCertificates(comercio_id);
+    const ptoVta = parseInt(punto_venta, 10) || 1;
+    const condIva = condicion_iva || "Monotributo";
+    const amb = ambiente === "produccion" ? "produccion" : "homologacion";
+    const certCargado = certStatus.hasCert ? 1 : 0;
+    const keyCargada = certStatus.hasKey ? 1 : 0;
+    const vencimientoFinal = vencimiento || certStatus.vencimiento || null;
+
+    await pool.query(
+      `INSERT INTO configuracion_fiscal
+        (comercio_id, cuit, punto_venta, condicion_iva, ambiente, certificado_cargado, clave_privada_cargada, vencimiento_certificado, updated_at)
+       VALUES
+        ($1, $2, $3, $4, $5, $6, $7, $8, datetime('now','localtime'))
+       ON CONFLICT(comercio_id) DO UPDATE SET
+        cuit = excluded.cuit,
+        punto_venta = excluded.punto_venta,
+        condicion_iva = excluded.condicion_iva,
+        ambiente = excluded.ambiente,
+        certificado_cargado = excluded.certificado_cargado,
+        clave_privada_cargada = excluded.clave_privada_cargada,
+        vencimiento_certificado = COALESCE(excluded.vencimiento_certificado, configuracion_fiscal.vencimiento_certificado),
+        updated_at = datetime('now','localtime')`,
+      [
+        comercio_id,
+        valCuit.formatted,
+        ptoVta,
+        condIva,
+        amb,
+        certCargado,
+        keyCargada,
+        vencimientoFinal,
+      ]
+    );
+
+    res.json({
+      success: true,
+      mensaje: "Configuración fiscal guardada correctamente.",
+      config: {
+        cuit: valCuit.formatted,
+        punto_venta: ptoVta,
+        condicion_iva: condIva,
+        ambiente: amb,
+        certificado_cargado: certCargado,
+        clave_privada_cargada: keyCargada,
+        vencimiento_certificado: vencimientoFinal,
+        expirado: certStatus.expirado,
+        configurado: !!(valCuit.formatted && certCargado && keyCargada),
+      },
+    });
+  } catch (error) {
+    console.error("Error al guardar configuración fiscal:", error);
+    res.status(500).json({ error: error.message || "Error al guardar configuración fiscal" });
+  }
+});
+
+// Probar conexión y estado con AFIP
+router.post("/fiscal/test", requireAdmin, async (req, res) => {
+  const { comercio_id } = req.body;
+  if (!comercio_id) {
+    return res.status(400).json({ error: "comercio_id requerido" });
+  }
+
+  try {
+    const estado = await verificarEstadoAfip(comercio_id);
+    res.json(estado);
+  } catch (error) {
+    console.error("Error al probar estado AFIP:", error);
+    res.status(500).json({ ok: false, message: error.message || "Error al verificar conexión AFIP" });
+  }
+});
+
 export default router;
+
 

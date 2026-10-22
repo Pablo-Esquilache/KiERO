@@ -57,6 +57,34 @@ function runMigrations(database, dataDir, databaseFilePath) {
           precio_nuevo REAL NOT NULL
         );
       `
+    },
+    {
+      v: 3,
+      name: "Agregar columnas fiscales a clientes",
+      sql: `
+        ALTER TABLE clientes ADD COLUMN cuit TEXT;
+        ALTER TABLE clientes ADD COLUMN condicion_iva TEXT DEFAULT 'Consumidor Final';
+        ALTER TABLE clientes ADD COLUMN domicilio_fiscal TEXT;
+      `
+    },
+    {
+      v: 4,
+      name: "Crear tabla de configuracion_fiscal para AFIP/ARCA",
+      sql: `
+        CREATE TABLE IF NOT EXISTS configuracion_fiscal (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          comercio_id INTEGER UNIQUE NOT NULL,
+          cuit TEXT,
+          punto_venta INTEGER DEFAULT 1,
+          condicion_iva TEXT DEFAULT 'Monotributo',
+          ambiente TEXT DEFAULT 'homologacion',
+          certificado_cargado INTEGER DEFAULT 0,
+          clave_privada_cargada INTEGER DEFAULT 0,
+          vencimiento_certificado TEXT,
+          created_at TEXT DEFAULT (datetime('now','localtime')),
+          updated_at TEXT DEFAULT (datetime('now','localtime'))
+        );
+      `
     }
   ];
 
@@ -210,4 +238,5 @@ const pool = {
   }
 };
 
+export { userDataPath, db };
 export default pool;
