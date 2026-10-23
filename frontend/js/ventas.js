@@ -285,6 +285,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if(typeof cargarClientes === "function") cargarClientes();
                 if(typeof cargarProductos === "function") cargarProductos();
                 if(typeof cargarMetodosYDescuentos === "function") cargarMetodosYDescuentos();
+                if(typeof cargarConfiguracionFiscalVentas === "function") cargarConfiguracionFiscalVentas();
             }
         } catch (err) {
             console.error("Error al verificar estado de caja para bloqueo:", err);
@@ -303,19 +304,19 @@ let currentFilteredVentas = [];
 // CONFIGURACIÓN FISCAL / FACTURACIÓN ELECTRÓNICA
 // ===========================================================
 let configFiscalComercio = null;
-const chkFacturarAfip = document.getElementById("chkFacturarAfip");
-const infoFacturaPreview = document.getElementById("infoFacturaPreview");
 
 async function cargarConfiguracionFiscalVentas() {
   if (!comercioId) return;
   try {
     const data = await FiscalAPI.getConfig(comercioId);
     configFiscalComercio = data;
-    if (chkFacturarAfip) {
+    const chk = document.getElementById("chkFacturarAfip");
+    const info = document.getElementById("infoFacturaPreview");
+    if (chk) {
       if (!data.configurado) {
-        chkFacturarAfip.checked = false;
-        if (infoFacturaPreview) {
-          infoFacturaPreview.innerHTML = '<span style="color: #94a3b8;">(Sin certificados AFIP configurados en Ajustes)</span>';
+        chk.checked = false;
+        if (info) {
+          info.innerHTML = '<span style="color: #94a3b8;">(Sin certificados AFIP configurados en Ajustes)</span>';
         }
       } else {
         actualizarPreviewFactura();
@@ -327,43 +328,38 @@ async function cargarConfiguracionFiscalVentas() {
 }
 
 function actualizarPreviewFactura() {
-  if (!infoFacturaPreview || !chkFacturarAfip) return;
+  const chk = document.getElementById("chkFacturarAfip");
+  const info = document.getElementById("infoFacturaPreview");
+  if (!info || !chk) return;
 
-  if (!chkFacturarAfip.checked) {
-    infoFacturaPreview.textContent = "Comprobante no fiscal (Ticket interno)";
-    infoFacturaPreview.style.color = "#64748b";
+  if (!chk.checked) {
+    info.textContent = "Comprobante no fiscal (Ticket interno)";
+    info.style.color = "#64748b";
     return;
   }
 
   if (!configFiscalComercio || !configFiscalComercio.configurado) {
-    infoFacturaPreview.innerHTML = '<span style="color: #ef4444;">⚠ No hay certificados AFIP cargados en Ajustes.</span>';
+    info.innerHTML = '<span style="color: #ef4444;">⚠ No hay certificados AFIP cargados en Ajustes.</span>';
     return;
   }
 
   // Verificar cliente seleccionado
-  const cliId = clienteVenta ? clienteVenta.value : null;
-  const clienteObj = clientes.find(c => c.id == cliId);
+  const cInput = document.getElementById("clienteVenta");
+  const cliId = cInput ? cInput.value : null;
+  const clienteObj = (typeof allClientes !== "undefined" && allClientes) ? allClientes.find(c => c.id == cliId) : null;
   const emisorIva = (configFiscalComercio.condicion_iva || "Monotributo").toLowerCase();
 
   if (emisorIva.includes("monotribut") || emisorIva.includes("exento")) {
-    infoFacturaPreview.innerHTML = '<strong style="color: #10b981;">Factura C</strong> oficial AFIP (Emisor Monotributista)';
+    info.innerHTML = '<strong style="color: #10b981;">Factura C</strong> oficial AFIP (Emisor Monotributista)';
   } else {
     // Responsable Inscripto
     const cliIva = (clienteObj?.condicion_iva || "Consumidor Final").toLowerCase();
     if (cliIva.includes("inscripto") && clienteObj?.cuit) {
-      infoFacturaPreview.innerHTML = `<strong style="color: #10b981;">Factura A</strong> oficial AFIP (Cliente RI: ${clienteObj.cuit})`;
+      info.innerHTML = `<strong style="color: #10b981;">Factura A</strong> oficial AFIP (Cliente RI: ${clienteObj.cuit})`;
     } else {
-      infoFacturaPreview.innerHTML = '<strong style="color: #10b981;">Factura B</strong> oficial AFIP (Consumidor Final)';
+      info.innerHTML = '<strong style="color: #10b981;">Factura B</strong> oficial AFIP (Consumidor Final)';
     }
   }
-}
-
-if (chkFacturarAfip) {
-  chkFacturarAfip.addEventListener("change", actualizarPreviewFactura);
-}
-
-if (clienteVenta) {
-  clienteVenta.addEventListener("change", actualizarPreviewFactura);
 }
 
 // Plantilla universal para imprimir ticket térmico (58mm / 80mm)
@@ -472,6 +468,16 @@ const metodoPagoVenta = document.getElementById("metodoPagoVenta");
 const totalFinalVenta = document.getElementById("totalFinalVenta");
 
 const formVenta = document.querySelector(".app-form-venta");
+const chkFacturarAfip = document.getElementById("chkFacturarAfip");
+const infoFacturaPreview = document.getElementById("infoFacturaPreview");
+
+if (chkFacturarAfip) {
+  chkFacturarAfip.addEventListener("change", actualizarPreviewFactura);
+}
+
+if (clienteVenta) {
+  clienteVenta.addEventListener("change", actualizarPreviewFactura);
+}
 
 const btnDevolucion = document.getElementById("btnDevolucion");
 const modalDevolucion = document.getElementById("modalDevolucion");
@@ -610,6 +616,7 @@ function limpiarFormulario() {
 // ==============================
 async function cargarClientes() {
   const clientes = await ClientesAPI.getAll(comercioId);
+  allClientes = clientes;
     
     // Auto-select Consumidor Final
     const consumidorFinal = clientes.find(c => c.nombre && c.nombre.toLowerCase().includes('consumidor'));
