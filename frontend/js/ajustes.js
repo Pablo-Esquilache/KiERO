@@ -1,4 +1,20 @@
 import { API_BASE_URL } from "./api.js";
+
+function getAuthToken() {
+  try {
+    const s = JSON.parse(localStorage.getItem("session") || "{}");
+    return s.token || null;
+  } catch {
+    return null;
+  }
+}
+
+const authFetch = async (url, options = {}) => {
+  options.headers = options.headers || {};
+  const token = getAuthToken();
+  if (token) options.headers['Authorization'] = 'Bearer ' + token;
+  return globalThis.fetch(url.startsWith('/api') ? API_BASE_URL + url.substring(4) : url, options);
+};
 document.addEventListener("DOMContentLoaded", () => {
   const session = JSON.parse(localStorage.getItem("session") || "{}");
   const token = session.token;
@@ -10,11 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const cid = session.comercio_id || 1;
-  const authFetch = async (url, options = {}) => {
-    options.headers = options.headers || {};
-    if (token) options.headers['Authorization'] = 'Bearer ' + token;
-    return globalThis.fetch(url.startsWith('/api') ? API_BASE_URL + url.substring(4) : url, options);
-  };
+// authFetch declared at module level
 
 //   // ===== ECOMMERCE SYNC =====
 //   const txtUrl = document.getElementById("apiUrlSync");
@@ -487,7 +499,6 @@ document.addEventListener("DOMContentLoaded", () => {
   cargarCategoriasGasto();
   cargarUmbralStock();
   cargarUsuarios();
-});
 
 // ==========================================
 // Botón de Copia de Seguridad Manual (SQL)
@@ -543,6 +554,7 @@ if (backupBtn) {
       backupBtn.textContent = "💾 Descargar Backup";
     }
   });
+  }
 
   // ==========================================
   // AUMENTO MASIVO DE PRECIOS
@@ -952,5 +964,4 @@ if (backupBtn) {
 
   // Cargar configuración fiscal al inicializar
   cargarConfigFiscal();
-
-}
+});

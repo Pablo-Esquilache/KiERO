@@ -8,6 +8,7 @@ import {
   ProductosAPI,
   DevolucionesAPI,
   CajasAPI,
+  FiscalAPI,
   API_BASE_URL } from "./api.js";
 
 
