@@ -192,6 +192,34 @@
               </div>
             </div>
 
+            <!-- DATOS LEGALES Y FISCALES DEL COMERCIO -->
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <div class="app-form-group" style="flex: 2; min-width: 200px; margin-bottom: 0;">
+                <label>Razón Social / Nombre Comercial</label>
+                <input type="text" id="fiscalRazonSocialInput" class="app-input" placeholder="Ej: Mi Negocio S.R.L. o Nombre Titular" />
+              </div>
+
+              <div class="app-form-group" style="flex: 2; min-width: 200px; margin-bottom: 0;">
+                <label>Domicilio Comercial</label>
+                <input type="text" id="fiscalDomicilioInput" class="app-input" placeholder="Ej: Av. San Martín 1234" />
+              </div>
+
+              <div class="app-form-group" style="flex: 1.2; min-width: 130px; margin-bottom: 0;">
+                <label>Ingresos Brutos (IIBB)</label>
+                <input type="text" id="fiscalIibbInput" class="app-input" placeholder="Ej: 20-12345678-9 o Exento" />
+              </div>
+
+              <div class="app-form-group" style="flex: 1.2; min-width: 130px; margin-bottom: 0;">
+                <label>Inicio Actividades</label>
+                <input type="date" id="fiscalInicioActividadesInput" class="app-input" />
+              </div>
+
+              <div class="app-form-group" style="flex: 1.2; min-width: 130px; margin-bottom: 0;">
+                <label>Tope Cons. Final ($)</label>
+                <input type="number" id="fiscalTopeCfInput" class="app-input" value="10000000" min="1000" step="1000" title="Tope para ventas sin identificar al comprador (RG 5700/2025)" />
+              </div>
+            </div>
+
             <div style="display: flex; gap: 12px; flex-wrap: wrap; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
               <div class="app-form-group" style="flex: 1; min-width: 240px; margin-bottom: 0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">

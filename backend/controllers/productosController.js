@@ -136,8 +136,8 @@ export const createProducto = async (req, res) => {
   try {
     const query = `
       INSERT INTO productos
-        (nombre, categoria, precio, stock, codigo_barras, comercio_id, precio_abierto, proveedor)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        (nombre, categoria, precio, stock, codigo_barras, comercio_id, precio_abierto, proveedor, alicuota_iva)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
     `;
 
@@ -149,7 +149,8 @@ export const createProducto = async (req, res) => {
         codigo_barras || null,
         comercio_id,
         precio_abierto,
-        proveedor ? proveedor.trim() : null
+        proveedor ? proveedor.trim() : null,
+        alicuotaIvaFinal
       ]);
 
     const finalProduct = rows[0];
@@ -224,7 +225,8 @@ export const updateProducto = async (req, res) => {
             stock = stock + COALESCE($4::integer, 0),
             codigo_barras = $7,
             precio_abierto = $8,
-            proveedor = $9
+            proveedor = $9,
+            alicuota_iva = $10
         WHERE id = $5 AND comercio_id = $6
         RETURNING *
       `;
@@ -237,7 +239,8 @@ export const updateProducto = async (req, res) => {
         comercio_id,
         codigo_barras || null,
         req.body.precio_abierto,
-        proveedor !== undefined ? (proveedor ? proveedor.trim() : null) : null
+        proveedor !== undefined ? (proveedor ? proveedor.trim() : null) : null,
+        alicuotaIvaFinal
       ];
     } else {
       query = `
@@ -247,7 +250,8 @@ export const updateProducto = async (req, res) => {
             precio = $3,
             stock = stock + COALESCE($4::integer, 0),
             codigo_barras = $7,
-            proveedor = $8
+            proveedor = $8,
+            alicuota_iva = $9
         WHERE id = $5 AND comercio_id = $6
         RETURNING *
       `;
@@ -259,7 +263,8 @@ export const updateProducto = async (req, res) => {
         id,
         comercio_id,
         codigo_barras || null,
-        proveedor !== undefined ? (proveedor ? proveedor.trim() : null) : null
+        proveedor !== undefined ? (proveedor ? proveedor.trim() : null) : null,
+        alicuotaIvaFinal
       ];
     }
 

@@ -733,6 +733,11 @@ if (backupBtn) {
   const fiscalCondicionIvaSelect = document.getElementById("fiscalCondicionIvaSelect");
   const fiscalPtoVtaInput = document.getElementById("fiscalPtoVtaInput");
   const fiscalAmbienteSelect = document.getElementById("fiscalAmbienteSelect");
+  const fiscalRazonSocialInput = document.getElementById("fiscalRazonSocialInput");
+  const fiscalDomicilioInput = document.getElementById("fiscalDomicilioInput");
+  const fiscalIibbInput = document.getElementById("fiscalIibbInput");
+  const fiscalInicioActividadesInput = document.getElementById("fiscalInicioActividadesInput");
+  const fiscalTopeCfInput = document.getElementById("fiscalTopeCfInput");
   const fiscalCertFile = document.getElementById("fiscalCertFile");
   const fiscalKeyFile = document.getElementById("fiscalKeyFile");
   const badgeCertStatus = document.getElementById("badgeCertStatus");
@@ -793,6 +798,11 @@ if (backupBtn) {
       if (data.punto_venta) fiscalPtoVtaInput.value = data.punto_venta;
       if (data.condicion_iva) fiscalCondicionIvaSelect.value = data.condicion_iva;
       if (data.ambiente) fiscalAmbienteSelect.value = data.ambiente;
+      if (fiscalRazonSocialInput) fiscalRazonSocialInput.value = data.razon_social || "";
+      if (fiscalDomicilioInput) fiscalDomicilioInput.value = data.domicilio_comercial || "";
+      if (fiscalIibbInput) fiscalIibbInput.value = data.iibb || "";
+      if (fiscalInicioActividadesInput) fiscalInicioActividadesInput.value = data.fecha_inicio_actividades || "";
+      if (fiscalTopeCfInput) fiscalTopeCfInput.value = data.tope_consumidor_final || 10000000;
 
       // Badge Certificado
       if (data.certificado_cargado) {
@@ -892,6 +902,11 @@ if (backupBtn) {
           punto_venta: parseInt(fiscalPtoVtaInput.value, 10) || 1,
           condicion_iva: fiscalCondicionIvaSelect.value,
           ambiente: fiscalAmbienteSelect.value,
+          razon_social: fiscalRazonSocialInput ? fiscalRazonSocialInput.value.trim() : "",
+          domicilio_comercial: fiscalDomicilioInput ? fiscalDomicilioInput.value.trim() : "",
+          iibb: fiscalIibbInput ? fiscalIibbInput.value.trim() : "",
+          fecha_inicio_actividades: fiscalInicioActividadesInput ? fiscalInicioActividadesInput.value : "",
+          tope_consumidor_final: fiscalTopeCfInput ? (parseFloat(fiscalTopeCfInput.value) || 10000000) : 10000000,
           certificado_texto: certText || undefined,
           clave_privada_texto: keyText || undefined,
         };

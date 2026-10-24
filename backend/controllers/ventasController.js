@@ -1,4 +1,4 @@
-import { emitirComprobanteAfip } from "../services/fiscalService.js";
+import { emitirComprobanteAfip, withFiscalLock } from "../services/fiscalService.js";
 import db from "../db.js";
 import { resolverFechaMovimiento } from "../utils/fechas.js";
 
@@ -159,12 +159,14 @@ export const createVenta = async (req, res) => {
   let fiscalData = null;
   if (facturar_afip) {
     try {
-      fiscalData = await emitirComprobanteAfip({
-        comercioId: comercio_id,
-        clienteId: cliente_id,
-        items,
-        descuentoPorcentaje: descuento,
-        totalVenta: total
+      fiscalData = await withFiscalLock(comercio_id, async () => {
+        return await emitirComprobanteAfip({
+          comercioId: comercio_id,
+          clienteId: cliente_id,
+          items,
+          descuentoPorcentaje: descuento,
+          totalVenta: total
+        });
       });
 
       if (!fiscalData.ok && !fiscalData.indeterminate) {
@@ -193,8 +195,8 @@ export const createVenta = async (req, res) => {
         (fecha, cliente_id, metodo_pago, total_bruto,
          descuento_monto, descuento_porcentaje, total, comercio_id,
          tipo_comprobante, punto_venta, numero_comprobante, cae, vto_cae,
-         resultado_afip, observaciones_afip, codigo_qr_afip)
-      VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+         resultado_afip, observaciones_afip, codigo_qr_afip, qr_data_url)
+      VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       RETURNING *
     `;
 
@@ -213,7 +215,8 @@ export const createVenta = async (req, res) => {
       fiscalData ? fiscalData.vto_cae : null,
       fiscalData ? fiscalData.resultado : "NO_FISCAL",
       fiscalData ? fiscalData.observaciones : null,
-      fiscalData ? fiscalData.codigo_qr_afip : null
+      fiscalData ? fiscalData.codigo_qr_afip : null,
+      fiscalData ? fiscalData.qr_data_url : null
     ]);
 
     const venta = vRows[0];
@@ -269,6 +272,44 @@ export const createVenta = async (req, res) => {
   } catch (err) {
     await client.query("ROLLBACK");
     console.error("Error en transacción de venta:", err);
+
+    // Resguardo crítico: Si ARCA ya autorizó y emitió el CAE, NO perderlo
+    if (fiscalData && fiscalData.cae) {
+      try {
+        await db.query(
+          `INSERT INTO ventas_fiscales_contingencia
+            (comercio_id, cliente_id, cae, vto_cae, punto_venta, numero_comprobante, tipo_comprobante, total, datos_venta, resuelto)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 0)`,
+          [
+            comercio_id,
+            cliente_id,
+            fiscalData.cae,
+            fiscalData.vto_cae,
+            fiscalData.punto_venta,
+            fiscalData.numero_comprobante,
+            fiscalData.tipo_comprobante,
+            total,
+            JSON.stringify({ items, error_local: err.message })
+          ]
+        );
+      } catch (cErr) {
+        console.error("[CONTINGENCIA CRÍTICA] Error al registrar:", cErr);
+      }
+
+      return res.status(200).json({
+        warning: true,
+        cae: fiscalData.cae,
+        vto_cae: fiscalData.vto_cae,
+        punto_venta: fiscalData.punto_venta,
+        numero_comprobante: fiscalData.numero_comprobante,
+        tipo_comprobante: fiscalData.tipo_comprobante,
+        codigo_qr_afip: fiscalData.codigo_qr_afip,
+        qr_data_url: fiscalData.qr_data_url,
+        total: total,
+        error: `ATENCIÓN: La factura fue AUTORIZADA por AFIP (CAE: ${fiscalData.cae}), pero ocurrió un problema al registrar el stock local (${err.message}). La venta fue resguardada en contingencia fiscal.`
+      });
+    }
+
     res.status(400).json({ error: err.message });
   } finally {
     client.release();
@@ -309,13 +350,17 @@ export const updateVenta = async (req, res) => {
   try {
     await client.query("BEGIN");
 
-    // 🔹 Validar existencia de venta
+    // 🔹 Validar existencia de venta y resguardo fiscal
     const { rows: ventaExistente } = await client.query(
-      `SELECT id FROM ventas WHERE id = $1 AND comercio_id = $2`,
+      `SELECT id, cae, resultado_afip FROM ventas WHERE id = $1 AND comercio_id = $2`,
       [id, comercio_id],
     );
 
     if (!ventaExistente.length) throw new Error("Venta no encontrada");
+
+    if (ventaExistente[0].cae || ventaExistente[0].resultado_afip === 'A') {
+      throw new Error("No se puede editar una venta que ya fue facturada electrónicamente en AFIP/ARCA (CAE: " + (ventaExistente[0].cae || "") + ").");
+    }
 
     // 1️⃣ Obtener detalles anteriores
     const { rows: detallesAnteriores } = await client.query(
@@ -461,9 +506,9 @@ export const deleteVenta = async (req, res) => {
   try {
     await client.query("BEGIN");
 
-    // 1️⃣ Obtener datos de la venta
+    // 1️⃣ Obtener datos de la venta y resguardo fiscal
     const { rows: ventaRows } = await client.query(
-      `SELECT cliente_id, metodo_pago, total
+      `SELECT cliente_id, metodo_pago, total, cae, resultado_afip
        FROM ventas
        WHERE id = $1 AND comercio_id = $2`,
       [id, comercio_id],
@@ -472,6 +517,10 @@ export const deleteVenta = async (req, res) => {
     if (!ventaRows.length) throw new Error("Venta no encontrada");
 
     const venta = ventaRows[0];
+
+    if (venta.cae || venta.resultado_afip === 'A') {
+      throw new Error("No se puede eliminar una factura electrónica autorizada por AFIP/ARCA (CAE: " + (venta.cae || "") + "). Debe emitir la Nota de Crédito correspondiente.");
+    }
 
     // 2️⃣ Restaurar stock
     const { rows: detalles } = await client.query(

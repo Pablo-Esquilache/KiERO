@@ -271,12 +271,13 @@ router.get("/aumento-masivo/previsualizar/:comercioId", requireAdmin, async (req
 
 // Aplicar aumento masivo con registro en log
 router.post("/aumento-masivo", requireAdmin, async (req, res) => {
-  const { comercio_id, proveedor = "TODOS", porcentaje, tipo_redondeo = "centavo" } = req.body;
+  const comercio_id = req.user?.comercio_id || req.body.comercio_id;
+  const { proveedor = "TODOS", porcentaje, tipo_redondeo = "centavo" } = req.body;
   const usuario_id = req.user?.id || null;
 
-  const pct = parseFloat(porcentaje);
-  if (isNaN(pct) || pct <= 0) {
-    return res.status(400).json({ error: "Porcentaje de aumento inválido" });
+  const pct = Number(porcentaje);
+  if (!Number.isFinite(pct) || pct <= 0 || pct > 500) {
+    return res.status(400).json({ error: "El porcentaje de aumento debe ser un número finito mayor a 0 y menor o igual a 500%." });
   }
 
   const client = await pool.connect();
@@ -392,11 +393,25 @@ router.get("/ultimo-aumento/:comercioId", requireAdmin, async (req, res) => {
 
 // Revertir el último aumento masivo
 router.post("/revertir-aumento", requireAdmin, async (req, res) => {
-  const { comercio_id, log_id } = req.body;
+  const comercio_id = req.user?.comercio_id || req.body.comercio_id;
+  const { log_id } = req.body;
 
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+
+    // Verificar que sea estrictamente el último aumento activo del comercio
+    const { rows: latestRows } = await client.query(
+      `SELECT id FROM log_aumentos_precios 
+       WHERE comercio_id = $1 AND revertido = 0 
+       ORDER BY id DESC LIMIT 1`,
+      [comercio_id]
+    );
+
+    if (latestRows.length === 0 || Number(latestRows[0].id) !== Number(log_id)) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ error: "Solo es posible revertir el último aumento masivo activo registrado." });
+    }
 
     // Verificar que el log exista, pertenezca al comercio y no esté revertido
     const { rows: logRows } = await client.query(
@@ -432,6 +447,13 @@ router.post("/revertir-aumento", requireAdmin, async (req, res) => {
       }
     }
 
+    if (revertidos === 0) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({
+        error: "No se pudieron revertir los precios porque todos los productos de este lote fueron modificados manualmente con posterioridad."
+      });
+    }
+
     // Marcar como revertido
     await client.query(
       `UPDATE log_aumentos_precios SET revertido = 1 WHERE id = $1`,
@@ -458,10 +480,10 @@ router.post("/revertir-aumento", requireAdmin, async (req, res) => {
 
 // Obtener configuración fiscal (sin exponer llaves privadas ni rutas locales)
 router.get("/fiscal/:comercioId", requireAdmin, async (req, res) => {
-  const { comercioId } = req.params;
+  const comercioId = req.user?.comercio_id || req.params.comercioId;
   try {
     const { rows } = await pool.query(
-      `SELECT cuit, punto_venta, condicion_iva, ambiente, certificado_cargado, clave_privada_cargada, vencimiento_certificado, created_at, updated_at
+      `SELECT cuit, punto_venta, condicion_iva, ambiente, razon_social, domicilio_comercial, iibb, fecha_inicio_actividades, tope_consumidor_final, certificado_cargado, clave_privada_cargada, vencimiento_certificado, created_at, updated_at
        FROM configuracion_fiscal
        WHERE comercio_id = $1`,
       [comercioId]
@@ -475,6 +497,11 @@ router.get("/fiscal/:comercioId", requireAdmin, async (req, res) => {
         punto_venta: 1,
         condicion_iva: "Monotributo",
         ambiente: "homologacion",
+        razon_social: "",
+        domicilio_comercial: "",
+        iibb: "",
+        fecha_inicio_actividades: "",
+        tope_consumidor_final: 10000000,
         certificado_cargado: certStatus.hasCert ? 1 : 0,
         clave_privada_cargada: certStatus.hasKey ? 1 : 0,
         vencimiento_certificado: certStatus.vencimiento,
@@ -489,6 +516,11 @@ router.get("/fiscal/:comercioId", requireAdmin, async (req, res) => {
       punto_venta: row.punto_venta || 1,
       condicion_iva: row.condicion_iva || "Monotributo",
       ambiente: row.ambiente || "homologacion",
+      razon_social: row.razon_social || "",
+      domicilio_comercial: row.domicilio_comercial || "",
+      iibb: row.iibb || "",
+      fecha_inicio_actividades: row.fecha_inicio_actividades || "",
+      tope_consumidor_final: Number(row.tope_consumidor_final) || 10000000,
       certificado_cargado: certStatus.hasCert ? 1 : (row.certificado_cargado ? 1 : 0),
       clave_privada_cargada: certStatus.hasKey ? 1 : (row.clave_privada_cargada ? 1 : 0),
       vencimiento_certificado: certStatus.vencimiento || row.vencimiento_certificado,
@@ -503,12 +535,17 @@ router.get("/fiscal/:comercioId", requireAdmin, async (req, res) => {
 
 // Guardar configuración fiscal (guarda cert y key en userData/fiscal, guarda flags en DB)
 router.post("/fiscal", requireAdmin, async (req, res) => {
+  const comercio_id = req.user?.comercio_id || req.body.comercio_id;
   const {
-    comercio_id,
     cuit,
     punto_venta,
     condicion_iva,
     ambiente,
+    razon_social,
+    domicilio_comercial,
+    iibb,
+    fecha_inicio_actividades,
+    tope_consumidor_final,
     certificado_texto,
     clave_privada_texto,
   } = req.body;
@@ -539,14 +576,19 @@ router.post("/fiscal", requireAdmin, async (req, res) => {
 
     await pool.query(
       `INSERT INTO configuracion_fiscal
-        (comercio_id, cuit, punto_venta, condicion_iva, ambiente, certificado_cargado, clave_privada_cargada, vencimiento_certificado, updated_at)
+        (comercio_id, cuit, punto_venta, condicion_iva, ambiente, razon_social, domicilio_comercial, iibb, fecha_inicio_actividades, tope_consumidor_final, certificado_cargado, clave_privada_cargada, vencimiento_certificado, updated_at)
        VALUES
-        ($1, $2, $3, $4, $5, $6, $7, $8, datetime('now','localtime'))
+        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, datetime('now','localtime'))
        ON CONFLICT(comercio_id) DO UPDATE SET
         cuit = excluded.cuit,
         punto_venta = excluded.punto_venta,
         condicion_iva = excluded.condicion_iva,
         ambiente = excluded.ambiente,
+        razon_social = excluded.razon_social,
+        domicilio_comercial = excluded.domicilio_comercial,
+        iibb = excluded.iibb,
+        fecha_inicio_actividades = excluded.fecha_inicio_actividades,
+        tope_consumidor_final = excluded.tope_consumidor_final,
         certificado_cargado = excluded.certificado_cargado,
         clave_privada_cargada = excluded.clave_privada_cargada,
         vencimiento_certificado = COALESCE(excluded.vencimiento_certificado, configuracion_fiscal.vencimiento_certificado),
@@ -557,6 +599,11 @@ router.post("/fiscal", requireAdmin, async (req, res) => {
         ptoVta,
         condIva,
         amb,
+        razon_social ? String(razon_social).trim() : null,
+        domicilio_comercial ? String(domicilio_comercial).trim() : null,
+        iibb ? String(iibb).trim() : null,
+        fecha_inicio_actividades ? String(fecha_inicio_actividades).trim() : null,
+        Number(tope_consumidor_final) || 10000000,
         certCargado,
         keyCargada,
         vencimientoFinal,

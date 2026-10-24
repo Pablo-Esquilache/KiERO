@@ -47,6 +47,11 @@
       "main.js",
       "backend/**/*",
       "!backend/node_modules/**",
+      "!backend/kiero.db*",
+      "!backend/.env*",
+      "!backend/dist/**",
+      "!backend/functions/**",
+      "!backend/backups/**",
       "frontend/**/*",
       "package.json"
     ],

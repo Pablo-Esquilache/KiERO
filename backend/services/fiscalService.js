@@ -6,6 +6,42 @@ import { Arca } from "@arcasdk/core";
 import pool, { userDataPath } from "../db.js";
 
 // ============================================================
+// MUTEX SERIALIZADOR DE EMISIONES AFIP POR COMERCIO
+// ============================================================
+const fiscalLocks = new Map();
+
+export async function withFiscalLock(comercioId, fn) {
+  const current = fiscalLocks.get(comercioId) || Promise.resolve();
+  let release;
+  const p = new Promise(resolve => { release = resolve; });
+  fiscalLocks.set(comercioId, current.then(() => p));
+  await current;
+  try {
+    return await fn();
+  } finally {
+    release();
+    if (fiscalLocks.get(comercioId) === current) {
+      fiscalLocks.delete(comercioId);
+    }
+  }
+}
+
+// ============================================================
+// FECHA EN ZONA HORARIA DE ARGENTINA (AMERICA/ARGENTINA/BUENOS_AIRES)
+// ============================================================
+export function getFechaArgentina() {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Argentina/Buenos_Aires",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  });
+  const iso = formatter.format(new Date()); // YYYY-MM-DD
+  const afip = iso.replace(/-/g, "");       // YYYYMMDD
+  return { iso, afip };
+}
+
+// ============================================================
 // VALIDACIÓN OFICIAL CUIT - MÓDULO 11 (100% OFFLINE)
 // ============================================================
 export function validarCuit(cuitRaw) {
@@ -104,28 +140,47 @@ export function checkCertificates(comercioId) {
 }
 
 export function saveCertificates(comercioId, certText, keyText) {
-  const { fiscalDir } = getFiscalDir();
   let vencimiento = null;
+  let cleanCert = null;
+  let cleanKey = null;
 
   if (certText && certText.trim()) {
+    cleanCert = certText.trim();
     try {
-      const cleanCert = certText.trim();
       const x509 = new crypto.X509Certificate(cleanCert);
       vencimiento = x509.validTo;
-      const certPath = getCertPath(comercioId);
-      fs.writeFileSync(certPath, cleanCert, "utf8");
     } catch (err) {
       throw new Error("El archivo de certificado (.crt) no tiene un formato X.509 válido: " + err.message);
     }
   }
 
   if (keyText && keyText.trim()) {
-    const cleanKey = keyText.trim();
+    cleanKey = keyText.trim();
     if (!cleanKey.includes("PRIVATE KEY")) {
       throw new Error("El archivo de clave privada (.key) no contiene un encabezado válido de clave privada.");
     }
-    const keyPath = getKeyPath(comercioId);
-    fs.writeFileSync(keyPath, cleanKey, "utf8");
+    const certToCheck = cleanCert || (fs.existsSync(getCertPath(comercioId)) ? fs.readFileSync(getCertPath(comercioId), "utf8") : null);
+    if (certToCheck) {
+      try {
+        const x509 = new crypto.X509Certificate(certToCheck);
+        const privateKey = crypto.createPrivateKey(cleanKey);
+        if (typeof x509.checkPrivateKey === "function") {
+          const match = x509.checkPrivateKey(privateKey);
+          if (!match) {
+            throw new Error("La clave privada (.key) no corresponde al certificado digital (.crt) cargado.");
+          }
+        }
+      } catch (keyErr) {
+        throw new Error("Validación de clave privada fallida: " + keyErr.message);
+      }
+    }
+  }
+
+  if (cleanCert) {
+    fs.writeFileSync(getCertPath(comercioId), cleanCert, "utf8");
+  }
+  if (cleanKey) {
+    fs.writeFileSync(getKeyPath(comercioId), cleanKey, "utf8");
   }
 
   return {
@@ -367,9 +422,17 @@ export async function generarQrAfip({
   nroDocRec,
   codAut
 }) {
+  let fStr = String(fecha || "").trim();
+  let fechaQr = fStr;
+  if (fStr.length === 8 && !fStr.includes("-")) {
+    fechaQr = `${fStr.slice(0, 4)}-${fStr.slice(4, 6)}-${fStr.slice(6, 8)}`;
+  } else if (fStr.includes("T")) {
+    fechaQr = fStr.slice(0, 10);
+  }
+
   const qrObj = {
     ver: 1,
-    fecha: String(fecha).slice(0, 10),
+    fecha: fechaQr,
     cuit: parseInt(String(cuit).replace(/\D/g, ""), 10),
     ptoVta: parseInt(ptoVta, 10),
     tipoCmp: parseInt(tipoCmp, 10),
@@ -462,30 +525,45 @@ export async function emitirComprobanteAfip({
   const voucherInfo = determinarTipoComprobante(config.condicion_iva, condicionReceptor);
   const cbteTipo = voucherInfo.tipo;
 
-  // Determinar documento del receptor
-  let docTipo = 99; // Consumidor Final
+  // Determinar documento del receptor (CUIT 80, DNI 96, o Consumidor Final 99)
+  let docTipo = 99;
   let docNro = 0;
 
-  if (cliente?.cuit) {
-    const cleanCuit = String(cliente.cuit).replace(/\D/g, "");
-    if (cleanCuit.length === 11) {
+  if (cliente?.cuit || cliente?.documento) {
+    const rawDoc = String(cliente.cuit || cliente.documento).replace(/\D/g, "");
+    if (rawDoc.length === 11) {
       docTipo = 80; // CUIT
-      docNro = parseInt(cleanCuit, 10);
+      docNro = parseInt(rawDoc, 10);
+    } else if (rawDoc.length >= 7 && rawDoc.length <= 8) {
+      docTipo = 96; // DNI
+      docNro = parseInt(rawDoc, 10);
     }
   }
+
+  // Mapeo oficial ARCA CondicionIVAReceptorId:
+  // 1: Responsable Inscripto, 4: Exento, 5: Consumidor Final, 6: Monotributo
+  let condicionIvaReceptorId = 5;
+  const condNorm = condicionReceptor.toLowerCase();
+  if (condNorm.includes("inscripto")) condicionIvaReceptorId = 1;
+  else if (condNorm.includes("exento")) condicionIvaReceptorId = 4;
+  else if (condNorm.includes("monotribut")) condicionIvaReceptorId = 6;
+  else condicionIvaReceptorId = 5;
 
   // Validación regulatoria Factura A
   if (cbteTipo === 1 && docTipo !== 80) {
     throw new Error("Para emitir Factura A es obligatorio que el cliente tenga un CUIT válido asignado.");
   }
 
-  // Validación de tope consumidor final sin identificar (Res. AFIP)
+  // Validación de tope consumidor final sin identificar (RG 5700/2025 y RG 5866/2026: $10.000.000)
   const totalNum = parseFloat(Number(totalVenta).toFixed(2));
-  if (docTipo === 99 && totalNum >= 344488) {
-    throw new Error("Para ventas iguales o superiores a $344.488 la resolución de AFIP exige identificar al cliente con CUIT o DNI.");
+  const topeCf = Number(config.tope_consumidor_final) || 10000000;
+  if (docTipo === 99 && totalNum >= topeCf) {
+    throw new Error(`Para ventas iguales o superiores a ${topeCf.toLocaleString("es-AR")} la resolución de AFIP exige identificar al cliente con CUIT o DNI.`);
   }
 
-  const cbteFch = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const fechaArg = getFechaArgentina();
+  const cbteFch = fechaArg.afip; // YYYYMMDD para AFIP
+  const qrFecha = fechaArg.iso;  // YYYY-MM-DD para RG 4291
   const ptoVta = parseInt(config.punto_venta, 10) || 1;
 
   // Matemática de importes en centavos enteros
@@ -501,11 +579,14 @@ export async function emitirComprobanteAfip({
 
     for (const it of items) {
       const itTotal = Math.round(Number(it.precio_unitario) * Number(it.cantidad) * descFactor * 100) / 100;
-      const ali = Number(it.alicuota_iva) || 21.0;
+      const rawAli = (it.alicuota_iva !== undefined && it.alicuota_iva !== null) ? Number(it.alicuota_iva) : 21.0;
+      const ali = isNaN(rawAli) ? 21.0 : rawAli;
       let aliId = 5; // 21%
-      if (ali === 10.5) aliId = 4;
-      else if (ali === 0) aliId = 3;
-      else if (ali === 27) aliId = 6;
+      if (ali === 0) aliId = 3;         // 0% Exento
+      else if (ali === 10.5) aliId = 4; // 10.5%
+      else if (ali === 27) aliId = 6;   // 27%
+      else if (ali === 5) aliId = 8;    // 5%
+      else if (ali === 2.5) aliId = 9;  // 2.5%
 
       const tasa = ali / 100;
       const base = Math.round((itTotal / (1 + tasa)) * 100) / 100;
@@ -545,6 +626,7 @@ export async function emitirComprobanteAfip({
     Concepto: 1, // Productos
     DocTipo: docTipo,
     DocNro: docNro,
+    CondicionIVAReceptorId: condicionIvaReceptorId,
     CbteFch: cbteFch,
     ImpTotal: ImpTotal,
     ImpTotConc: 0,
@@ -574,44 +656,56 @@ export async function emitirComprobanteAfip({
       try {
         const lastVoucher = await arca.electronicBillingService.getLastVoucher(ptoVta, cbteTipo);
         if (lastVoucher && lastVoucher.cbteNro) {
-          const voucherInfoRecover = await arca.electronicBillingService.getVoucherInfo(
-            lastVoucher.cbteNro,
-            ptoVta,
-            cbteTipo
+          const { rows: maxRows } = await pool.query(
+            `SELECT MAX(numero_comprobante) as max_nro FROM ventas 
+             WHERE comercio_id = $1 AND punto_venta = $2 AND tipo_comprobante = $3 AND cae IS NOT NULL`,
+            [comercioId, ptoVta, voucherInfo.nombre]
           );
-          if (
-            voucherInfoRecover &&
-            voucherInfoRecover.codAutorizacion &&
-            Math.abs(voucherInfoRecover.impTotal - ImpTotal) < 0.01
-          ) {
-            const nroCmp = lastVoucher.cbteNro;
-            const caeRec = voucherInfoRecover.codAutorizacion;
-            const vtoCaeRec = voucherInfoRecover.fchVto;
-            const { qrUrl, qrDataUrl } = await generarQrAfip({
-              fecha: cbteFch,
-              cuit: config.cuit,
-              ptoVta,
-              tipoCmp: cbteTipo,
-              nroCmp,
-              importe: ImpTotal,
-              tipoDocRec: docTipo,
-              nroDocRec: docNro,
-              codAut: caeRec
-            });
+          const maxLocal = Number(maxRows[0]?.max_nro) || 0;
 
-            return {
-              ok: true,
-              resultado: "A",
-              tipo_comprobante: voucherInfo.nombre,
-              letra: voucherInfo.letra,
-              punto_venta: ptoVta,
-              numero_comprobante: nroCmp,
-              cae: caeRec,
-              vto_cae: vtoCaeRec,
-              codigo_qr_afip: qrUrl,
-              qr_data_url: qrDataUrl,
-              observaciones: "Recuperado tras reintento de conexión."
-            };
+          if (Number(lastVoucher.cbteNro) > maxLocal) {
+            const voucherInfoRecover = await arca.electronicBillingService.getVoucherInfo(
+              lastVoucher.cbteNro,
+              ptoVta,
+              cbteTipo
+            );
+            if (
+              voucherInfoRecover &&
+              voucherInfoRecover.codAutorizacion &&
+              Math.abs(voucherInfoRecover.impTotal - ImpTotal) < 0.01 &&
+              String(voucherInfoRecover.cbteFch) === String(cbteFch) &&
+              Number(voucherInfoRecover.docNro) === Number(docNro)
+            ) {
+              const nroCmp = lastVoucher.cbteNro;
+              const caeRec = voucherInfoRecover.codAutorizacion;
+              const vtoCaeRec = voucherInfoRecover.fchVto;
+              const { qrUrl, qrDataUrl } = await generarQrAfip({
+                fecha: qrFecha,
+                cuit: config.cuit,
+                ptoVta,
+                tipoCmp: cbteTipo,
+                nroCmp,
+                importe: ImpTotal,
+                tipoDocRec: docTipo,
+                nroDocRec: docNro,
+                codAut: caeRec
+              });
+
+              return {
+                ok: true,
+                ambiente: config.ambiente,
+                resultado: "A",
+                tipo_comprobante: voucherInfo.nombre,
+                letra: voucherInfo.letra,
+                punto_venta: ptoVta,
+                numero_comprobante: nroCmp,
+                cae: caeRec,
+                vto_cae: vtoCaeRec,
+                codigo_qr_afip: qrUrl,
+                qr_data_url: qrDataUrl,
+                observaciones: "Recuperado tras reintento de conexión."
+              };
+            }
           }
         }
       } catch (recoverErr) {
@@ -645,7 +739,7 @@ export async function emitirComprobanteAfip({
     }
 
     const { qrUrl, qrDataUrl } = await generarQrAfip({
-      fecha: cbteFch,
+      fecha: qrFecha,
       cuit: config.cuit,
       ptoVta,
       tipoCmp: cbteTipo,
@@ -658,6 +752,7 @@ export async function emitirComprobanteAfip({
 
     return {
       ok: true,
+      ambiente: config.ambiente,
       resultado: "A",
       tipo_comprobante: voucherInfo.nombre,
       letra: voucherInfo.letra,

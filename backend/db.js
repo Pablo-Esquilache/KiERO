@@ -106,6 +106,32 @@ function runMigrations(database, dataDir, databaseFilePath) {
       sql: `
         ALTER TABLE productos ADD COLUMN alicuota_iva REAL DEFAULT 21.0;
       `
+    },
+    {
+      v: 7,
+      name: "Campos legales afip, contingencia fiscal y qr local",
+      sql: `
+        ALTER TABLE configuracion_fiscal ADD COLUMN razon_social TEXT;
+        ALTER TABLE configuracion_fiscal ADD COLUMN domicilio_comercial TEXT;
+        ALTER TABLE configuracion_fiscal ADD COLUMN iibb TEXT;
+        ALTER TABLE configuracion_fiscal ADD COLUMN fecha_inicio_actividades TEXT;
+        ALTER TABLE configuracion_fiscal ADD COLUMN tope_consumidor_final REAL DEFAULT 10000000;
+        ALTER TABLE ventas ADD COLUMN qr_data_url TEXT;
+        CREATE TABLE IF NOT EXISTS ventas_fiscales_contingencia (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          comercio_id INTEGER NOT NULL,
+          cliente_id INTEGER,
+          cae TEXT NOT NULL,
+          vto_cae TEXT,
+          punto_venta INTEGER,
+          numero_comprobante INTEGER,
+          tipo_comprobante TEXT,
+          total REAL,
+          datos_venta TEXT,
+          resuelto INTEGER DEFAULT 0,
+          created_at TEXT DEFAULT (datetime('now','localtime'))
+        );
+      `
     }
   ];
 
@@ -126,6 +152,7 @@ function runMigrations(database, dataDir, databaseFilePath) {
 
     // Backup de seguridad obligatorio antes de aplicar cualquier cambio
     try {
+      try { database.pragma('wal_checkpoint(TRUNCATE)'); } catch (wErr) { console.warn('[WAL CHECKPOINT]', wErr.message); }
       const backupPath = path.join(dataDir, 'kiero.db.bak');
       fs.copyFileSync(databaseFilePath, backupPath);
       console.log(`[MIGRACIONES] Backup de seguridad creado exitosamente en: ${backupPath}`);
@@ -179,6 +206,9 @@ try {
         '\n\nLa aplicación se detendrá para proteger sus datos.'
       );
     } catch (dErr) {}
+  }
+  if (app && typeof app.exit === 'function') {
+    app.exit(1);
   }
   throw error;
 }

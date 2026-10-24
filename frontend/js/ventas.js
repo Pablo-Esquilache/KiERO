@@ -350,14 +350,16 @@ function actualizarPreviewFactura() {
   const emisorIva = (configFiscalComercio.condicion_iva || "Monotributo").toLowerCase();
 
   if (emisorIva.includes("monotribut") || emisorIva.includes("exento")) {
-    info.innerHTML = '<strong style="color: #10b981;">Factura C</strong> oficial AFIP (Emisor Monotributista)';
+    const badgeHomo = configFiscalComercio.ambiente === "homologacion" ? ' <span style="font-size: 0.75em; background: #fee2e2; color: #dc2626; padding: 1px 6px; border-radius: 4px; font-weight: 600;">[PRUEBAS - HOMOLOGACIÓN]</span>' : '';
+    info.innerHTML = '<strong style="color: #10b981;">Factura C</strong> oficial AFIP (Emisor Monotributista)' + badgeHomo;
   } else {
     // Responsable Inscripto
     const cliIva = (clienteObj?.condicion_iva || "Consumidor Final").toLowerCase();
+    const badgeHomo = configFiscalComercio.ambiente === "homologacion" ? ' <span style="font-size: 0.75em; background: #fee2e2; color: #dc2626; padding: 1px 6px; border-radius: 4px; font-weight: 600;">[PRUEBAS - HOMOLOGACIÓN]</span>' : '';
     if (cliIva.includes("inscripto") && clienteObj?.cuit) {
-      info.innerHTML = `<strong style="color: #10b981;">Factura A</strong> oficial AFIP (Cliente RI: ${clienteObj.cuit})`;
+      info.innerHTML = `<strong style="color: #10b981;">Factura A</strong> oficial AFIP (Cliente RI: ${clienteObj.cuit})` + badgeHomo;
     } else {
-      info.innerHTML = '<strong style="color: #10b981;">Factura B</strong> oficial AFIP (Consumidor Final)';
+      info.innerHTML = '<strong style="color: #10b981;">Factura B</strong> oficial AFIP (Consumidor Final)' + badgeHomo;
     }
   }
 }
@@ -785,19 +787,25 @@ if (btnAgregarProducto) {
 // ESCÁNER DE CÓDIGO DE BARRAS GLOBAL (POS)
 // ==========================================
 
+let sharedAudioCtx = null;
 function playScanBeep(success = true) {
   try {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
+    if (!sharedAudioCtx) {
+      sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (sharedAudioCtx.state === 'suspended') {
+      sharedAudioCtx.resume();
+    }
+    const osc = sharedAudioCtx.createOscillator();
+    const gain = sharedAudioCtx.createGain();
     osc.connect(gain);
-    gain.connect(audioCtx.destination);
+    gain.connect(sharedAudioCtx.destination);
     osc.type = "sine";
     osc.frequency.value = success ? 1200 : 350;
-    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.08, sharedAudioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, sharedAudioCtx.currentTime + 0.1);
     osc.start();
-    osc.stop(audioCtx.currentTime + 0.1);
+    osc.stop(sharedAudioCtx.currentTime + 0.1);
   } catch (e) {}
 }
 
@@ -900,8 +908,8 @@ let lastKeyTime = 0;
 
 document.addEventListener("keydown", (e) => {
   const now = Date.now();
-  if (now - lastKeyTime > 50) {
-    barcodeBuffer = ""; // Pasó demasiado tiempo: no es la pistola
+  if (now - lastKeyTime > 85) {
+    barcodeBuffer = ""; // Buffer extendido a 85ms para pistolas inalámbricas/bluetooth
   }
   lastKeyTime = now;
 
@@ -1045,27 +1053,49 @@ if (formVenta) {
       if (modalTicketExito) {
         const ticketContent = document.getElementById("ticketExitoContenido");
         if (ticketContent) {
-            const clienteName = document.getElementById("clienteVentaNombre")?.value || "Consumidor Final";
+            const clienteName = escapeHtml(document.getElementById("clienteVentaNombre")?.value || "Consumidor Final");
             let itemsHtml = "";
             for(let i of carrito) {
-                itemsHtml += `<div style="display:flex; justify-content:space-between;"><span>${i.cantidad}x ${escapeHtml(i.nombre)}</span><span>${i.subtotal.toFixed(2)}</span></div>`;
+                itemsHtml += `<div style="display:flex; justify-content:space-between;"><span>${i.cantidad}x ${escapeHtml(i.nombre)}</span><span>${Number(i.subtotal).toFixed(2)}</span></div>`;
             }
             const sub = carrito.reduce((acc, i) => acc + i.subtotal, 0);
             const desc = Number(descuentoVenta.value) || 0;
-            const tot = sub - (sub * desc / 100);
-            const pago = metodoPagoVenta.value;
+            const totCalc = sub - (sub * desc / 100);
+            const totalImpreso = Number(ventaResultado?.total !== undefined ? ventaResultado.total : totCalc).toFixed(2);
+            const pago = escapeHtml(metodoPagoVenta.value);
             
             const isFiscal = !!(ventaResultado?.cae);
+            const isHomologacion = configFiscalComercio?.ambiente === "homologacion";
             const ptoVta = String(ventaResultado?.punto_venta || configFiscalComercio?.punto_venta || 1).padStart(5, "0");
             const nroCmp = String(ventaResultado?.numero_comprobante || ventaResultado?.id || 0).padStart(8, "0");
             const tipoCbte = ventaResultado?.tipo_comprobante || (isFiscal ? "Factura Electrónica" : "Ticket de Venta");
-            const qrSrc = ventaResultado?.qr_data_url || (ventaResultado?.codigo_qr_afip ? `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(ventaResultado.codigo_qr_afip)}` : "");
+            const qrSrc = ventaResultado?.qr_data_url || "";
+
+            const cartelHomologacion = (isFiscal && isHomologacion) ? `
+              <div style="background: #fff1f2; border: 1.5px dashed #f43f5e; padding: 4px; margin-bottom: 6px; text-align: center; font-weight: bold; font-size: 10px; color: #be123c;">
+                *** COMPROBANTE DE PRUEBA ***<br>SIN VALIDEZ FISCAL (HOMOLOGACIÓN)
+              </div>
+            ` : "";
+
+            const nombreFantasia = escapeHtml(configFiscalComercio?.razon_social || configFiscalComercio?.nombre_fantasia || "KiERO POS");
+            const domComercial = configFiscalComercio?.domicilio_comercial ? `<div style="font-size: 11px; color: #475569;">${escapeHtml(configFiscalComercio.domicilio_comercial)}</div>` : "";
+            const iibbTxt = configFiscalComercio?.iibb ? `<div style="font-size: 11px; color: #475569;">IIBB: ${escapeHtml(configFiscalComercio.iibb)}</div>` : "";
+            const inicioAct = configFiscalComercio?.fecha_inicio_actividades ? `<div style="font-size: 11px; color: #475569;">Inicio Act.: ${escapeHtml(configFiscalComercio.fecha_inicio_actividades)}</div>` : "";
+            const leyendaTransparencia = (isFiscal && (tipoCbte.includes("Factura B") || tipoCbte.includes("B"))) ? `
+              <div style="border-top: 1px dotted #cbd5e1; margin: 6px 0; padding-top: 4px; font-size: 9px; color: #64748b; text-align: center;">
+                Régimen de Transparencia Fiscal al Consumidor (Ley 27.743 / RG 5614)
+              </div>
+            ` : "";
 
             ticketContent.innerHTML = `
+                ${cartelHomologacion}
                 <div style="text-align: center; margin-bottom: 8px;">
-                  <div style="font-weight: bold; font-size: 15px;">${escapeHtml(configFiscalComercio?.nombre_fantasia || "KiERO POS")}</div>
-                  ${configFiscalComercio?.cuit ? `<div style="font-size: 12px; color: #475569;">CUIT: ${configFiscalComercio.cuit}</div>` : ""}
-                  ${configFiscalComercio?.condicion_iva ? `<div style="font-size: 12px; color: #475569;">IVA: ${configFiscalComercio.condicion_iva}</div>` : ""}
+                  <div style="font-weight: bold; font-size: 15px;">${nombreFantasia}</div>
+                  ${domComercial}
+                  ${configFiscalComercio?.cuit ? `<div style="font-size: 11px; color: #475569;">CUIT: ${configFiscalComercio.cuit}</div>` : ""}
+                  ${configFiscalComercio?.condicion_iva ? `<div style="font-size: 11px; color: #475569;">IVA: ${configFiscalComercio.condicion_iva}</div>` : ""}
+                  ${iibbTxt}
+                  ${inicioAct}
                   <div style="border-top: 1px dashed #cbd5e1; margin: 6px 0;"></div>
                   <div style="font-weight: bold; font-size: 14px; color: #1e293b;">${tipoCbte}</div>
                   <div style="font-size: 12px; color: #334155;">P.V.: ${ptoVta} - N°: ${nroCmp}</div>
@@ -1078,7 +1108,8 @@ if (formVenta) {
                 <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
                 <div style="text-align: right;">Subtotal: ${sub.toFixed(2)}</div>
                 <div style="text-align: right;">Descuento: ${desc}%</div>
-                <div style="text-align: right; font-weight: bold; font-size: 1.2em; margin-top: 5px;">Total: ${tot.toFixed(2)}</div>
+                <div style="text-align: right; font-weight: bold; font-size: 1.2em; margin-top: 5px;">Total: ${totalImpreso}</div>
+                ${leyendaTransparencia}
 
                 ${isFiscal ? `
                   <div style="border-top: 1px dashed #cbd5e1; margin: 8px 0;"></div>
@@ -1086,7 +1117,11 @@ if (formVenta) {
                     <div style="font-weight: bold; color: #1e293b;">CAE: ${ventaResultado.cae}</div>
                     <div style="color: #64748b;">Vto. CAE: ${ventaResultado.vto_cae ? formatearFecha(ventaResultado.vto_cae) : "N/D"}</div>
                     ${qrSrc ? `<img src="${qrSrc}" alt="QR AFIP" style="display: block; margin: 8px auto; width: 120px; height: 120px;" />` : ""}
-                    <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">Comprobante Autorizado por AFIP/ARCA</div>
+                    ${isHomologacion ? `
+                      <div style="color: #e11d48; font-weight: bold; font-size: 10px; margin-top: 2px;">AMBIENTE HOMOLOGACIÓN (PRUEBAS)</div>
+                    ` : `
+                      <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">Comprobante Autorizado por AFIP/ARCA</div>
+                    `}
                   </div>
                 ` : ""}
             `;
@@ -1368,16 +1403,37 @@ function activarBotonesVerTicket() {
           }
 
           const isFiscal = !!(venta.cae);
+          const isHomologacion = configFiscalComercio?.ambiente === "homologacion";
           const ptoVta = String(venta.punto_venta || configFiscalComercio?.punto_venta || 1).padStart(5, "0");
           const nroCmp = String(venta.numero_comprobante || venta.id || 0).padStart(8, "0");
           const tipoCbte = venta.tipo_comprobante || (isFiscal ? "Factura Electrónica" : "Ticket de Venta");
-          const qrSrc = venta.codigo_qr_afip ? `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(venta.codigo_qr_afip)}` : "";
+          const qrSrc = venta.qr_data_url || "";
+
+          const cartelHomologacion = (isFiscal && isHomologacion) ? `
+            <div style="background: #fff1f2; border: 1.5px dashed #f43f5e; padding: 4px; margin-bottom: 6px; text-align: center; font-weight: bold; font-size: 10px; color: #be123c;">
+              *** COMPROBANTE DE PRUEBA ***<br>SIN VALIDEZ FISCAL (HOMOLOGACIÓN)
+            </div>
+          ` : "";
+
+          const nombreFantasia = escapeHtml(configFiscalComercio?.razon_social || configFiscalComercio?.nombre_fantasia || "KiERO POS");
+          const domComercial = configFiscalComercio?.domicilio_comercial ? `<div style="font-size: 11px; color: #475569;">${escapeHtml(configFiscalComercio.domicilio_comercial)}</div>` : "";
+          const iibbTxt = configFiscalComercio?.iibb ? `<div style="font-size: 11px; color: #475569;">IIBB: ${escapeHtml(configFiscalComercio.iibb)}</div>` : "";
+          const inicioAct = configFiscalComercio?.fecha_inicio_actividades ? `<div style="font-size: 11px; color: #475569;">Inicio Act.: ${escapeHtml(configFiscalComercio.fecha_inicio_actividades)}</div>` : "";
+          const leyendaTransparencia = (isFiscal && (tipoCbte.includes("Factura B") || tipoCbte.includes("B"))) ? `
+            <div style="border-top: 1px dotted #cbd5e1; margin: 6px 0; padding-top: 4px; font-size: 9px; color: #64748b; text-align: center;">
+              Régimen de Transparencia Fiscal al Consumidor (Ley 27.743 / RG 5614)
+            </div>
+          ` : "";
 
           const ticketHTML = `
+            ${cartelHomologacion}
             <div style="text-align: center; margin-bottom: 8px;">
-              <div style="font-weight: bold; font-size: 15px;">${escapeHtml(configFiscalComercio?.nombre_fantasia || "KiERO POS")}</div>
-              ${configFiscalComercio?.cuit ? `<div style="font-size: 12px; color: #475569;">CUIT: ${configFiscalComercio.cuit}</div>` : ""}
-              ${configFiscalComercio?.condicion_iva ? `<div style="font-size: 12px; color: #475569;">IVA: ${configFiscalComercio.condicion_iva}</div>` : ""}
+              <div style="font-weight: bold; font-size: 15px;">${nombreFantasia}</div>
+              ${domComercial}
+              ${configFiscalComercio?.cuit ? `<div style="font-size: 11px; color: #475569;">CUIT: ${configFiscalComercio.cuit}</div>` : ""}
+              ${configFiscalComercio?.condicion_iva ? `<div style="font-size: 11px; color: #475569;">IVA: ${configFiscalComercio.condicion_iva}</div>` : ""}
+              ${iibbTxt}
+              ${inicioAct}
               <div style="border-top: 1px dashed #cbd5e1; margin: 6px 0;"></div>
               <div style="font-weight: bold; font-size: 14px; color: #1e293b;">${tipoCbte}</div>
               <div style="font-size: 12px; color: #334155;">P.V.: ${ptoVta} - N°: ${nroCmp}</div>
@@ -1385,15 +1441,16 @@ function activarBotonesVerTicket() {
 
             <div style="margin-bottom: 5px;"><strong>ID Venta:</strong> ${venta.id}</div>
             <div style="margin-bottom: 5px;"><strong>Fecha:</strong> ${formatearFecha(venta.fecha)}</div>
-            <div style="margin-bottom: 5px;"><strong>Cliente:</strong> ${escapeHtml(venta.cliente_nombre) || "Consumidor Final"}</div>
-            ${venta.cliente_cuit ? `<div style="margin-bottom: 5px;"><strong>CUIT/DNI:</strong> ${venta.cliente_cuit}</div>` : ""}
-            ${venta.cliente_condicion_iva ? `<div style="margin-bottom: 5px;"><strong>Cond. IVA:</strong> ${venta.cliente_condicion_iva}</div>` : ""}
-            <div style="margin-bottom: 5px;"><strong>Método de pago:</strong> ${venta.metodo_pago}</div>
+            <div style="margin-bottom: 5px;"><strong>Cliente:</strong> ${escapeHtml(venta.cliente_nombre || "Consumidor Final")}</div>
+            ${venta.cliente_cuit ? `<div style="margin-bottom: 5px;"><strong>CUIT/DNI:</strong> ${escapeHtml(venta.cliente_cuit)}</div>` : ""}
+            ${venta.cliente_condicion_iva ? `<div style="margin-bottom: 5px;"><strong>Cond. IVA:</strong> ${escapeHtml(venta.cliente_condicion_iva)}</div>` : ""}
+            <div style="margin-bottom: 5px;"><strong>Método de pago:</strong> ${escapeHtml(venta.metodo_pago || "Efectivo")}</div>
             <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
             ${itemsHtml}
             ${descHtml ? `<div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>${descHtml}` : ""}
             <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
             <div style="text-align: right; font-weight: bold; font-size: 1.2em; margin-top: 5px;">Total: ${Number(venta.total).toFixed(2)}</div>
+            ${leyendaTransparencia}
 
             ${isFiscal ? `
               <div style="border-top: 1px dashed #cbd5e1; margin: 8px 0;"></div>
@@ -1401,7 +1458,11 @@ function activarBotonesVerTicket() {
                 <div style="font-weight: bold; color: #1e293b;">CAE: ${venta.cae}</div>
                 <div style="color: #64748b;">Vto. CAE: ${venta.vto_cae ? formatearFecha(venta.vto_cae) : "N/D"}</div>
                 ${qrSrc ? `<img src="${qrSrc}" alt="QR AFIP" style="display: block; margin: 8px auto; width: 120px; height: 120px;" />` : ""}
-                <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">Comprobante Autorizado por AFIP/ARCA</div>
+                ${isHomologacion ? `
+                  <div style="color: #e11d48; font-weight: bold; font-size: 10px; margin-top: 2px;">AMBIENTE HOMOLOGACIÓN (PRUEBAS)</div>
+                ` : `
+                  <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">Comprobante Autorizado por AFIP/ARCA</div>
+                `}
               </div>
             ` : ""}
           `;
