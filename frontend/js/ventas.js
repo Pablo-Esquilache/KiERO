@@ -327,6 +327,72 @@ async function cargarConfiguracionFiscalVentas() {
   }
 }
 
+
+// ==========================================
+// FICHA FISCAL REACTIVA EN DASHBOARD DE VENTAS
+// ==========================================
+function actualizarFichaFiscalCliente(cliente) {
+  const container = document.getElementById("fichaFiscalClienteVenta");
+  if (!container) return;
+
+  if (!cliente) {
+    container.style.display = "none";
+    container.innerHTML = "";
+    return;
+  }
+
+  // Verificar si tiene CUIT o Domicilio Fiscal
+  const tieneCuit = cliente.cuit && String(cliente.cuit).trim().length > 0;
+  const tieneIva = cliente.condicion_iva && String(cliente.condicion_iva).trim().length > 0 && cliente.condicion_iva !== "Consumidor Final";
+  const tieneDomicilio = cliente.domicilio_fiscal && String(cliente.domicilio_fiscal).trim().length > 0;
+
+  // Si no tiene ningún dato fiscal guardado (cliente común o consumidor final estándar), no mostrar nada
+  if (!tieneCuit && !tieneIva && !tieneDomicilio) {
+    container.style.display = "none";
+    container.innerHTML = "";
+    return;
+  }
+
+  let itemsHtml = [];
+
+  if (tieneCuit) {
+    itemsHtml.push(`
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+        <span style="color: #64748b; font-size: 11px;">CUIT:</span>
+        <strong style="font-family: monospace; font-size: 12px; color: #0284c7;">${escapeHtml(cliente.cuit)}</strong>
+      </div>
+    `);
+  }
+
+  if (cliente.condicion_iva && cliente.condicion_iva.trim().length > 0) {
+    const isRI = cliente.condicion_iva.toLowerCase().includes("inscripto");
+    const badgeBg = isRI ? "#e0f2fe" : "#f1f5f9";
+    const badgeColor = isRI ? "#0369a1" : "#475569";
+    itemsHtml.push(`
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+        <span style="color: #64748b; font-size: 11px;">Condición IVA:</span>
+        <span style="font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 4px; background: ${badgeBg}; color: ${badgeColor};">${escapeHtml(cliente.condicion_iva)}</span>
+      </div>
+    `);
+  }
+
+  if (tieneDomicilio) {
+    itemsHtml.push(`
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-top: 3px;">
+        <span style="color: #64748b; font-size: 11px; white-space: nowrap; margin-right: 6px;">Domicilio:</span>
+        <span style="font-size: 11px; color: #334155; text-align: right; word-break: break-word;">${escapeHtml(cliente.domicilio_fiscal)}</span>
+      </div>
+    `);
+  }
+
+  container.innerHTML = `
+    <div style="font-size: 10.5px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; display: flex; align-items: center; gap: 4px;">
+      <span>🏛️ Datos Fiscales</span>
+    </div>
+    ${itemsHtml.join("")}
+  `;
+  container.style.display = "block";
+}
 function actualizarPreviewFactura() {
   const chk = document.getElementById("chkFacturarAfip");
   const info = document.getElementById("infoFacturaPreview");
@@ -438,11 +504,21 @@ const renderClientesBuscadorLazy = (append = false) => {
       <td>${escapeHtml(c.email) || "-"}</td>
     `;
     tr.addEventListener("click", () => {
-      document.getElementById(window.targetClientInput).value = c.id;
-      document.getElementById(window.targetClientNameInput).value = c.nombre;
-      document.getElementById(window.targetClientNameInput)?.dispatchEvent(new Event("input", { bubbles: true }));
-      document.getElementById(window.targetClientNameInput)?.dispatchEvent(new Event("change", { bubbles: true }));
+      const inputId = document.getElementById(window.targetClientInput);
+      const inputName = document.getElementById(window.targetClientNameInput);
+      if (inputId) {
+        inputId.value = c.id;
+        inputId.dispatchEvent(new Event("change"));
+      }
+      if (inputName) {
+        inputName.value = c.nombre;
+        inputName.dispatchEvent(new Event("input", { bubbles: true }));
+        inputName.dispatchEvent(new Event("change", { bubbles: true }));
+      }
       document.getElementById("modalBuscarCliente").style.display = "none";
+      if (window.targetClientInput === 'clienteVenta') {
+        actualizarFichaFiscalCliente(c);
+      }
     });
     tabla.appendChild(tr);
   }
@@ -490,7 +566,12 @@ if (chkFacturarAfip) {
 }
 
 if (clienteVenta) {
-  clienteVenta.addEventListener("change", actualizarPreviewFactura);
+  clienteVenta.addEventListener("change", () => {
+    const cliId = clienteVenta.value;
+    const clienteObj = (typeof allClientes !== "undefined" && allClientes) ? allClientes.find(c => c.id == cliId) : null;
+    actualizarFichaFiscalCliente(clienteObj);
+    actualizarPreviewFactura();
+  });
 }
 
 const btnDevolucion = document.getElementById("btnDevolucion");
@@ -616,9 +697,11 @@ function limpiarFormulario() {
     if (cf && cVenta && cVentaNombre) {
       cVenta.value = cf.id;
       cVentaNombre.value = cf.nombre;
+      actualizarFichaFiscalCliente(cf);
     } else if (cVenta && cVentaNombre) {
       cVenta.value = "";
       cVentaNombre.value = "";
+      actualizarFichaFiscalCliente(null);
     }
   }
 
@@ -637,6 +720,7 @@ async function cargarClientes() {
     if (consumidorFinal) {
       document.getElementById("clienteVenta").value = consumidorFinal.id;
       document.getElementById("clienteVentaNombre").value = consumidorFinal.nombre;
+      actualizarFichaFiscalCliente(consumidorFinal);
     }
 
 
@@ -2211,7 +2295,14 @@ clienteDevolucionNombre?.addEventListener("input", debounce(async (e) => {
     allClientes = await ClientesAPI.getAll(comercioId);
   }
   
-  const filtrados = allClientes.filter(c => c.nombre.toLowerCase().includes(q) || c.documento?.includes(q)).slice(0, 10);
+  const digits = q.replace(/\D/g, "");
+  const filtrados = allClientes.filter(c => 
+    (c.nombre && c.nombre.toLowerCase().includes(q)) || 
+    (digits && c.cuit && c.cuit.replace(/\D/g, "").includes(digits)) ||
+    (c.cuit && c.cuit.toLowerCase().includes(q)) ||
+    (c.telefono && c.telefono.includes(q)) ||
+    (c.documento && c.documento.includes(q))
+  ).slice(0, 10);
   if (filtrados.length === 0) {
     if(autocompleteClientesDevolucion) autocompleteClientesDevolucion.style.display = "none";
     return;
@@ -2540,12 +2631,17 @@ clienteVentaNombreV?.addEventListener("input", debounce(async (e) => {
   }
   filtrados.forEach(c => {
     const li = document.createElement("li");
-    li.textContent = `${escapeHtml(c.nombre)} ${c.documento ? '('+c.documento+')' : ''}`;
+    const docText = c.cuit ? ` (${c.cuit})` : (c.documento ? ` (${c.documento})` : '');
+    li.textContent = `${escapeHtml(c.nombre)}${docText}`;
     li.addEventListener("mousedown", (ev) => {
       ev.preventDefault();
-      if(clienteVentaV) clienteVentaV.value = c.id;
+      if(clienteVentaV) {
+        clienteVentaV.value = c.id;
+        clienteVentaV.dispatchEvent(new Event("change"));
+      }
       if(clienteVentaNombreV) clienteVentaNombreV.value = c.nombre;
       if(autocompleteClientesV) autocompleteClientesV.style.display = "none";
+      actualizarFichaFiscalCliente(c);
     });
     if(autocompleteClientesV) autocompleteClientesV.appendChild(li);
   });
