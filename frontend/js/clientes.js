@@ -178,7 +178,10 @@ function limpiarFormulario() {
   campoLocalidad.value = "";
   campoNuevaLocalidad.value = "";
   campoComentarios.value = "";
-  if (campoCuit) campoCuit.value = "";
+  if (campoCuit) {
+    campoCuit.value = "";
+    delete campoCuit.dataset.lastQueriedCuit;
+  }
   if (cuitStatusMsg) cuitStatusMsg.innerHTML = "";
   if (campoCondicionIva) campoCondicionIva.value = "Consumidor Final";
   if (campoDomicilioFiscal) campoDomicilioFiscal.value = "";
@@ -252,11 +255,14 @@ function renderTablaClientes() {
   const texto = buscarCliente.value.toLowerCase();
   const localidadSeleccionada = filtroLocalidad.value;
 
+  const digits = texto.replace(/\D/g, "");
   const filtrados = clientes.filter((c) => {
-    const okNombre = c.nombre.toLowerCase().includes(texto);
+    const okNombre = c.nombre && c.nombre.toLowerCase().includes(texto);
+    const okCuit = (digits && c.cuit && c.cuit.replace(/\D/g, "").includes(digits)) ||
+                   (c.cuit && c.cuit.toLowerCase().includes(texto));
     const okLocalidad =
       !localidadSeleccionada || c.localidad === localidadSeleccionada;
-    return okNombre && okLocalidad;
+    return (okNombre || okCuit) && okLocalidad;
   });
 
   tablaClientesBody.innerHTML = "";
@@ -268,6 +274,10 @@ function renderTablaClientes() {
           <button class="btn-nombre-cliente" onclick="verHistorialCliente(${c.id}, '${escapeQuote(c.nombre)}')">
             ${escapeHtml(c.nombre)}
           </button>
+        </td>
+        <td>
+          <div style="font-family: monospace; font-size: 0.9em; font-weight: 500;">${escapeHtml(c.cuit) || "-"}</div>
+          ${c.condicion_iva ? `<div style="font-size: 0.75em; color: #64748b;">${escapeHtml(c.condicion_iva)}</div>` : ""}
         </td>
         <td>${calcularEdad(c.fecha_nacimiento) ?? "-"}</td>
         <td>${c.genero || "-"}</td>
@@ -315,7 +325,10 @@ function editarCliente(id) {
   document.getElementById("fila-id-cliente").style.display = "block";
 
   campoId.value = c.id;
-  if (campoCuit) campoCuit.value = c.cuit || "";
+  if (campoCuit) {
+    campoCuit.value = c.cuit || "";
+    campoCuit.dataset.lastQueriedCuit = (c.cuit || "").replace(/\D/g, "");
+  }
   if (cuitStatusMsg) cuitStatusMsg.innerHTML = "";
   if (campoCondicionIva) campoCondicionIva.value = c.condicion_iva || "Consumidor Final";
   if (campoDomicilioFiscal) campoDomicilioFiscal.value = c.domicilio_fiscal || "";
@@ -667,79 +680,133 @@ document.getElementById("btnImprimirTicketHistorial")?.addEventListener("click",
 });
 
 // ===========================================================
-// FISCAL / AFIP PADRÓN
+// FISCAL / AFIP PADRÓN (AUTOCOMPLETADO Y CONSULTA MANUAL)
 // ===========================================================
+let debounceCuitTimer = null;
+
+async function ejecutarConsultaPadron(silent = false) {
+  if (!campoCuit) return;
+  const raw = campoCuit.value.trim();
+  if (!raw) {
+    if (!silent) alert("Por favor ingrese un CUIT antes de consultar.");
+    campoCuit.focus();
+    return;
+  }
+
+  const check = validarCuitAlgoritmo(raw);
+  if (!check.valid) {
+    if (!silent) alert(`El CUIT ingresado no es válido: ${check.error}`);
+    campoCuit.focus();
+    return;
+  }
+
+  // Si ya consultamos exitosamente este mismo CUIT, no repetir la llamada innecesariamente
+  if (campoCuit.dataset.lastQueriedCuit === check.clean) {
+    return;
+  }
+
+  const originalText = btnConsultarPadron ? btnConsultarPadron.innerHTML : "🔍 AFIP";
+  if (btnConsultarPadron) {
+    btnConsultarPadron.innerHTML = "⏳ Consultando...";
+    btnConsultarPadron.disabled = true;
+  }
+  if (cuitStatusMsg) {
+    cuitStatusMsg.innerHTML = '<span style="color: #3b82f6;">Conectando con AFIP/ARCA...</span>';
+  }
+
+  try {
+    const res = await ClientesAPI.consultarPadron(check.clean);
+    if (res.ok && res.datos) {
+      campoCuit.dataset.lastQueriedCuit = check.clean;
+      const d = res.datos;
+      campoCuit.value = d.cuit;
+      if (d.razon_social) campoNombre.value = d.razon_social;
+      if (d.condicion_iva && campoCondicionIva) campoCondicionIva.value = d.condicion_iva;
+      if (d.domicilio_fiscal && campoDomicilioFiscal) campoDomicilioFiscal.value = d.domicilio_fiscal;
+
+      if (d.localidad) {
+        if (localidades.includes(d.localidad)) {
+          mostrarInputNuevaLocalidad(false);
+          campoLocalidad.value = d.localidad;
+        } else {
+          mostrarInputNuevaLocalidad(true);
+          campoNuevaLocalidad.value = d.localidad;
+        }
+      }
+
+      if (cuitStatusMsg) {
+        cuitStatusMsg.innerHTML = '<span style="color: #10b981; font-weight: 500;">✓ Datos autocompletados desde AFIP</span>';
+      }
+    } else {
+      const msg = res.message || res.error || "No se obtuvieron datos de AFIP.";
+      if (cuitStatusMsg) {
+        cuitStatusMsg.innerHTML = `<span style="color: #eab308;" title="${msg}">⚠ ${msg.length > 50 ? msg.slice(0, 47) + '...' : msg}</span>`;
+      }
+      if (!silent) {
+        alert(`Consulta AFIP/ARCA:\n${msg}\n\nPuede ingresar los datos del cliente manualmente.`);
+      }
+    }
+  } catch (err) {
+    if (cuitStatusMsg) {
+      cuitStatusMsg.innerHTML = `<span style="color: #ef4444;">⚠ Error: ${err.message}</span>`;
+    }
+    if (!silent) {
+      alert(`No se pudo conectar con el servidor para consultar AFIP: ${err.message}. Puede completar los datos manualmente.`);
+    }
+  } finally {
+    if (btnConsultarPadron) {
+      btnConsultarPadron.innerHTML = originalText;
+      btnConsultarPadron.disabled = false;
+    }
+  }
+}
+
 if (campoCuit) {
+  // Autocompletado reactivo mientras se escribe o pega el CUIT
   campoCuit.addEventListener("input", () => {
     const raw = campoCuit.value.trim();
     if (!raw) {
-      cuitStatusMsg.innerHTML = "";
+      if (cuitStatusMsg) cuitStatusMsg.innerHTML = "";
+      delete campoCuit.dataset.lastQueriedCuit;
       return;
     }
+
+    const clean = raw.replace(/\D/g, "");
     const check = validarCuitAlgoritmo(raw);
+
     if (check.valid) {
-      cuitStatusMsg.innerHTML = '<span style="color: #10b981; font-weight: 500;">✓ Formato CUIT válido</span>';
-    } else if (raw.replace(/\D/g, "").length >= 11) {
-      cuitStatusMsg.innerHTML = `<span style="color: #ef4444;">⚠ ${check.error}</span>`;
+      if (cuitStatusMsg) {
+        cuitStatusMsg.innerHTML = '<span style="color: #10b981; font-weight: 500;">✓ CUIT válido</span>';
+      }
+      // Autoconsulta con debounce de 450ms al completar los 11 dígitos
+      clearTimeout(debounceCuitTimer);
+      debounceCuitTimer = setTimeout(() => {
+        ejecutarConsultaPadron(true);
+      }, 450);
+    } else if (clean.length >= 11) {
+      if (cuitStatusMsg) {
+        cuitStatusMsg.innerHTML = `<span style="color: #ef4444;">⚠ ${check.error}</span>`;
+      }
     } else {
-      cuitStatusMsg.innerHTML = '<span style="color: #64748b;">Ingrese los 11 dígitos</span>';
+      if (cuitStatusMsg) {
+        cuitStatusMsg.innerHTML = `<span style="color: #64748b;">${clean.length}/11 dígitos</span>`;
+      }
+    }
+  });
+
+  // Al presionar Enter en el campo CUIT, ejecuta la consulta
+  campoCuit.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      clearTimeout(debounceCuitTimer);
+      ejecutarConsultaPadron(false);
     }
   });
 }
 
 if (btnConsultarPadron) {
-  btnConsultarPadron.addEventListener("click", async () => {
-    const raw = campoCuit.value.trim();
-    if (!raw) {
-      alert("Por favor ingrese un CUIT antes de consultar.");
-      campoCuit.focus();
-      return;
-    }
-
-    const check = validarCuitAlgoritmo(raw);
-    if (!check.valid) {
-      alert(`El CUIT ingresado no es válido: ${check.error}`);
-      campoCuit.focus();
-      return;
-    }
-
-    const originalText = btnConsultarPadron.innerHTML;
-    btnConsultarPadron.innerHTML = "⏳ Consultando...";
-    btnConsultarPadron.disabled = true;
-    cuitStatusMsg.innerHTML = '<span style="color: #3b82f6;">Conectando con AFIP/ARCA...</span>';
-
-    try {
-      const res = await ClientesAPI.consultarPadron(check.clean);
-      if (res.ok && res.datos) {
-        const d = res.datos;
-        campoCuit.value = d.cuit;
-        if (d.razon_social) campoNombre.value = d.razon_social;
-        if (d.condicion_iva && campoCondicionIva) campoCondicionIva.value = d.condicion_iva;
-        if (d.domicilio_fiscal && campoDomicilioFiscal) campoDomicilioFiscal.value = d.domicilio_fiscal;
-
-        if (d.localidad) {
-          if (localidades.includes(d.localidad)) {
-            mostrarInputNuevaLocalidad(false);
-            campoLocalidad.value = d.localidad;
-          } else {
-            mostrarInputNuevaLocalidad(true);
-            campoNuevaLocalidad.value = d.localidad;
-          }
-        }
-
-        cuitStatusMsg.innerHTML = '<span style="color: #10b981; font-weight: 500;">✓ Datos cargados desde AFIP/ARCA</span>';
-      } else {
-        const msg = res.message || res.error || "No se obtuvieron datos de AFIP.";
-        cuitStatusMsg.innerHTML = `<span style="color: #eab308;">⚠ ${msg}</span>`;
-        alert(`Consulta AFIP/ARCA:\n${msg}\n\nPuede ingresar los datos del cliente manualmente.`);
-      }
-    } catch (err) {
-      cuitStatusMsg.innerHTML = `<span style="color: #ef4444;">⚠ Error: ${err.message}</span>`;
-      alert(`No se pudo conectar con el servidor para consultar AFIP: ${err.message}. Puede completar los datos manualmente.`);
-    } finally {
-      btnConsultarPadron.innerHTML = originalText;
-      btnConsultarPadron.disabled = false;
-    }
+  btnConsultarPadron.addEventListener("click", () => {
+    clearTimeout(debounceCuitTimer);
+    ejecutarConsultaPadron(false);
   });
 }
-
