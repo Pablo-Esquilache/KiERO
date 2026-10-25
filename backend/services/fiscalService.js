@@ -275,35 +275,52 @@ export async function consultarPadron(comercioId, cuitAConsultar) {
   // 3. Consulta con timeout de seguridad de 8 segundos (evita congelamiento si la red de AFIP no responde)
   try {
     const consultaPromise = (async () => {
-      // Intentar primero con Padrón Alcance 5 (datos completos de contribuyentes)
-      try {
-        const detailsA5 = await arca.registerScopeFiveService.getTaxpayerDetails(cuitNum);
-        if (detailsA5) return { source: "A5", data: detailsA5 };
-      } catch (e5) {
-        console.warn("[PADRÓN] Falló Scope 5, probando Scope 4 / 13...", e5.message);
+      // 1) Intentar prioritariamente con Constancia de Inscripción (ws_sr_constancia_inscripcion)
+      // Es el servicio oficial autorizado para consultar datos de padrón e IVA en Homologación y Producción
+      if (arca.registerInscriptionProofService) {
+        try {
+          const detailsProof = await arca.registerInscriptionProofService.getTaxpayerDetails(cuitNum);
+          if (detailsProof) return { source: "PROOF", data: detailsProof };
+        } catch (eProof) {
+          console.warn("[PADRÓN] Constancia de Inscripción no respondió o falló:", eProof.message);
+        }
       }
 
-      // Fallback a Scope 4
-      try {
-        const detailsA4 = await arca.registerScopeFourService.getTaxpayerDetails(cuitNum);
-        if (detailsA4) return { source: "A4", data: detailsA4 };
-      } catch (e4) {
-        console.warn("[PADRÓN] Falló Scope 4, probando Scope 13...", e4.message);
+      // 2) Fallback a Padrón Alcance 5 (datos completos de contribuyentes)
+      if (arca.registerScopeFiveService) {
+        try {
+          const detailsA5 = await arca.registerScopeFiveService.getTaxpayerDetails(cuitNum);
+          if (detailsA5) return { source: "A5", data: detailsA5 };
+        } catch (e5) {
+          console.warn("[PADRÓN] Falló Scope 5:", e5.message);
+        }
       }
 
-      // Fallback a Scope 13 (Constancia de Inscripción)
-      try {
-        const detailsA13 = await arca.registerScopeThirteenService.getTaxpayerDetails(cuitNum);
-        if (detailsA13) return { source: "A13", data: detailsA13 };
-      } catch (e13) {
-        console.warn("[PADRÓN] Falló Scope 13:", e13.message);
+      // 3) Fallback a Scope 4
+      if (arca.registerScopeFourService) {
+        try {
+          const detailsA4 = await arca.registerScopeFourService.getTaxpayerDetails(cuitNum);
+          if (detailsA4) return { source: "A4", data: detailsA4 };
+        } catch (e4) {
+          console.warn("[PADRÓN] Falló Scope 4:", e4.message);
+        }
+      }
+
+      // 4) Fallback a Scope 13
+      if (arca.registerScopeThirteenService) {
+        try {
+          const detailsA13 = await arca.registerScopeThirteenService.getTaxpayerDetails(cuitNum);
+          if (detailsA13) return { source: "A13", data: detailsA13 };
+        } catch (e13) {
+          console.warn("[PADRÓN] Falló Scope 13:", e13.message);
+        }
       }
 
       return null;
     })();
 
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Tiempo de espera agotado al consultar los servidores de AFIP/ARCA (8s).")), 8000)
+      setTimeout(() => reject(new Error("Tiempo de espera agotado al consultar los servidores de AFIP/ARCA (12s).")), 12000)
     );
 
     const resultado = await Promise.race([consultaPromise, timeoutPromise]);
@@ -311,7 +328,7 @@ export async function consultarPadron(comercioId, cuitAConsultar) {
     if (!resultado || !resultado.data) {
       return {
         ok: false,
-        message: "AFIP no devolvió datos para el CUIT consultado. Puede completar los datos manualmente."
+        message: "El CUIT no se encuentra en la base de datos de AFIP (o en el entorno de pruebas Homologación). Puede completar los datos del cliente manualmente."
       };
     }
 
