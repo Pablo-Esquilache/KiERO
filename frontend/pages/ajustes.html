@@ -38,7 +38,10 @@
 
       <div class="ajustes-grid">
 
-        <!-- FILA 1 -->
+        <!-- ========================================== -->
+        <!-- FILA 1 (ARRIBA DEL TODO): 3 COLUMNAS -->
+        <!-- ========================================== -->
+
         <!-- 1. MÉTODOS DE PAGO -->
         <section class="ajustes-card">
           <h2 class="app-subtitle">Métodos de Pago</h2>
@@ -50,6 +53,7 @@
             <!-- Renderizado dinámico -->
           </ul>
         </section>
+
         <!-- 2. DESCUENTOS -->
         <section class="ajustes-card">
           <h2 class="app-subtitle">Descuentos (%)</h2>
@@ -61,7 +65,8 @@
             <!-- Renderizado dinámico -->
           </ul>
         </section>
-        <!-- 4. CATEGORÍAS DE GASTOS -->
+
+        <!-- 3. CATEGORÍAS DE GASTOS -->
         <section class="ajustes-card">
           <h2 class="app-subtitle">Categorías de Gastos</h2>
           <div class="app-form-group" style="display: flex; gap: 5px;">
@@ -73,32 +78,41 @@
           </ul>
         </section>
 
-        <!-- FILA 2 -->
-        <!-- 5. SISTEMA / BD -->
-        <section class="ajustes-card">
-          <h2 class="app-subtitle">Sistema y Datos</h2>
-          <div class="ajustes-actions">
-            <button id="refresh-db-btn" class="app-btn-secondary" title="Actualizar datos forzosamente">
-              ⟳ Actualizar Tablas
-            </button>
-            <button id="backup-btn" class="app-btn-secondary" title="Hacer un respaldo manual">
-              💾 Descargar Backup
-            </button>
-          </div>
-        </section>
-        <!-- 6. UMBRAL DE STOCK -->
-        <section class="ajustes-card">
-          <h2 class="app-subtitle">Alertas de Stock</h2>
-          <p style="font-size: 0.9em; margin-bottom: 10px; color: #64748b;">
-            Define cuándo el stock figura como bajo.
-          </p>
-          <div class="app-form-group" style="display: flex; gap: 5px; align-items: center;">
-            <input type="number" id="inputUmbralStock" class="app-input" placeholder="Mínimo (Ej: 3)" style="flex:1;" />
-            <button id="btnGuardarUmbral" class="app-btn-secondary">Guardar</button>
-          </div>
-        </section>
-        
-        <!-- AUMENTO DE PRECIOS MASIVO -->
+        <!-- ========================================== -->
+        <!-- FILA 2: SISTEMA Y DATOS + ALERTAS STOCK -->
+        <!-- ========================================== -->
+        <div class="fila-dos-cards" style="grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <!-- 4. SISTEMA / BD -->
+          <section class="ajustes-card">
+            <h2 class="app-subtitle">Sistema y Datos</h2>
+            <div class="ajustes-actions">
+              <button id="refresh-db-btn" class="app-btn-secondary" title="Actualizar datos forzosamente">
+                ⟳ Actualizar Tablas
+              </button>
+              <button id="backup-btn" class="app-btn-secondary" title="Hacer un respaldo manual">
+                💾 Descargar Backup
+              </button>
+            </div>
+          </section>
+
+          <!-- 5. UMBRAL DE STOCK -->
+          <section class="ajustes-card">
+            <h2 class="app-subtitle">Alertas de Stock</h2>
+            <p style="font-size: 0.9em; margin-bottom: 10px; color: #64748b;">
+              Define cuándo el stock figura como bajo.
+            </p>
+            <div class="app-form-group" style="display: flex; gap: 5px; align-items: center;">
+              <input type="number" id="inputUmbralStock" class="app-input" placeholder="Mínimo (Ej: 3)" style="flex:1;" />
+              <button id="btnGuardarUmbral" class="app-btn-secondary">Guardar</button>
+            </div>
+          </section>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- FILA 3: AUMENTO MASIVO + MÓDULO TURNERO -->
+        <!-- ========================================== -->
+
+        <!-- 6. AUMENTO DE PRECIOS MASIVO (2 COLUMNAS) -->
         <section class="ajustes-card" style="grid-column: span 2;">
           <h2 class="app-subtitle">Aumento de Precios Masivo</h2>
           <p style="font-size: 0.9em; margin-bottom: 12px; color: #64748b;">
@@ -142,8 +156,64 @@
           </div>
         </section>
 
-        <!-- CONFIGURACIÓN FISCAL AFIP / ARCA -->
-        <section class="ajustes-card" style="grid-column: span 2;">
+        <!-- 7. MÓDULO TURNERO (1 COLUMNA, AL LADO DE AUMENTO MASIVO) -->
+        <section class="ajustes-card" style="grid-column: span 1;">
+          <h2 class="app-subtitle">Módulo Turnero</h2>
+          <p style="font-size: 0.9em; margin-bottom: 10px; color: #64748b;">
+            Configuración de los turnos y la agenda.
+          </p>
+          <form id="formTurnosConfig" style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="switch-container">
+               <label>Habilitar Turnero</label>
+               <label class="switch-ui">
+                 <input type="checkbox" id="turnosEnabledSwitch">
+                 <span class="slider">
+                   <span class="slider-dot"></span>
+                 </span>
+               </label>
+            </div>
+
+            <div class="app-form-group" style="display: flex; gap: 10px;">
+               <div style="flex: 1;">
+                 <label>Hora Inicio Laboral</label>
+                 <input type="time" id="horaInicioTurnos" class="app-input" required />
+               </div>
+               <div style="flex: 1;">
+                 <label>Hora Fin Laboral</label>
+                 <input type="time" id="horaFinTurnos" class="app-input" required />
+               </div>
+            </div>
+
+            <div class="app-form-group">
+               <label>Intervalo (Minutos)</label>
+               <select id="intervaloTurnos" class="app-input">
+                 <option value="15">15 Minutos</option>
+                 <option value="30">30 Minutos</option>
+                 <option value="45">45 Minutos</option>
+                 <option value="60">1 Hora</option>
+               </select>
+            </div>
+
+            <div class="switch-container">
+               <label>Permitir Solapamiento</label>
+               <label class="switch-ui">
+                 <input type="checkbox" id="solapamientoTurnosSwitch">
+                 <span class="slider">
+                   <span class="slider-dot"></span>
+                 </span>
+               </label>
+            </div>
+
+            <button type="submit" class="app-btn-primary" id="btnGuardarTurnosConfig">
+               Guardar Configuración
+            </button>
+          </form>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- FILA 4: CONFIGURACIÓN FISCAL (TODO EL ANCHO) -->
+        <!-- ========================================== -->
+        <section class="ajustes-card" style="grid-column: 1 / -1;">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
             <div>
               <h2 class="app-subtitle" style="display: flex; align-items: center; gap: 8px;">
@@ -224,7 +294,7 @@
               <div class="app-form-group" style="flex: 1; min-width: 240px; margin-bottom: 0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                   <label style="margin: 0;">Certificado Digital (.crt)</label>
-                  <span id="badgeCertStatus" style="font-size: 0.75em; font-weight: 600; padding: 1px 6px; border-radius: 4px; background: #fee2e2; color: #dc2626;">Sin cargar</span>
+                  <span id="badgeCertStatus" style="font-size: 0.75em; font-weight: 600; padding: 1px 6px; border-radius: 4px; background: #fee2e8; color: #dc2626;">Sin cargar</span>
                 </div>
                 <input type="file" id="fiscalCertFile" class="app-input" accept=".crt,.pem,.txt" style="padding: 6px;" />
                 <span id="fiscalCertVencimiento" style="font-size: 0.75em; color: #64748b; display: block; margin-top: 3px;"></span>
@@ -233,7 +303,7 @@
               <div class="app-form-group" style="flex: 1; min-width: 240px; margin-bottom: 0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                   <label style="margin: 0;">Clave Privada (.key)</label>
-                  <span id="badgeKeyStatus" style="font-size: 0.75em; font-weight: 600; padding: 1px 6px; border-radius: 4px; background: #fee2e2; color: #dc2626;">Sin cargar</span>
+                  <span id="badgeKeyStatus" style="font-size: 0.75em; font-weight: 600; padding: 1px 6px; border-radius: 4px; background: #fee2e8; color: #dc2626;">Sin cargar</span>
                 </div>
                 <input type="file" id="fiscalKeyFile" class="app-input" accept=".key,.pem,.txt" style="padding: 6px;" />
                 <span style="font-size: 0.75em; color: #64748b; display: block; margin-top: 3px;">Se almacena de forma segura en userData local.</span>
@@ -249,62 +319,9 @@
           </form>
         </section>
 
-        <!-- TURNERO CONFIG -->
-        <section class="ajustes-card">
-          <h2 class="app-subtitle">Módulo Turnero</h2>
-          <p style="font-size: 0.9em; margin-bottom: 10px; color: #64748b;">
-            Configuración de los turnos y la agenda.
-          </p>
-          <form id="formTurnosConfig" style="display: flex; flex-direction: column; gap: 10px;">
-            <div class="switch-container">
-               <label>Habilitar Turnero</label>
-               <label class="switch-ui">
-                 <input type="checkbox" id="turnosEnabledSwitch">
-                 <span class="slider">
-                   <span class="slider-dot"></span>
-                 </span>
-               </label>
-            </div>
-
-            <div class="app-form-group" style="display: flex; gap: 10px;">
-               <div style="flex: 1;">
-                 <label>Hora Inicio Laboral</label>
-                 <input type="time" id="horaInicioTurnos" class="app-input" required />
-               </div>
-               <div style="flex: 1;">
-                 <label>Hora Fin Laboral</label>
-                 <input type="time" id="horaFinTurnos" class="app-input" required />
-               </div>
-            </div>
-
-            <div class="app-form-group">
-               <label>Intervalo (Minutos)</label>
-               <select id="intervaloTurnos" class="app-input">
-                 <option value="15">15 Minutos</option>
-                 <option value="30">30 Minutos</option>
-                 <option value="45">45 Minutos</option>
-                 <option value="60">1 Hora</option>
-               </select>
-            </div>
-
-            <div class="switch-container">
-               <label>Permitir Solapamiento</label>
-               <label class="switch-ui">
-                 <input type="checkbox" id="solapamientoTurnosSwitch">
-                 <span class="slider">
-                   <span class="slider-dot"></span>
-                 </span>
-               </label>
-            </div>
-
-            <button type="submit" class="app-btn-primary" id="btnGuardarTurnosConfig">
-               Guardar Configuración
-            </button>
-          </form>
-        </section>
-
-        <!-- FILA 3 -->
-        <!-- 7. GESTIÓN DE USUARIOS -->
+        <!-- ========================================== -->
+        <!-- FILA 5 (ABAJO DE TODO): USUARIOS SISTEMA (TODO EL ANCHO) -->
+        <!-- ========================================== -->
         <section class="ajustes-card" style="grid-column: 1 / -1;">
           <h2 class="app-subtitle">Usuarios del Sistema</h2>
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">

@@ -110,3 +110,19 @@
 .switch-ui.small input:checked + .slider .slider-dot {
   transform: translateX(16px);
 }
+
+
+/* =========================================================
+   RESPONSIVE Y FILAS DE AJUSTES
+========================================================= */
+@media (max-width: 960px) {
+  .ajustes-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .fila-dos-cards {
+    grid-template-columns: 1fr !important;
+  }
+  .ajustes-card {
+    grid-column: 1 / -1 !important;
+  }
+}
