@@ -96,16 +96,16 @@
 
     <!-- MODAL NUEVO / EDITAR PRODUCTO -->
     <div id="modalProducto" class="app-modal">
-      <div class="app-modal-content app-modal-sm">
+      <div class="app-modal-content">
         <div class="app-modal-header">
           <h2 class="app-subtitle" id="tituloModalProducto">Nuevo producto</h2>
           <button type="button" class="app-close">Cerrar</button>
         </div>
 
-        <form id="formProducto" class="app-form-venta">
-          <div class="app-form-group">
-            <label>Nombre</label>
-            <input type="text" id="nombreProducto" class="app-input" required />
+        <form id="formProducto">
+          <div class="app-form-group campo-full">
+            <label>Nombre del Producto</label>
+            <input type="text" id="nombreProducto" class="app-input" placeholder="Ej: Arroz 1kg" required />
           </div>
 
           <div class="app-form-group">
@@ -119,7 +119,6 @@
             </div>
           </div>
 
-          
           <div class="app-form-group">
             <label>Proveedor (Opcional)</label>
             <div style="display: flex; gap: 8px; align-items: center;">
@@ -131,11 +130,6 @@
             </div>
           </div>
 
-          <div class="app-form-group" id="containerPrecioAbierto" style="display: none; flex-direction: row; align-items: center; gap: 10px;">
-            <input type="checkbox" id="precioAbiertoProducto" style="width: auto;"/>
-            <label for="precioAbiertoProducto" style="margin: 0; color: #b45309; font-weight: bold;">Precio Variable (Comodín)</label>
-          </div>
-
           <div class="app-form-group">
             <label>Código de Barras (Opcional)</label>
             <input
@@ -144,6 +138,11 @@
               class="app-input"
               placeholder="Escaneá acá tu código de barras"
             />
+          </div>
+
+          <div class="app-form-group" id="containerPrecioAbierto" style="display: none; flex-direction: row; align-items: center; gap: 10px; padding-top: 24px;">
+            <input type="checkbox" id="precioAbiertoProducto" style="width: auto;"/>
+            <label for="precioAbiertoProducto" style="margin: 0; color: #b45309; font-weight: bold;">Precio Variable (Comodín)</label>
           </div>
 
           <div class="app-form-group">
@@ -168,7 +167,7 @@
           </div>
 
           <div class="app-form-group">
-            <label>Precio</label>
+            <label>Precio de Venta ($)</label>
             <input
               type="number"
               id="precioProducto"
@@ -179,9 +178,21 @@
             />
           </div>
 
-          <button type="submit" id="btnGuardarProducto" class="app-btn-primary" style="margin-top: 10px;">
-            Guardar
-          </button>
+          <div class="app-form-group">
+            <label>Alícuota IVA</label>
+            <select id="alicuotaIvaProducto" class="app-input">
+              <option value="21.0">21.0% (General)</option>
+              <option value="10.5">10.5% (Reducida)</option>
+              <option value="0.0">0.0% (Exento)</option>
+              <option value="27.0">27.0% (Incrementada)</option>
+            </select>
+          </div>
+
+          <div class="modal-acciones">
+            <button type="submit" id="btnGuardarProducto" class="app-btn-primary" style="height: 38px; padding: 0 24px;">
+              💾 Guardar Producto
+            </button>
+          </div>
         </form>
       </div>
     </div>

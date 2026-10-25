@@ -128,17 +128,20 @@ function mostrarInputNuevoProveedor(mostrar) {
   if (mostrar) {
     nuevoProveedorProducto.style.display = "block";
     proveedorProducto.style.display = "none";
+    if (btnNuevoProveedor) btnNuevoProveedor.textContent = "Lista";
   } else {
     nuevoProveedorProducto.style.display = "none";
     proveedorProducto.style.display = "inline-block";
     nuevoProveedorProducto.value = "";
+    if (btnNuevoProveedor) btnNuevoProveedor.textContent = "Nuevo";
   }
 }
 
 // ------------------------------
 // ABRIR MODAL
 // ------------------------------
-btnNuevoProducto.addEventListener("click", () => {
+btnNuevoProducto.addEventListener("click", async () => {
+  await cargarProveedores();
   mostrarInputNuevaCategoria(false);
   mostrarInputNuevoProveedor(false);
   modoEdicion = false;
@@ -169,25 +172,39 @@ function mostrarInputNuevaCategoria(mostrar) {
   if (mostrar) {
     inputCat.style.display = "block";
     selectCat.style.display = "none";
+    if (btnNuevaCategoria) btnNuevaCategoria.textContent = "Lista";
   } else {
     inputCat.style.display = "none";
     selectCat.style.display = "inline-block";
     inputCat.value = "";
+    if (btnNuevaCategoria) btnNuevaCategoria.textContent = "Nueva";
   }
 }
 
 
 if (btnNuevoProveedor) {
   btnNuevoProveedor.addEventListener("click", () => {
-    mostrarInputNuevoProveedor(true);
-    nuevoProveedorProducto?.focus();
+    const isVisible = nuevoProveedorProducto && nuevoProveedorProducto.style.display !== "none";
+    if (isVisible) {
+      mostrarInputNuevoProveedor(false);
+    } else {
+      mostrarInputNuevoProveedor(true);
+      nuevoProveedorProducto?.focus();
+    }
   });
 }
 
-btnNuevaCategoria.addEventListener("click", () => {
-  mostrarInputNuevaCategoria(true);
-  document.getElementById("nuevaCategoriaProducto").focus();
-});
+if (btnNuevaCategoria) {
+  btnNuevaCategoria.addEventListener("click", () => {
+    const isVisible = nuevaCategoriaProducto && nuevaCategoriaProducto.style.display !== "none";
+    if (isVisible) {
+      mostrarInputNuevaCategoria(false);
+    } else {
+      mostrarInputNuevaCategoria(true);
+      nuevaCategoriaProducto?.focus();
+    }
+  });
+}
 
 
 // ------------------------------
@@ -350,14 +367,17 @@ function agregarEventosAcciones() {
 // ------------------------------
 // EDITAR
 // ------------------------------
-function editarProducto(id) {
+async function editarProducto(id) {
   const p = productos.find((x) => x.id == id);
+  if (!p) return;
 
   modoEdicion = true;
   productoEditandoId = id;
 
   tituloModal.textContent = "Editar producto";
   nombreProducto.value = p.nombre;
+
+  // Cargar categorías y preseleccionar
   const categoriasExistentes = Array.from(categoriaProducto.options).map(opt => opt.value);
   if (p.categoria && categoriasExistentes.includes(p.categoria)) {
     mostrarInputNuevaCategoria(false);
@@ -370,13 +390,18 @@ function editarProducto(id) {
     categoriaProducto.value = "";
   }
   
-  const proveedoresExistentes = Array.from(proveedorProducto?.options || []).map(opt => opt.value);
-  if (p.proveedor && proveedoresExistentes.includes(p.proveedor)) {
+  // Asegurar proveedores cargados y preseleccionar en el dropdown
+  await cargarProveedores();
+  if (p.proveedor) {
+    const provsExistentes = Array.from(proveedorProducto?.options || []).map(opt => opt.value);
+    if (!provsExistentes.includes(p.proveedor)) {
+      const opt = document.createElement("option");
+      opt.value = p.proveedor;
+      opt.textContent = p.proveedor;
+      proveedorProducto.appendChild(opt);
+    }
     mostrarInputNuevoProveedor(false);
     proveedorProducto.value = p.proveedor;
-  } else if (p.proveedor) {
-    mostrarInputNuevoProveedor(true);
-    if (nuevoProveedorProducto) nuevoProveedorProducto.value = p.proveedor;
   } else {
     mostrarInputNuevoProveedor(false);
     if (proveedorProducto) proveedorProducto.value = "";
@@ -491,6 +516,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (comercioId) {
     await cargarProductos();
     await cargarCategorias();
+    await cargarProveedores();
   } else {
     console.error("No se pudo obtener comercioId");
   }
