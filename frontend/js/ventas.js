@@ -422,19 +422,31 @@ const renderClientesBuscadorLazy = (append = false) => {
     const tr = document.createElement("tr");
     tr.style.cursor = "pointer";
     tr.innerHTML = `
-      <td>${escapeHtml(c.nombre)}</td>
+      <td>
+        <div style="font-weight: 600; color: #1e293b;">${escapeHtml(c.nombre)}</div>
+        ${c.domicilio_fiscal ? `<div style="font-size: 0.75em; color: #64748b;">${escapeHtml(c.domicilio_fiscal)}</div>` : ''}
+      </td>
+      <td>
+        <div style="font-family: monospace; font-size: 0.9em; font-weight: 600; color: #0284c7;">
+          ${escapeHtml(c.cuit) || '<span style="color: #94a3b8; font-weight: normal; font-family: sans-serif;">Consumidor Final</span>'}
+        </div>
+        <div style="font-size: 0.78em; color: #475569; margin-top: 2px;">
+          ${escapeHtml(c.condicion_iva) || (c.cuit ? 'Responsable Inscripto' : 'Consumidor Final')}
+        </div>
+      </td>
       <td>${escapeHtml(c.telefono) || "-"}</td>
       <td>${escapeHtml(c.email) || "-"}</td>
     `;
     tr.addEventListener("click", () => {
       document.getElementById(window.targetClientInput).value = c.id;
-        document.getElementById(window.targetClientNameInput).value = c.nombre;
+      document.getElementById(window.targetClientNameInput).value = c.nombre;
+      document.getElementById(window.targetClientNameInput)?.dispatchEvent(new Event("input", { bubbles: true }));
+      document.getElementById(window.targetClientNameInput)?.dispatchEvent(new Event("change", { bubbles: true }));
       document.getElementById("modalBuscarCliente").style.display = "none";
     });
     tabla.appendChild(tr);
   }
 };
-
 
 async function cargarComercio() {
   if (!firebaseUID) return;
@@ -1958,6 +1970,149 @@ if (cerrarModalClienteRapido) {
   });
 }
 
+// VALIDACIÓN ALGORITMO CUIT (MÓDULO 11)
+function validarCuitAlgoritmo(cuitRaw) {
+  if (!cuitRaw) return { valid: false, error: "Vacío" };
+  const clean = String(cuitRaw).replace(/\D/g, "");
+  if (clean.length !== 11) return { valid: false, error: "Debe tener 11 dígitos" };
+  const prefijos = ["20", "23", "24", "27", "30", "33", "34"];
+  if (!prefijos.includes(clean.slice(0, 2))) return { valid: false, error: "Prefijo no válido" };
+  const mult = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+  let suma = 0;
+  for (let i = 0; i < 10; i++) suma += parseInt(clean[i], 10) * mult[i];
+  const mod = 11 - (suma % 11);
+  const digitoVerif = mod === 11 ? 0 : mod === 10 ? 9 : mod;
+  if (digitoVerif !== parseInt(clean[10], 10)) return { valid: false, error: "Dígito verificador incorrecto" };
+  return {
+    valid: true,
+    clean,
+    formatted: `${clean.slice(0, 2)}-${clean.slice(2, 10)}-${clean.slice(10)}`
+  };
+}
+
+let debounceCuitVentasTimer = null;
+
+async function consultarPadronEnVentas(silent = false) {
+  const campoCuitModal = document.querySelector("#modalClienteRapido #cuitCliente");
+  const cuitStatusMsg = document.getElementById("cuitStatusMsgModalVentas");
+  const btnConsultar = document.getElementById("btnConsultarPadronVentas");
+  if (!campoCuitModal) return;
+
+  const raw = campoCuitModal.value.trim();
+  if (!raw) {
+    if (!silent) alert("Por favor ingrese un CUIT antes de consultar.");
+    campoCuitModal.focus();
+    return;
+  }
+
+  const check = validarCuitAlgoritmo(raw);
+  if (!check.valid) {
+    if (!silent) alert(`El CUIT ingresado no es válido: ${check.error}`);
+    campoCuitModal.focus();
+    return;
+  }
+
+  if (campoCuitModal.dataset.lastQueriedCuit === check.clean) return;
+
+  const originalText = btnConsultar ? btnConsultar.innerHTML : "🔍 AFIP";
+  if (btnConsultar) {
+    btnConsultar.innerHTML = "⏳ Consultando...";
+    btnConsultar.disabled = true;
+  }
+  if (cuitStatusMsg) cuitStatusMsg.innerHTML = '<span style="color: #3b82f6;">Conectando con AFIP...</span>';
+
+  try {
+    const res = await ClientesAPI.consultarPadron(check.clean);
+    if (res.ok && res.datos) {
+      campoCuitModal.dataset.lastQueriedCuit = check.clean;
+      const d = res.datos;
+      campoCuitModal.value = d.cuit;
+      const nombreInput = document.querySelector("#modalClienteRapido #nombre");
+      const condicionInput = document.querySelector("#modalClienteRapido #condicionIva");
+      const domInput = document.querySelector("#modalClienteRapido #domicilioFiscal");
+      const locSelect = document.querySelector("#modalClienteRapido #localidad");
+      const nuevaLocInput = document.querySelector("#modalClienteRapido #nuevaLocalidad");
+
+      if (d.razon_social && nombreInput) nombreInput.value = d.razon_social;
+      if (d.condicion_iva && condicionInput) condicionInput.value = d.condicion_iva;
+      if (d.domicilio_fiscal && domInput) domInput.value = d.domicilio_fiscal;
+
+      if (d.localidad) {
+        let optExists = false;
+        if (locSelect) {
+          for (let opt of locSelect.options) {
+            if (opt.value === d.localidad) {
+              optExists = true;
+              break;
+            }
+          }
+        }
+        if (optExists && locSelect) {
+          mostrarInputNuevaLocalidad(false);
+          locSelect.value = d.localidad;
+        } else if (nuevaLocInput) {
+          mostrarInputNuevaLocalidad(true);
+          nuevaLocInput.value = d.localidad;
+        }
+      }
+
+      if (cuitStatusMsg) cuitStatusMsg.innerHTML = '<span style="color: #10b981; font-weight: 500;">✓ Datos autocompletados desde AFIP</span>';
+    } else {
+      const msg = res.message || res.error || "No se obtuvieron datos de AFIP.";
+      if (cuitStatusMsg) cuitStatusMsg.innerHTML = `<span style="color: #eab308;" title="${msg}">⚠ ${msg.length > 40 ? msg.slice(0, 37) + '...' : msg}</span>`;
+      if (!silent) alert(`Consulta AFIP/ARCA:\n${msg}\n\nPuede ingresar los datos del cliente manualmente.`);
+    }
+  } catch (err) {
+    if (cuitStatusMsg) cuitStatusMsg.innerHTML = `<span style="color: #ef4444;">⚠ Error: ${err.message}</span>`;
+    if (!silent) alert(`Error consultando AFIP: ${err.message}`);
+  } finally {
+    if (btnConsultar) {
+      btnConsultar.innerHTML = originalText;
+      btnConsultar.disabled = false;
+    }
+  }
+}
+
+// Listeners para el CUIT dentro de modalClienteRapido
+const campoCuitVentas = document.querySelector("#modalClienteRapido #cuitCliente");
+if (campoCuitVentas) {
+  campoCuitVentas.addEventListener("input", () => {
+    const cuitStatusMsg = document.getElementById("cuitStatusMsgModalVentas");
+    const raw = campoCuitVentas.value.trim();
+    if (!raw) {
+      if (cuitStatusMsg) cuitStatusMsg.innerHTML = "";
+      delete campoCuitVentas.dataset.lastQueriedCuit;
+      return;
+    }
+    const clean = raw.replace(/\D/g, "");
+    const check = validarCuitAlgoritmo(raw);
+    if (check.valid) {
+      if (cuitStatusMsg) cuitStatusMsg.innerHTML = '<span style="color: #10b981; font-weight: 500;">✓ CUIT válido</span>';
+      clearTimeout(debounceCuitVentasTimer);
+      debounceCuitVentasTimer = setTimeout(() => {
+        consultarPadronEnVentas(true);
+      }, 450);
+    } else if (clean.length >= 11) {
+      if (cuitStatusMsg) cuitStatusMsg.innerHTML = `<span style="color: #ef4444;">⚠ ${check.error}</span>`;
+    } else {
+      if (cuitStatusMsg) cuitStatusMsg.innerHTML = `<span style="color: #64748b;">${clean.length}/11 dígitos</span>`;
+    }
+  });
+
+  campoCuitVentas.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      clearTimeout(debounceCuitVentasTimer);
+      consultarPadronEnVentas(false);
+    }
+  });
+}
+
+document.getElementById("btnConsultarPadronVentas")?.addEventListener("click", () => {
+  clearTimeout(debounceCuitVentasTimer);
+  consultarPadronEnVentas(false);
+});
+
 if (formCliente) {
   formCliente.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -1973,13 +2128,16 @@ if (formCliente) {
 
       const p = {
         comercio_id: comercioId,
-        nombre: document.getElementById("nombre")?.value.trim() || "",
-        fecha_nacimiento: document.getElementById("fechaNacimiento")?.value || null,
-        genero: document.getElementById("genero")?.value || "",
-        telefono: document.getElementById("telefono")?.value.trim() || "",
-        email: document.getElementById("email")?.value.trim() || "",
+        nombre: document.querySelector("#modalClienteRapido #nombre")?.value.trim() || "",
+        cuit: document.querySelector("#modalClienteRapido #cuitCliente")?.value.trim() || null,
+        condicion_iva: document.querySelector("#modalClienteRapido #condicionIva")?.value || "Consumidor Final",
+        domicilio_fiscal: document.querySelector("#modalClienteRapido #domicilioFiscal")?.value.trim() || null,
+        fecha_nacimiento: document.querySelector("#modalClienteRapido #fechaNacimiento")?.value || null,
+        genero: document.querySelector("#modalClienteRapido #genero")?.value || "",
+        telefono: document.querySelector("#modalClienteRapido #telefono")?.value.trim() || "",
+        email: document.querySelector("#modalClienteRapido #email")?.value.trim() || "",
         localidad: localidadFinal,
-        comentarios: document.getElementById("comentarios")?.value.trim() || ""
+        comentarios: document.querySelector("#modalClienteRapido #comentarios")?.value.trim() || ""
       };
       
       const res = await ClientesAPI.create(p);
@@ -1987,15 +2145,23 @@ if (formCliente) {
       const clienteVenta = document.getElementById("clienteVenta");
       const clienteVentaNombre = document.getElementById("clienteVentaNombre");
       if(clienteVenta) clienteVenta.value = res.id;
-      if(clienteVentaNombre) clienteVentaNombre.value = res.nombre;
+      if(clienteVentaNombre) {
+        clienteVentaNombre.value = res.nombre;
+        clienteVentaNombre.dispatchEvent(new Event("input", { bubbles: true }));
+        clienteVentaNombre.dispatchEvent(new Event("change", { bubbles: true }));
+      }
       
       if (typeof allClientes !== 'undefined') {
         allClientes.push(res);
         currentFilteredClientes = allClientes;
+        if(typeof renderClientesBuscadorLazy === 'function') renderClientesBuscadorLazy(false);
       }
       
       modalClienteRapido.style.display = "none";
       formCliente.reset();
+      const cuitStatusMsg = document.getElementById("cuitStatusMsgModalVentas");
+      if (cuitStatusMsg) cuitStatusMsg.innerHTML = "";
+      toastOk("Cliente creado exitosamente");
     } catch (err) {
       toastError(err.message || "Error creando cliente");
     } finally {
@@ -2289,7 +2455,15 @@ document.getElementById("btnBuscarCliente")?.addEventListener("click", () => {
 
 document.getElementById("inputBuscarClienteModal")?.addEventListener("input", (e) => {
   const q = e.target.value.toLowerCase().trim();
-  currentFilteredClientes = allClientes.filter(c => c.nombre.toLowerCase().includes(q) || (c.documento && c.documento.includes(q)));
+  const digits = q.replace(/\D/g, "");
+  currentFilteredClientes = allClientes.filter(c => 
+    (c.nombre && c.nombre.toLowerCase().includes(q)) || 
+    (digits && c.cuit && c.cuit.replace(/\D/g, "").includes(digits)) ||
+    (c.cuit && c.cuit.toLowerCase().includes(q)) ||
+    (c.telefono && c.telefono.includes(q)) ||
+    (c.email && c.email.toLowerCase().includes(q)) ||
+    (c.condicion_iva && c.condicion_iva.toLowerCase().includes(q))
+  );
   modalVisibleCount = 20;
   if(typeof renderClientesBuscadorLazy === 'function') renderClientesBuscadorLazy(false);
 });

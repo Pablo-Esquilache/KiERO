@@ -905,3 +905,40 @@ select#metodoPagoVenta, select#descuentoVenta {
   padding: 0 10px !important;
   line-height: normal !important;
 }
+
+
+/* =========================================================
+   MODALES DE CLIENTES EN VENTAS
+========================================================= */
+#modalBuscarCliente .app-modal-content {
+  width: 850px !important;
+  max-width: 95% !important;
+  height: auto !important;
+  max-height: 85vh !important;
+  display: flex;
+  flex-direction: column;
+}
+
+#modalBuscarCliente .app-tabla th {
+  background: #f1f5f9;
+  color: #334155;
+  font-weight: 600;
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 2px solid #cbd5e1;
+}
+
+#modalBuscarCliente .app-tabla td {
+  padding: 10px 14px;
+  vertical-align: middle;
+}
+
+#modalClienteRapido .app-modal-content {
+  width: 780px !important;
+  max-width: 95% !important;
+  height: auto !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+  padding: 1.5rem 2rem;
+  box-sizing: border-box;
+}

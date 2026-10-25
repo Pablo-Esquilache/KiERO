@@ -443,61 +443,68 @@
 
 <!-- MODAL BUSCAR CLIENTE -->
     <div id="modalBuscarCliente" class="app-modal" style="z-index: 10000;">
-      <div class="app-modal-content" style="max-width: 800px;">
+      <div class="app-modal-content" style="max-width: 850px;">
         <div class="app-modal-header">
           <h2 class="app-subtitle">Buscar Cliente</h2>
           <button type="button" class="app-close" id="cerrarModalBuscarCliente">Cerrar</button>
         </div>
-        <div class="app-controls">
-          <input type="text" id="inputBuscarClienteModal" class="app-input" placeholder="Buscar por nombre..." />
-          <button type="button" id="btnNuevoClienteDesdeBuscador" class="app-btn-primary">Nuevo Cliente</button>
+        <div class="app-controls" style="display: flex; gap: 10px; margin-bottom: 12px;">
+          <input type="text" id="inputBuscarClienteModal" class="app-input" placeholder="Buscar por nombre, CUIT o teléfono..." style="flex: 1;" />
+          <button type="button" id="btnNuevoClienteDesdeBuscador" class="app-btn-primary" style="white-space: nowrap;">+ Nuevo Cliente</button>
         </div>
         <div class="app-tabla-container" id="scrollClientesBuscador" style="height: 65vh; max-height: 65vh; overflow-y: auto;">
           <table class="app-tabla">
-            <thead><tr><th>Nombre</th><th>Teléfono</th></tr></thead>
+            <thead>
+              <tr>
+                <th style="width: 32%;">Nombre / Razón Social</th>
+                <th style="width: 28%;">CUIT / Condición IVA</th>
+                <th style="width: 18%;">Teléfono</th>
+                <th style="width: 22%;">Email</th>
+              </tr>
+            </thead>
             <tbody id="tablaClientesBuscadorBody"></tbody>
           </table>
         </div>
       </div>
     </div>
 
-    
-    
     <!-- MODAL CREAR CLIENTE COMPLETO -->
-      <div id="modalClienteRapido" class="app-modal" style="z-index: 15000;">
-
-      <div class="app-modal-content">
+    <div id="modalClienteRapido" class="app-modal" style="z-index: 15000;">
+      <div class="app-modal-content" style="max-width: 780px;">
         <div class="app-modal-header">
           <h2 class="app-subtitle">Nuevo cliente</h2>
           <button type="button" class="app-close" id="cerrarModalClienteRapido">Cerrar</button>
         </div>
 
         <form id="formCliente" class="app-form-venta">
-          <div class="app-form-row">
-            <div
-              class="app-form-group"
-              id="fila-id-cliente"
-              style="display: none"
-            >
-              <label>ID (generado)</label>
-              <input type="text" id="idCliente" class="app-input" readonly />
-            </div>
+          <div
+            class="app-form-group"
+            id="fila-id-cliente"
+            style="display: none; margin-bottom: 12px;"
+          >
+            <label>ID (generado)</label>
+            <input type="text" id="idCliente" class="app-input" readonly />
+          </div>
 
-            <div class="app-form-group">
-              <label>Nombre</label>
-              <input type="text" id="nombre" class="app-input" required />
+          <!-- FILA 1: NOMBRE / RAZÓN SOCIAL -->
+          <div class="app-form-row" style="margin-bottom: 12px;">
+            <div class="app-form-group" style="width: 100%;">
+              <label>Nombre / Razón Social</label>
+              <input type="text" id="nombre" class="app-input" placeholder="Ej: Juan Pérez o Distribuidora SRL" required />
             </div>
+          </div>
 
-            <div class="app-form-group app-col">
+          <!-- FILA 2: FECHA NACIMIENTO, GÉNERO, TELÉFONO -->
+          <div class="app-form-row" style="display: flex; gap: 12px; margin-bottom: 12px;">
+            <div class="app-form-group" style="flex: 1;">
               <label>Fecha de nacimiento</label>
               <input
                 type="date"
                 id="fechaNacimiento"
                 class="app-input"
-                required
               />
             </div>
-            <div class="app-form-group app-col">
+            <div class="app-form-group" style="flex: 1;">
               <label>Género</label>
               <select id="genero" class="app-input">
                 <option value="">Seleccionar</option>
@@ -506,44 +513,80 @@
                 <option value="Otro">Otro</option>
               </select>
             </div>
+            <div class="app-form-group" style="flex: 1;">
+              <label>Teléfono</label>
+              <input type="text" id="telefono" class="app-input" placeholder="Ej: 11 1234-5678" />
+            </div>
           </div>
 
-          <div class="app-form-row">
-            <div class="app-form-group">
-              <label>Teléfono</label>
-              <input type="text" id="telefono" class="app-input" />
-            </div>
-
-            <div class="app-form-group">
+          <!-- FILA 3: EMAIL, LOCALIDAD -->
+          <div class="app-form-row" style="display: flex; gap: 12px; margin-bottom: 12px;">
+            <div class="app-form-group" style="flex: 1;">
               <label>Email</label>
-              <input type="email" id="email" class="app-input" />
+              <input type="email" id="email" class="app-input" placeholder="correo@ejemplo.com" />
             </div>
-            <div class="app-form-group">
+            <div class="app-form-group" style="flex: 1;">
               <label>Localidad</label>
               <div style="display: flex; gap: 8px; align-items: center;">
                 <select id="localidad" class="app-input" style="flex: 1;">
                   <option value="">Seleccionar localidad</option>
                 </select>
                 <input type="text" id="nuevaLocalidad" class="app-input" placeholder="Escribí nueva localidad" style="display: none; flex: 1;" />
-                <button type="button" id="btnNuevaLocalidad" class="app-btn-secondary" style="flex-shrink: 0;">Nueva</button>
+                <button type="button" id="btnNuevaLocalidad" class="app-btn-secondary" style="flex-shrink: 0; height: 38px; padding: 0 12px;">Nueva</button>
               </div>
             </div>
           </div>
 
-          <div class="app-form-row">
-            <div class="app-form-group">
-              <label>Comentarios</label>
-              <textarea id="comentarios" class="app-input" rows="2"></textarea>
+          <!-- FILA 4 (ABAJO): COMENTARIOS A LA IZQUIERDA Y AFIP/CUIT A LA DERECHA -->
+          <div class="app-form-row" style="display: flex; gap: 14px; margin-bottom: 16px; align-items: stretch;">
+            <!-- COMENTARIOS (achicado) -->
+            <div class="app-form-group" style="flex: 1; display: flex; flex-direction: column; margin-bottom: 0;">
+              <label for="comentarios">Comentarios / Observaciones</label>
+              <textarea id="comentarios" class="app-input" placeholder="Notas sobre el cliente..." style="flex: 1; min-height: 95px; resize: vertical;"></textarea>
+            </div>
+
+            <!-- BLOQUE AFIP / CUIT -->
+            <div class="app-form-group" style="flex: 1.15; background: #f8fafc; padding: 10px 12px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 8px; margin-bottom: 0;">
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                  <label style="font-weight: 600; font-size: 13px; color: #1e293b; margin: 0;">CUIT / CUIL (11 dígitos)</label>
+                  <span id="cuitStatusMsgModalVentas" style="font-size: 0.78em;"></span>
+                </div>
+                <div style="display: flex; gap: 6px; align-items: center;">
+                  <input type="text" id="cuitCliente" class="app-input" placeholder="Ej: 20-12345678-9" maxlength="13" style="font-family: monospace; font-size: 13px;" />
+                  <button type="button" id="btnConsultarPadronVentas" class="app-btn-secondary" style="white-space: nowrap; height: 36px; padding: 0 10px; font-size: 12px;" title="Buscar en padrón AFIP">
+                    🔍 AFIP
+                  </button>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 8px;">
+                <div style="flex: 1;">
+                  <label style="font-size: 12px; margin-bottom: 2px;">Condición IVA</label>
+                  <select id="condicionIva" class="app-input" style="font-size: 12.5px;">
+                    <option value="Consumidor Final">Consumidor Final</option>
+                    <option value="Monotributo">Monotributo</option>
+                    <option value="Responsable Inscripto">Responsable Inscripto</option>
+                    <option value="Exento">Exento</option>
+                  </select>
+                </div>
+                <div style="flex: 1.1;">
+                  <label style="font-size: 12px; margin-bottom: 2px;">Domicilio Fiscal</label>
+                  <input type="text" id="domicilioFiscal" class="app-input" placeholder="Dirección fiscal" style="font-size: 12.5px;" />
+                </div>
+              </div>
             </div>
           </div>
 
-          <button type="submit" class="app-btn-primary app-btn-guardar">
-            Guardar cliente
-          </button>
+          <!-- BOTÓN GUARDAR -->
+          <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+            <button type="submit" class="app-btn-primary app-btn-guardar" style="min-width: 160px;">
+              Guardar cliente
+            </button>
+          </div>
         </form>
-        </div>
-
       </div>
+    </div>
 
     <!-- SCRIPTS -->
     <!-- ========================= -->
