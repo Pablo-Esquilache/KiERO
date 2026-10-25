@@ -250,9 +250,9 @@ function limpiarFormulario() {
 // ------------------------------
 // GUARDAR PRODUCTO
 // ------------------------------
-document
-  .querySelector(".app-form-venta")
-  .addEventListener("submit", async (e) => {
+const formProductoElem = document.getElementById("formProducto") || document.querySelector(".app-form-venta");
+if (formProductoElem) {
+  formProductoElem.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const categoriaFinal =
@@ -288,9 +288,9 @@ document
     limpiarFormulario();
     await cargarProductos();
     await cargarCategorias();
-  await cargarProveedores();
     await cargarProveedores();
   });
+}
 
 // ------------------------------
 // FILTROS
