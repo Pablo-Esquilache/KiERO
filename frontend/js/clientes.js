@@ -178,6 +178,10 @@ function limpiarFormulario() {
   campoLocalidad.value = "";
   campoNuevaLocalidad.value = "";
   campoComentarios.value = "";
+  if (campoCuit) campoCuit.value = "";
+  if (cuitStatusMsg) cuitStatusMsg.innerHTML = "";
+  if (campoCondicionIva) campoCondicionIva.value = "Consumidor Final";
+  if (campoDomicilioFiscal) campoDomicilioFiscal.value = "";
 }
 
 function mostrarInputNuevaLocalidad(mostrar) {

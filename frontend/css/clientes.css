@@ -92,10 +92,23 @@ body.role-admin .app-btn-historial {
 }
 
 #comentarios {
-  min-height: 150px;
-  resize: none;
+  min-height: 90px;
+  resize: vertical;
 }
 
 #app-modal-detalle {
   z-index: 2000;
+}
+
+/* =========================================================
+   4. MODAL CLIENTE (ESTRUCTURACIÓN Y ALTURA)
+========================================================= */
+#app-modal .app-modal-content {
+  width: 780px !important;
+  max-width: 95% !important;
+  height: auto !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+  padding: 1.5rem 2rem;
+  box-sizing: border-box;
 }
