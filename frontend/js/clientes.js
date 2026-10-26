@@ -671,15 +671,55 @@ function escapeQuote(str) {
 // Imprimir ticket historial
 document.getElementById("btnImprimirTicketHistorial")?.addEventListener("click", () => {
   const contenido = document.getElementById("ticketContenidoImprimir").innerHTML;
-  const ventana = window.open('', '_blank', 'width=300,height=500');
-  ventana.document.write('<html><head><title>Imprimir Ticket</title></head><body style="font-family: monospace;">');
-  ventana.document.write(contenido);
-  ventana.document.write('</body></html>');
+  const ventana = window.open('', '_blank', 'width=420,height=680');
+  ventana.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Ticket de Venta</title>
+      <style>
+        @media print {
+          @page {
+            size: 80mm auto;
+            margin: 0;
+          }
+          html, body {
+            width: 76mm !important;
+            max-width: 76mm !important;
+            margin: 0 auto !important;
+            padding: 3mm 1mm !important;
+          }
+        }
+        * {
+          box-sizing: border-box;
+        }
+        body {
+          font-family: 'Courier New', Courier, monospace;
+          font-size: 12.5px;
+          line-height: 1.35;
+          margin: 0 auto;
+          padding: 8px 4px;
+          width: 76mm;
+          max-width: 100%;
+          color: #000;
+          background: #fff;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+      </style>
+    </head>
+    <body>
+      ${contenido}
+    </body>
+    </html>
+  `);
   ventana.document.close();
-  ventana.onload = () => {
+  setTimeout(() => {
+    ventana.focus();
     ventana.print();
     ventana.close();
-  };
+  }, 250);
 });
 
 // ===========================================================

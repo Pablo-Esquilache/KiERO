@@ -460,7 +460,7 @@ function actualizarPreviewFactura() {
 
 // Plantilla universal para imprimir ticket térmico (58mm / 80mm)
 function imprimirTicket(contenidoHtml) {
-  const ventana = window.open("", "_blank", "width=380,height=600");
+  const ventana = window.open("", "_blank", "width=420,height=680");
   if (!ventana) {
     alert("Por favor permita las ventanas emergentes para imprimir.");
     return;
@@ -473,19 +473,39 @@ function imprimirTicket(contenidoHtml) {
       <title>Ticket de Venta</title>
       <style>
         @media print {
-          @page { margin: 0; size: auto; }
-          body { margin: 0; padding: 4px; width: 100%; max-width: 80mm; }
+          @page {
+            size: 80mm auto;
+            margin: 0;
+          }
+          html, body {
+            width: 76mm !important;
+            max-width: 76mm !important;
+            margin: 0 auto !important;
+            padding: 3mm 1mm !important;
+          }
+        }
+        * {
+          box-sizing: border-box;
         }
         body {
           font-family: 'Courier New', Courier, monospace;
-          font-size: 12px;
-          line-height: 1.3;
-          margin: 0;
-          padding: 8px;
+          font-size: 12.5px;
+          line-height: 1.35;
+          margin: 0 auto;
+          padding: 8px 4px;
+          width: 76mm;
+          max-width: 100%;
           color: #000;
           background: #fff;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
         }
-        img { max-width: 130px; height: auto; display: block; margin: 6px auto; }
+        img {
+          max-width: 135px;
+          height: auto;
+          display: block;
+          margin: 8px auto;
+        }
       </style>
     </head>
     <body>
@@ -494,10 +514,11 @@ function imprimirTicket(contenidoHtml) {
     </html>
   `);
   ventana.document.close();
-  ventana.onload = () => {
+  setTimeout(() => {
+    ventana.focus();
     ventana.print();
     ventana.close();
-  };
+  }, 250);
 }
 
 
@@ -713,6 +734,17 @@ function limpiarFormulario() {
   descuentoVenta.value = "0";
   cantidadVenta.value = 1;
   productoVenta.value = "";
+
+  const chk = document.getElementById("chkFacturarAfip");
+  if (chk) {
+    chk.checked = false;
+    actualizarPreviewFactura();
+  }
+  const submitBtn = document.querySelector('.app-form-venta button[type="submit"]');
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "COBRAR VENTA";
+  }
   
   const pNombre = document.getElementById("productoVentaNombre");
   if(pNombre) pNombre.value = "";
@@ -1250,18 +1282,66 @@ if (formVenta) {
                 ` : ""}
             `;
         }
+        // Configurar botones del modal según sea Factura AFIP o Ticket Interno
+        const btnTop = document.getElementById("btnImprimirTicketExito");
+        const btnBottom = document.getElementById("btnAceptarTicketExito");
+
+        if (isFiscal) {
+          // Factura AFIP: Botón grande abajo para IMPRIMIR, botón secundario arriba para Cerrar
+          if (btnTop) {
+            btnTop.innerHTML = "Cerrar";
+            btnTop.className = "app-btn-secondary";
+            btnTop.dataset.action = "cerrar";
+            btnTop.style.borderColor = "#cbd5e1";
+            btnTop.style.color = "#475569";
+          }
+          if (btnBottom) {
+            btnBottom.innerHTML = "🖨️ IMPRIMIR FACTURA";
+            btnBottom.className = "app-btn-primary";
+            btnBottom.dataset.action = "imprimir";
+            btnBottom.style.backgroundColor = "#10b981";
+            btnBottom.style.fontWeight = "bold";
+            btnBottom.style.padding = "14px";
+            btnBottom.style.fontSize = "1.15em";
+          }
+        } else {
+          // Ticket común: Abajo botón Aceptar, arriba botón Imprimir
+          if (btnTop) {
+            btnTop.innerHTML = "🖨️ Imprimir";
+            btnTop.className = "app-btn-secondary";
+            btnTop.dataset.action = "imprimir";
+            btnTop.style.borderColor = "";
+            btnTop.style.color = "";
+          }
+          if (btnBottom) {
+            btnBottom.innerHTML = "Aceptar y Continuar";
+            btnBottom.className = "app-btn-primary";
+            btnBottom.dataset.action = "cerrar";
+            btnBottom.style.backgroundColor = "";
+            btnBottom.style.fontWeight = "";
+            btnBottom.style.padding = "12px";
+            btnBottom.style.fontSize = "1.1em";
+          }
+        }
+
         modalTicketExito.style.display = "flex";
       }
     } catch (err) {
         toastError(err.message || "Error guardando venta");
-        if (submitBtn) submitBtn.disabled = false;
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "COBRAR VENTA";
+        }
         return;
       }
 
     // 🔹 Reset estado
-    if (submitBtn) submitBtn.disabled = false;
-      ventaEnEdicionId = null;
-      clienteVenta.disabled = false;
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "COBRAR VENTA";
+    }
+    ventaEnEdicionId = null;
+    clienteVenta.disabled = false;
 
     modalVenta.style.display = "none";
     limpiarFormulario();
@@ -2760,22 +2840,33 @@ productoVentaNombreV?.addEventListener("blur", () => {
     });
   }
 // ==========================================
-// TICKET EXITO (Aceptar e Imprimir)
+// TICKET EXITO (Aceptar e Imprimir con soporte de botón invertido para Factura AFIP)
 // ==========================================
 const btnAceptarTicketExito = document.getElementById("btnAceptarTicketExito");
+const btnImprimirTicketExito = document.getElementById("btnImprimirTicketExito");
 const modalTicketExito = document.getElementById("modalTicketExito");
 
 if (btnAceptarTicketExito && modalTicketExito) {
   btnAceptarTicketExito.addEventListener("click", () => {
-    modalTicketExito.style.display = "none";
+    const action = btnAceptarTicketExito.dataset.action || "cerrar";
+    if (action === "imprimir") {
+      const contenido = document.getElementById("ticketExitoContenido")?.innerHTML || "";
+      imprimirTicket(contenido);
+    } else {
+      modalTicketExito.style.display = "none";
+    }
   });
 }
 
-const btnImprimirTicketExito = document.getElementById("btnImprimirTicketExito");
 if (btnImprimirTicketExito) {
   btnImprimirTicketExito.addEventListener("click", () => {
-    const contenido = document.getElementById("ticketExitoContenido")?.innerHTML || "";
-    imprimirTicket(contenido);
+    const action = btnImprimirTicketExito.dataset.action || "imprimir";
+    if (action === "cerrar") {
+      if (modalTicketExito) modalTicketExito.style.display = "none";
+    } else {
+      const contenido = document.getElementById("ticketExitoContenido")?.innerHTML || "";
+      imprimirTicket(contenido);
+    }
   });
 }
 
