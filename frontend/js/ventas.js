@@ -1204,6 +1204,8 @@ if (formVenta) {
         ventaResultado = await VentasAPI.create(payload);
       }
       
+      const isFiscal = !!(ventaResultado?.cae);
+
       // Show ticket
       const modalTicketExito = document.getElementById("modalTicketExito");
       if (modalTicketExito) {
@@ -1219,8 +1221,6 @@ if (formVenta) {
             const totCalc = sub - (sub * desc / 100);
             const totalImpreso = Number(ventaResultado?.total !== undefined ? ventaResultado.total : totCalc).toFixed(2);
             const pago = escapeHtml(metodoPagoVenta.value);
-            
-            const isFiscal = !!(ventaResultado?.cae);
             const isHomologacion = configFiscalComercio?.ambiente === "homologacion";
             const ptoVta = String(ventaResultado?.punto_venta || configFiscalComercio?.punto_venta || 1).padStart(5, "0");
             const nroCmp = String(ventaResultado?.numero_comprobante || ventaResultado?.id || 0).padStart(8, "0");
