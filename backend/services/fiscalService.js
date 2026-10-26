@@ -638,6 +638,7 @@ export async function emitirComprobanteAfip({
   }
 
   const nextVoucherPayload = {
+    CantReg: 1,
     PtoVta: ptoVta,
     CbteTipo: cbteTipo,
     Concepto: 1, // Productos

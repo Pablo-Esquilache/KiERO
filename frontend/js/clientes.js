@@ -213,6 +213,9 @@ document.getElementById("formCliente").addEventListener("submit", async (e) => {
 
   const data = {
     nombre: campoNombre.value.trim(),
+    cuit: campoCuit ? (campoCuit.value.trim() || null) : null,
+    condicion_iva: campoCondicionIva ? campoCondicionIva.value : "Consumidor Final",
+    domicilio_fiscal: campoDomicilioFiscal ? (campoDomicilioFiscal.value.trim() || null) : null,
     fecha_nacimiento: campoFechaNacimiento.value || null,
     genero: campoGenero.value || "",
     telefono: campoTelefono.value.trim() || "",

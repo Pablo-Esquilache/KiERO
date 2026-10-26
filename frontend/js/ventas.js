@@ -405,7 +405,7 @@ function actualizarPreviewFactura() {
   }
 
   if (!configFiscalComercio || !configFiscalComercio.configurado) {
-    info.innerHTML = '<span style="color: #ef4444;">⚠ No hay certificados AFIP cargados en Ajustes.</span>';
+    info.innerHTML = '<span style="color: #ef4444; font-weight: 500;">⚠️ No hay certificados AFIP cargados en Ajustes.</span>';
     return;
   }
 
@@ -414,18 +414,46 @@ function actualizarPreviewFactura() {
   const cliId = cInput ? cInput.value : null;
   const clienteObj = (typeof allClientes !== "undefined" && allClientes) ? allClientes.find(c => c.id == cliId) : null;
   const emisorIva = (configFiscalComercio.condicion_iva || "Monotributo").toLowerCase();
+  const badgeHomo = configFiscalComercio.ambiente === "homologacion"
+    ? ' <span style="font-size: 0.72em; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; padding: 1px 6px; border-radius: 4px; font-weight: 700;">HOMOLOGACIÓN</span>'
+    : '';
 
   if (emisorIva.includes("monotribut") || emisorIva.includes("exento")) {
-    const badgeHomo = configFiscalComercio.ambiente === "homologacion" ? ' <span style="font-size: 0.75em; background: #fee2e2; color: #dc2626; padding: 1px 6px; border-radius: 4px; font-weight: 600;">[PRUEBAS - HOMOLOGACIÓN]</span>' : '';
-    info.innerHTML = '<strong style="color: #10b981;">Factura C</strong> oficial AFIP (Emisor Monotributista)' + badgeHomo;
+    info.innerHTML = `
+      <div style="margin-top: 5px; display: flex; flex-direction: column; gap: 3px;">
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span style="background: #10b981; color: white; padding: 2px 7px; border-radius: 4px; font-weight: 700; font-size: 11px; letter-spacing: 0.5px;">FACTURA C</span>
+          <span style="color: #0f766e; font-weight: 600; font-size: 12px;">Comprobante Oficial AFIP/ARCA</span>
+          ${badgeHomo}
+        </div>
+        <div style="font-size: 11px; color: #64748b;">Régimen Monotributo (los monotributistas emiten Factura C por ley AFIP).</div>
+      </div>
+    `;
   } else {
     // Responsable Inscripto
     const cliIva = (clienteObj?.condicion_iva || "Consumidor Final").toLowerCase();
-    const badgeHomo = configFiscalComercio.ambiente === "homologacion" ? ' <span style="font-size: 0.75em; background: #fee2e2; color: #dc2626; padding: 1px 6px; border-radius: 4px; font-weight: 600;">[PRUEBAS - HOMOLOGACIÓN]</span>' : '';
     if (cliIva.includes("inscripto") && clienteObj?.cuit) {
-      info.innerHTML = `<strong style="color: #10b981;">Factura A</strong> oficial AFIP (Cliente RI: ${clienteObj.cuit})` + badgeHomo;
+      info.innerHTML = `
+        <div style="margin-top: 5px; display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #0284c7; color: white; padding: 2px 7px; border-radius: 4px; font-weight: 700; font-size: 11px; letter-spacing: 0.5px;">FACTURA A</span>
+            <span style="color: #0369a1; font-weight: 600; font-size: 12px;">Comprobante Oficial AFIP/ARCA</span>
+            ${badgeHomo}
+          </div>
+          <div style="font-size: 11px; color: #64748b;">Cliente Responsable Inscripto (CUIT: ${escapeHtml(clienteObj.cuit)}).</div>
+        </div>
+      `;
     } else {
-      info.innerHTML = '<strong style="color: #10b981;">Factura B</strong> oficial AFIP (Consumidor Final)' + badgeHomo;
+      info.innerHTML = `
+        <div style="margin-top: 5px; display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #3b82f6; color: white; padding: 2px 7px; border-radius: 4px; font-weight: 700; font-size: 11px; letter-spacing: 0.5px;">FACTURA B</span>
+            <span style="color: #1d4ed8; font-weight: 600; font-size: 12px;">Comprobante Oficial AFIP/ARCA</span>
+            ${badgeHomo}
+          </div>
+          <div style="font-size: 11px; color: #64748b;">Consumidor Final / Monotributista.</div>
+        </div>
+      `;
     }
   }
 }
