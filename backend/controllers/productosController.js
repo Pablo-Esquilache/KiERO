@@ -1,5 +1,7 @@
 import db from "../db.js";
 
+const ALICUOTAS_IVA_VALIDAS = [0, 2.5, 5, 10.5, 21, 27];
+
 /* ==========================
    GET - PRODUCTOS POR COMERCIO
    ========================== */
@@ -127,6 +129,9 @@ export const createProducto = async (req, res) => {
   const precio_abierto = isAdmin ? (req.body.precio_abierto || false) : false;
   const { nombre, categoria, precio, stock, codigo_barras, proveedor, alicuota_iva } = req.body;
   const alicuotaIvaFinal = alicuota_iva !== undefined ? Number(alicuota_iva) : 21.0;
+  if (!ALICUOTAS_IVA_VALIDAS.includes(alicuotaIvaFinal)) {
+    return res.status(400).json({ error: "Alícuota de IVA inválida. Valores permitidos: 0, 2.5, 5, 10.5, 21, 27" });
+  }
   const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {
@@ -208,6 +213,9 @@ export const updateProducto = async (req, res) => {
   const { id } = req.params;
   const { nombre, categoria, precio, stock, codigo_barras, proveedor, alicuota_iva } = req.body;
   const alicuotaIvaFinal = alicuota_iva !== undefined ? Number(alicuota_iva) : 21.0;
+  if (!ALICUOTAS_IVA_VALIDAS.includes(alicuotaIvaFinal)) {
+    return res.status(400).json({ error: "Alícuota de IVA inválida. Valores permitidos: 0, 2.5, 5, 10.5, 21, 27" });
+  }
   const comercio_id = req.user.comercio_id;
 
   if (!comercio_id) {

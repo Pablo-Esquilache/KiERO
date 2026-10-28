@@ -86,19 +86,22 @@ export const ComercioAPI = {
 export const VentasAPI = {
   getAll: (comercioId) => apiFetch(`/ventas?comercio_id=${comercioId}`),
   getDetalle: (ventaId) => apiFetch(`/ventas/${ventaId}/detalle`),
-  create: async (data) => {
-    const res = await apiFetch("/ventas", { method: "POST", body: data });
+  create: async (data, options = {}) => {
+    const res = await apiFetch("/ventas", { method: "POST", body: data, ...options });
     const comercioId = JSON.parse(localStorage.getItem("session"))?.comercio_id;
     localStorage.removeItem(`productos_cache_${comercioId}`);
     localStorage.removeItem(`clientes_cache_${comercioId}`);
     return res;
   },
-  update: async (id, data) => {
-    const res = await apiFetch(`/ventas/${id}`, { method: "PUT", body: data });
+  update: async (id, data, options = {}) => {
+    const res = await apiFetch(`/ventas/${id}`, { method: "PUT", body: data, ...options });
     const comercioId = JSON.parse(localStorage.getItem("session"))?.comercio_id;
     localStorage.removeItem(`productos_cache_${comercioId}`);
     localStorage.removeItem(`clientes_cache_${comercioId}`);
     return res;
+  },
+  conciliarFiscal: async (id) => {
+    return await apiFetch(`/ventas/${id}/conciliar-fiscal`, { method: "POST" });
   },
   delete: async (id, comercioId) => {
     const res = await apiFetch(`/ventas/${id}?comercio_id=${comercioId}`, { method: "DELETE" });

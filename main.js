@@ -1,19 +1,22 @@
 import electronPkg from 'electron';
 const { app, BrowserWindow, dialog } = electronPkg;
-
-
-process.on('uncaughtException', (err) => {
-  import('fs').then(fs => {
-    fs.writeFileSync('CRASH_LOG.txt', err.stack || err.message || String(err));
-  });
-  console.error("CRASH:", err);
-});
-
-import server from './backend/app.js'; // El Express existente
 import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import fs from 'fs';
+
+process.on('uncaughtException', (err) => {
+  try {
+    const userDataPath = app?.getPath ? app.getPath('userData') : process.cwd();
+    const crashPath = path.join(userDataPath, 'CRASH_LOG.txt');
+    fs.writeFileSync(crashPath, err.stack || err.message || String(err));
+  } catch (logErr) {
+    console.error("Error escribiendo CRASH_LOG:", logErr);
+  }
+  console.error("CRASH:", err);
+});
+
+import server from './backend/app.js'; // El Express existente
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,7 +29,7 @@ if (!gotTheLock) {
   app.quit();
 } else {
   app.on('second-instance', () => {
-    // Si intentan abrir otra instancia, enfocamos la que ya est abierta
+    // Si intentan abrir otra instancia, enfocamos la que ya está abierta
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
@@ -35,18 +38,16 @@ if (!gotTheLock) {
 
   app.whenReady().then(async () => {
     // Generar o recuperar JWT_SECRET para uso local
+    const secretPath = path.join(app.getPath('userData'), 'jwt_secret.txt');
+    if (fs.existsSync(secretPath)) {
+      process.env.JWT_SECRET = fs.readFileSync(secretPath, 'utf8');
+    } else {
+      const secret = crypto.randomBytes(32).toString('hex');
+      fs.writeFileSync(secretPath, secret);
+      process.env.JWT_SECRET = secret;
+    }
 
-// Generar o recuperar JWT_SECRET para uso local
-const secretPath = path.join(app.getPath('userData'), 'jwt_secret.txt');
-if (fs.existsSync(secretPath)) {
-  process.env.JWT_SECRET = fs.readFileSync(secretPath, 'utf8');
-} else {
-  const secret = crypto.randomBytes(32).toString('hex');
-  fs.writeFileSync(secretPath, secret);
-  process.env.JWT_SECRET = secret;
-}
-
-// Levantamos Express en el localhost (127.0.0.1) asignando el puerto 0 para que el SO d uno libre al azar
+    // Levantamos Express en el localhost (127.0.0.1) asignando el puerto 0 para que el SO dé uno libre al azar
     const httpServer = server.listen(0, '127.0.0.1', () => {
       const port = httpServer.address().port;
       console.log("Express iniciado internamente en http://127.0.0.1:" + port);
@@ -78,4 +79,3 @@ if (fs.existsSync(secretPath)) {
     }
   });
 }
-

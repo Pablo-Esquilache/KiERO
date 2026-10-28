@@ -289,7 +289,17 @@ export const createVenta = async (req, res) => {
             fiscalData.numero_comprobante,
             fiscalData.tipo_comprobante,
             total,
-            JSON.stringify({ items, error_local: err.message })
+            JSON.stringify({
+              items,
+              metodo_pago,
+              total_bruto,
+              descuento_monto,
+              descuento_porcentaje: descuento,
+              observaciones: fiscalData.observaciones,
+              codigo_qr_afip: fiscalData.codigo_qr_afip,
+              qr_data_url: fiscalData.qr_data_url,
+              error_local: err.message
+            })
           ]
         );
       } catch (cErr) {
@@ -358,8 +368,8 @@ export const updateVenta = async (req, res) => {
 
     if (!ventaExistente.length) throw new Error("Venta no encontrada");
 
-    if (ventaExistente[0].cae || ventaExistente[0].resultado_afip === 'A') {
-      throw new Error("No se puede editar una venta que ya fue facturada electrónicamente en AFIP/ARCA (CAE: " + (ventaExistente[0].cae || "") + ").");
+    if (ventaExistente[0].cae || ventaExistente[0].resultado_afip === 'A' || ventaExistente[0].resultado_afip === 'INDETERMINADO') {
+      throw new Error("No se puede editar una venta con comprobante fiscal emitido o en estado INDETERMINADO pendiente de conciliación (CAE: " + (ventaExistente[0].cae || "") + ").");
     }
 
     // 1️⃣ Obtener detalles anteriores
@@ -518,8 +528,8 @@ export const deleteVenta = async (req, res) => {
 
     const venta = ventaRows[0];
 
-    if (venta.cae || venta.resultado_afip === 'A') {
-      throw new Error("No se puede eliminar una factura electrónica autorizada por AFIP/ARCA (CAE: " + (venta.cae || "") + "). Debe emitir la Nota de Crédito correspondiente.");
+    if (venta.cae || venta.resultado_afip === 'A' || venta.resultado_afip === 'INDETERMINADO') {
+      throw new Error("No se puede eliminar una factura electrónica autorizada por AFIP/ARCA o en estado INDETERMINADO pendiente de conciliación (CAE: " + (venta.cae || "") + ").");
     }
 
     // 2️⃣ Restaurar stock
@@ -583,3 +593,24 @@ export const deleteVenta = async (req, res) => {
   }
 };
 
+
+
+/* =====================================================
+   POST conciliar venta fiscal indeterminada con AFIP
+===================================================== */
+export const conciliarVentaFiscal = async (req, res) => {
+  const { id } = req.params;
+  const comercio_id = req.user.comercio_id;
+
+  try {
+    const { conciliarComprobanteIndeterminado } = await import("../services/fiscalService.js");
+    const resultado = await conciliarComprobanteIndeterminado({
+      comercioId: comercio_id,
+      ventaId: id
+    });
+    res.json(resultado);
+  } catch (err) {
+    console.error("Error al conciliar venta fiscal:", err);
+    res.status(400).json({ error: err.message });
+  }
+};

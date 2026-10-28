@@ -1,3 +1,4 @@
+import { escapeHtml } from "./utils/escapeHtml.js";
 import { API_BASE_URL } from "./api.js";
 
 function getAuthToken() {
@@ -977,6 +978,96 @@ if (backupBtn) {
     });
   }
 
-  // Cargar configuración fiscal al inicializar
+  // Elementos de contingencia fiscal
+  const cardContingenciaFiscal = document.getElementById("cardContingenciaFiscal");
+  const badgeContingenciaCount = document.getElementById("badgeContingenciaCount");
+  const tablaContingenciasBody = document.getElementById("tablaContingenciasBody");
+  const btnRefrescarContingencias = document.getElementById("btnRefrescarContingencias");
+
+  async function cargarContingenciasFiscales() {
+    const cid = getComercioId();
+    if (!cid || !cardContingenciaFiscal || !tablaContingenciasBody) return;
+    try {
+      const res = await authFetch(`/api/ajustes/fiscal/contingencia/${cid}`);
+      if (!res.ok) return;
+      const list = await res.json();
+      if (!Array.isArray(list) || list.length === 0) {
+        cardContingenciaFiscal.style.display = "none";
+        tablaContingenciasBody.innerHTML = "";
+        if (badgeContingenciaCount) badgeContingenciaCount.textContent = "0 pendientes";
+        return;
+      }
+
+      cardContingenciaFiscal.style.display = "block";
+      if (badgeContingenciaCount) {
+        badgeContingenciaCount.textContent = `${list.length} pendiente${list.length > 1 ? "s" : ""}`;
+      }
+
+      tablaContingenciasBody.innerHTML = list.map(c => {
+        let errorMsg = "-";
+        try {
+          const d = typeof c.datos_venta === "string" ? JSON.parse(c.datos_venta) : c.datos_venta;
+          errorMsg = d?.error_local || (d?.items ? `${d.items.length} ítems` : "-");
+        } catch(e) {}
+        
+        const pto = String(c.punto_venta || 1).padStart(4, "0");
+        const nro = String(c.numero_comprobante || 0).padStart(8, "0");
+        const cbte = `${escapeHtml(c.tipo_comprobante || "Factura")} ${pto}-${nro}`;
+        const fechaStr = c.created_at ? new Date(c.created_at).toLocaleString("es-AR") : "-";
+
+        return `
+          <tr>
+            <td style="font-size: 0.85em;">${fechaStr}</td>
+            <td style="font-weight: 600;">${cbte}</td>
+            <td style="font-family: monospace; color: #1e293b;">${escapeHtml(c.cae || "")}</td>
+            <td style="font-size: 0.85em;">${escapeHtml(c.vto_cae || "-")}</td>
+            <td style="font-weight: 700; color: #047857;">${Number(c.total || 0).toLocaleString("es-AR", { minimumFractionDigits: 2 })}</td>
+            <td style="font-size: 0.8em; color: #b45309; max-width: 200px; word-break: break-word;">${escapeHtml(errorMsg)}</td>
+            <td>
+              <button type="button" class="app-btn-primary btn-resolver-contingencia" data-id="${c.id}" style="padding: 4px 10px; font-size: 0.8em;">
+                ✅ Registrar venta
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+
+      tablaContingenciasBody.querySelectorAll(".btn-resolver-contingencia").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+          const id = e.currentTarget.getAttribute("data-id");
+          if (!id) return;
+          if (!confirm("¿Deseas registrar esta venta en el sistema local?\n\nSe asentará la venta en la caja actual, se descontará el stock de los productos y se vinculará formalmente con el CAE ya emitido.")) {
+            return;
+          }
+          btn.disabled = true;
+          btn.textContent = "Registrando...";
+          try {
+            const r = await authFetch(`/api/ajustes/fiscal/contingencia/${id}/resolver`, {
+              method: "POST"
+            });
+            const data = await r.json();
+            if (!r.ok) throw new Error(data.error || "Error al resolver contingencia");
+            alert("✅ Venta registrada correctamente en el sistema local.");
+            await cargarContingenciasFiscales();
+          } catch (err) {
+            alert(`❌ Error al registrar venta: ${err.message}`);
+            btn.disabled = false;
+            btn.textContent = "✅ Registrar venta";
+          }
+        });
+      });
+    } catch (err) {
+      console.error("Error al cargar contingencias fiscales:", err);
+    }
+  }
+
+  if (btnRefrescarContingencias) {
+    btnRefrescarContingencias.addEventListener("click", () => {
+      cargarContingenciasFiscales();
+    });
+  }
+
+  // Cargar configuración fiscal y contingencias al inicializar
   cargarConfigFiscal();
+  cargarContingenciasFiscales();
 });

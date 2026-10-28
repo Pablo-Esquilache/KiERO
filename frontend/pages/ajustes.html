@@ -320,6 +320,47 @@
         </section>
 
         <!-- ========================================== -->
+        <!-- CONTINGENCIA FISCAL (Comprobantes con CAE pendientes de registro local) -->
+        <!-- ========================================== -->
+        <section class="ajustes-card" id="cardContingenciaFiscal" style="grid-column: 1 / -1; display: none; border-left: 4px solid #f59e0b;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <h2 class="app-subtitle" style="margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+                <span>⚠️ Comprobantes en Contingencia Fiscal</span>
+                <span id="badgeContingenciaCount" style="font-size: 0.7em; font-weight: 700; padding: 2px 8px; border-radius: 9999px; background: #fef3c7; color: #b45309;">
+                  0 pendientes
+                </span>
+              </h2>
+              <p style="font-size: 0.9em; margin-bottom: 0; color: #64748b;">
+                Estos comprobantes fueron autorizados por AFIP/ARCA (tienen CAE válido), pero no pudieron registrarse en el sistema al emitirse. Registralos para descontar stock y asentar la venta en caja.
+              </p>
+            </div>
+            <button type="button" id="btnRefrescarContingencias" class="app-btn-secondary" style="height: 36px; padding: 0 14px; font-size: 0.85em;">
+              🔄 Actualizar lista
+            </button>
+          </div>
+
+          <div class="app-tabla-container select-tabla-container" style="max-height: 250px;">
+            <table class="app-tabla">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Comprobante</th>
+                  <th>CAE</th>
+                  <th>Vto. CAE</th>
+                  <th>Total</th>
+                  <th>Detalle / Error</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="tablaContingenciasBody">
+                <!-- Render dinámico -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
         <!-- FILA 5 (ABAJO DE TODO): USUARIOS SISTEMA (TODO EL ANCHO) -->
         <!-- ========================================== -->
         <section class="ajustes-card" style="grid-column: 1 / -1;">

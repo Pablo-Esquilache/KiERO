@@ -14,7 +14,7 @@ const router = express.Router();
 
 // Obtener métodos de pago
 router.get("/metodos_pago/:comercioId", async (req, res) => {
-  const { comercioId } = req.params;
+  const comercioId = req.user?.comercio_id || req.params.comercioId;
   try {
     const result = await pool.query(
       "SELECT * FROM metodos_pago WHERE comercio_id = $1 ORDER BY id ASC",
@@ -75,7 +75,7 @@ router.delete("/metodos_pago/:id", requireAdmin, async (req, res) => {
 
 // Obtener descuentos
 router.get("/descuentos/:comercioId", async (req, res) => {
-  const { comercioId } = req.params;
+  const comercioId = req.user?.comercio_id || req.params.comercioId;
   try {
     const result = await pool.query(
       "SELECT * FROM descuentos_config WHERE comercio_id = $1 ORDER BY porcentaje ASC",
@@ -135,7 +135,7 @@ router.delete("/descuentos/:id", requireAdmin, async (req, res) => {
 // --- CATEGORIAS DE GASTOS ---
 
 router.get("/gastos_categorias/:comercioId", async (req, res) => {
-  const { comercioId } = req.params;
+  const comercioId = req.user?.comercio_id || req.params.comercioId;
   try {
     const result = await pool.query(
       "SELECT * FROM gastos_categorias WHERE comercio_id = $1 ORDER BY id ASC",
@@ -192,7 +192,7 @@ router.delete("/gastos_categorias/:id", requireAdmin, async (req, res) => {
 // --- UMBRAL STOCK ---
 
 router.put("/umbral_stock/:comercioId", requireAdmin, async (req, res) => {
-  const { comercioId } = req.params;
+  const comercioId = req.user?.comercio_id || req.params.comercioId;
   const { umbral_stock } = req.body;
   try {
     await pool.query("UPDATE comercios SET umbral_stock = $1 WHERE id = $2", [umbral_stock, comercioId]);
@@ -206,7 +206,7 @@ router.put("/umbral_stock/:comercioId", requireAdmin, async (req, res) => {
 // --- TURNOS CONFIG ---
 
 router.get("/turnos_config/:comercioId", async (req, res) => {
-  const { comercioId } = req.params;
+  const comercioId = req.user?.comercio_id || req.params.comercioId;
   try {
     let result = await pool.query("SELECT * FROM turnos_config WHERE comercio_id = $1", [comercioId]);
     
@@ -224,7 +224,7 @@ router.get("/turnos_config/:comercioId", async (req, res) => {
 });
 
 router.put("/turnos_config/:comercioId", requireAdmin, async (req, res) => {
-  const { comercioId } = req.params;
+  const comercioId = req.user?.comercio_id || req.params.comercioId;
   const { modulo_habilitado, hora_inicio_laboral, hora_fin_laboral, intervalo_minutos, permitir_solapamiento } = req.body;
   try {
     const result = await pool.query(
@@ -251,7 +251,7 @@ router.put("/turnos_config/:comercioId", requireAdmin, async (req, res) => {
 
 // Previsualizar cantidad de productos a aumentar
 router.get("/aumento-masivo/previsualizar/:comercioId", requireAdmin, async (req, res) => {
-  const { comercioId } = req.params;
+  const comercioId = req.user?.comercio_id || req.params.comercioId;
   const proveedor = req.query.proveedor || "TODOS";
   try {
     const result = await pool.query(
@@ -376,7 +376,7 @@ router.post("/aumento-masivo", requireAdmin, async (req, res) => {
 
 // Obtener el último aumento activo que se puede revertir
 router.get("/ultimo-aumento/:comercioId", requireAdmin, async (req, res) => {
-  const { comercioId } = req.params;
+  const comercioId = req.user?.comercio_id || req.params.comercioId;
   try {
     const { rows } = await pool.query(
       `SELECT * FROM log_aumentos_precios 
@@ -644,6 +644,142 @@ router.post("/fiscal/test", requireAdmin, async (req, res) => {
   } catch (error) {
     console.error("Error al probar estado AFIP:", error);
     res.status(500).json({ ok: false, message: error.message || "Error al verificar conexión AFIP" });
+  }
+});
+
+// ==========================================
+// CONTINGENCIAS FISCALES (CAE emitido sin registro local)
+// ==========================================
+
+router.get("/fiscal/contingencia/:comercioId?", requireAdmin, async (req, res) => {
+  const comercioId = req.user?.comercio_id || req.params.comercioId;
+  if (!comercioId) return res.status(400).json({ error: "comercio_id requerido" });
+  try {
+    const { rows } = await pool.query(
+      `SELECT c.*, cl.nombre as cliente_nombre, cl.cuit as cliente_cuit
+       FROM ventas_fiscales_contingencia c
+       LEFT JOIN clientes cl ON cl.id = c.cliente_id
+       WHERE c.comercio_id = $1 AND c.resuelto = 0
+       ORDER BY c.created_at DESC`,
+      [comercioId]
+    );
+    res.json(rows);
+  } catch (error) {
+    console.error("Error al obtener contingencias fiscales:", error);
+    res.status(500).json({ error: "Error al obtener contingencias fiscales" });
+  }
+});
+
+router.post("/fiscal/contingencia/:id/resolver", requireAdmin, async (req, res) => {
+  const comercioId = req.user?.comercio_id;
+  const { id } = req.params;
+  if (!comercioId) return res.status(400).json({ error: "comercio_id requerido" });
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const { rows } = await client.query(
+      `SELECT * FROM ventas_fiscales_contingencia WHERE id = $1 AND comercio_id = $2 AND resuelto = 0`,
+      [id, comercioId]
+    );
+    if (!rows.length) {
+      throw new Error("Contingencia fiscal no encontrada o ya resuelta");
+    }
+    const contingencia = rows[0];
+    let datos = {};
+    try {
+      datos = typeof contingencia.datos_venta === "string" ? JSON.parse(contingencia.datos_venta) : (contingencia.datos_venta || {});
+    } catch (e) {
+      datos = {};
+    }
+
+    const items = Array.isArray(datos.items) ? datos.items : [];
+    const metodo_pago = datos.metodo_pago || "Efectivo";
+    const total_bruto = datos.total_bruto != null ? Number(datos.total_bruto) : Number(contingencia.total);
+    const descuento_monto = datos.descuento_monto != null ? Number(datos.descuento_monto) : 0;
+    const descuento_porcentaje = datos.descuento_porcentaje != null ? Number(datos.descuento_porcentaje) : 0;
+    const total = Number(contingencia.total);
+
+    // Insertar en ventas con el CAE y comprobante original
+    const qVenta = `
+      INSERT INTO ventas
+        (fecha, cliente_id, metodo_pago, total_bruto,
+         descuento_monto, descuento_porcentaje, total, comercio_id,
+         tipo_comprobante, punto_venta, numero_comprobante, cae, vto_cae,
+         resultado_afip, observaciones_afip, codigo_qr_afip, qr_data_url)
+      VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'A', $13, $14, $15)
+      RETURNING *
+    `;
+    const { rows: vRows } = await client.query(qVenta, [
+      contingencia.cliente_id || null,
+      metodo_pago,
+      total_bruto,
+      descuento_monto,
+      descuento_porcentaje,
+      total,
+      comercioId,
+      contingencia.tipo_comprobante,
+      contingencia.punto_venta,
+      contingencia.numero_comprobante,
+      contingencia.cae,
+      contingencia.vto_cae,
+      datos.observaciones || "Comprobante recuperado desde contingencia fiscal",
+      datos.codigo_qr_afip || null,
+      datos.qr_data_url || null
+    ]);
+    const venta = vRows[0];
+
+    // Insertar detalles y descontar stock
+    for (const item of items) {
+      const subtotal = Math.round(Number(item.precio_unitario || 0) * Number(item.cantidad || 1) * 100) / 100;
+      await client.query(
+        `INSERT INTO ventas_detalle
+          (venta_id, producto_id, cantidad, precio_unitario, subtotal, producto_nombre)
+          VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          venta.id,
+          item.producto_id || null,
+          item.cantidad || 1,
+          item.precio_unitario || 0,
+          subtotal,
+          item.nombre_db || item.nombre || "Producto"
+        ]
+      );
+
+      if (item.producto_id && !item.esPrecioAbierto) {
+        await client.query(
+          `UPDATE productos
+           SET stock = stock - $1
+           WHERE id = $2 AND comercio_id = $3`,
+          [item.cantidad || 1, item.producto_id, comercioId]
+        );
+      }
+    }
+
+    // Cuenta corriente si corresponde
+    if (metodo_pago === "Cuenta Corriente" && contingencia.cliente_id) {
+      await client.query(
+        `INSERT INTO cuenta_corriente_movimientos
+          (cliente_id, tipo, monto, venta_id, comercio_id)
+          VALUES ($1, 'venta', $2, $3, $4)`,
+        [contingencia.cliente_id, total, venta.id, comercioId]
+      );
+    }
+
+    // Marcar contingencia como resuelta
+    await client.query(
+      `UPDATE ventas_fiscales_contingencia SET resuelto = 1 WHERE id = $1`,
+      [id]
+    );
+
+    await client.query("COMMIT");
+    res.json({ success: true, venta, message: "Venta registrada con éxito desde la contingencia fiscal." });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error al resolver contingencia fiscal:", error);
+    res.status(500).json({ error: error.message || "Error al resolver contingencia fiscal" });
+  } finally {
+    client.release();
   }
 });
 

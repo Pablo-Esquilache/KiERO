@@ -670,70 +670,103 @@ export async function emitirComprobanteAfip({
     ]);
   } catch (err) {
     if (err.message === "TimeoutAFIP") {
-      console.warn("[FISCAL] Timeout creando comprobante. Verificando estado en AFIP...");
+      console.warn("[FISCAL] Timeout creando comprobante. Verificando estado en AFIP con límite de 8s...");
+      let nroIntentado = null;
       try {
-        const lastVoucher = await arca.electronicBillingService.getLastVoucher(ptoVta, cbteTipo);
-        if (lastVoucher && lastVoucher.cbteNro) {
-          const { rows: maxRows } = await pool.query(
-            `SELECT MAX(numero_comprobante) as max_nro FROM ventas 
-             WHERE comercio_id = $1 AND punto_venta = $2 AND tipo_comprobante = $3 AND cae IS NOT NULL`,
-            [comercioId, ptoVta, voucherInfo.nombre]
-          );
-          const maxLocal = Number(maxRows[0]?.max_nro) || 0;
+        const timeoutRecovery = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("TimeoutRecovery8s")), 8000)
+        );
 
-          if (Number(lastVoucher.cbteNro) > maxLocal) {
-            const voucherInfoRecover = await arca.electronicBillingService.getVoucherInfo(
-              lastVoucher.cbteNro,
-              ptoVta,
-              cbteTipo
-            );
-            if (
-              voucherInfoRecover &&
-              voucherInfoRecover.codAutorizacion &&
-              Math.abs(voucherInfoRecover.impTotal - ImpTotal) < 0.01 &&
-              String(voucherInfoRecover.cbteFch) === String(cbteFch) &&
-              Number(voucherInfoRecover.docNro) === Number(docNro)
-            ) {
-              const nroCmp = lastVoucher.cbteNro;
-              const caeRec = voucherInfoRecover.codAutorizacion;
-              const vtoCaeRec = voucherInfoRecover.fchVto;
-              const { qrUrl, qrDataUrl } = await generarQrAfip({
-                fecha: qrFecha,
-                cuit: config.cuit,
-                ptoVta,
-                tipoCmp: cbteTipo,
-                nroCmp,
-                importe: ImpTotal,
-                tipoDocRec: docTipo,
-                nroDocRec: docNro,
-                codAut: caeRec
-              });
+        const recResult = await Promise.race([
+          (async () => {
+            const lastVoucher = await arca.electronicBillingService.getLastVoucher(ptoVta, cbteTipo);
+            if (lastVoucher && lastVoucher.cbteNro) {
+              const { rows: maxRows } = await pool.query(
+                `SELECT MAX(numero_comprobante) as max_nro FROM ventas 
+                 WHERE comercio_id = $1 AND punto_venta = $2 AND tipo_comprobante = $3 AND cae IS NOT NULL`,
+                [comercioId, ptoVta, voucherInfo.nombre]
+              );
+              const maxLocal = Number(maxRows[0]?.max_nro) || 0;
+              nroIntentado = maxLocal + 1;
 
-              return {
-                ok: true,
-                ambiente: config.ambiente,
-                resultado: "A",
-                tipo_comprobante: voucherInfo.nombre,
-                letra: voucherInfo.letra,
-                punto_venta: ptoVta,
-                numero_comprobante: nroCmp,
-                cae: caeRec,
-                vto_cae: vtoCaeRec,
-                codigo_qr_afip: qrUrl,
-                qr_data_url: qrDataUrl,
-                observaciones: "Recuperado tras reintento de conexión."
-              };
+              if (Number(lastVoucher.cbteNro) > maxLocal) {
+                const voucherInfoRecover = await arca.electronicBillingService.getVoucherInfo(
+                  lastVoucher.cbteNro,
+                  ptoVta,
+                  cbteTipo
+                );
+                if (
+                  voucherInfoRecover &&
+                  voucherInfoRecover.codAutorizacion &&
+                  Math.abs(voucherInfoRecover.impTotal - ImpTotal) < 0.01 &&
+                  String(voucherInfoRecover.cbteFch) === String(cbteFch) &&
+                  Number(voucherInfoRecover.docNro) === Number(docNro)
+                ) {
+                  return {
+                    recovered: true,
+                    nroCmp: lastVoucher.cbteNro,
+                    caeRec: voucherInfoRecover.codAutorizacion,
+                    vtoCaeRec: voucherInfoRecover.fchVto
+                  };
+                }
+              }
             }
-          }
+            return { recovered: false };
+          })(),
+          timeoutRecovery
+        ]);
+
+        if (recResult && recResult.recovered) {
+          const { qrUrl, qrDataUrl } = await generarQrAfip({
+            fecha: qrFecha,
+            cuit: config.cuit,
+            ptoVta,
+            tipoCmp: cbteTipo,
+            nroCmp: recResult.nroCmp,
+            importe: ImpTotal,
+            tipoDocRec: docTipo,
+            nroDocRec: docNro,
+            codAut: recResult.caeRec
+          });
+
+          return {
+            ok: true,
+            ambiente: config.ambiente,
+            resultado: "A",
+            tipo_comprobante: voucherInfo.nombre,
+            letra: voucherInfo.letra,
+            punto_venta: ptoVta,
+            numero_comprobante: recResult.nroCmp,
+            cae: recResult.caeRec,
+            vto_cae: recResult.vtoCaeRec,
+            codigo_qr_afip: qrUrl,
+            qr_data_url: qrDataUrl,
+            observaciones: "Recuperado tras reintento de conexión."
+          };
         }
       } catch (recoverErr) {
-        console.error("[FISCAL] Error al recuperar comprobante tras timeout:", recoverErr);
+        console.error("[FISCAL] Error al recuperar comprobante tras timeout (o timeout 8s alcanzado):", recoverErr);
+      }
+
+      if (!nroIntentado) {
+        try {
+          const { rows: maxRows } = await pool.query(
+            `SELECT MAX(numero_comprobante) as max_nro FROM ventas 
+             WHERE comercio_id = $1 AND punto_venta = $2 AND tipo_comprobante = $3`,
+            [comercioId, ptoVta, voucherInfo.nombre]
+          );
+          nroIntentado = (Number(maxRows[0]?.max_nro) || 0) + 1;
+        } catch (_) {}
       }
 
       return {
         ok: false,
         indeterminate: true,
         resultado: "INDETERMINADO",
+        tipo_comprobante: voucherInfo.nombre,
+        letra: voucherInfo.letra,
+        punto_venta: ptoVta,
+        numero_comprobante: nroIntentado,
         error: "AFIP no respondió a tiempo (15s). Se guardará el comprobante en estado 'Indeterminado' para conciliar."
       };
     }
@@ -798,5 +831,130 @@ export async function emitirComprobanteAfip({
       error: motivo,
       observaciones: motivo
     };
+  }
+}
+
+
+function obtenerCbteTipoPorNombre(nombre) {
+  if (!nombre) return 6;
+  const s = String(nombre).toUpperCase();
+  if (s.includes("FACTURA A") || s === "A") return 1;
+  if (s.includes("FACTURA B") || s === "B") return 6;
+  if (s.includes("FACTURA C") || s === "C") return 11;
+  return 6;
+}
+
+export async function conciliarComprobanteIndeterminado({ comercioId, ventaId }) {
+  const { rows } = await pool.query(
+    `SELECT v.*, c.cuit as cliente_cuit, c.documento as cliente_doc
+     FROM ventas v
+     LEFT JOIN clientes c ON c.id = v.cliente_id
+     WHERE v.id = $1 AND v.comercio_id = $2`,
+    [ventaId, comercioId]
+  );
+
+  if (rows.length === 0) {
+    throw new Error("Venta no encontrada.");
+  }
+
+  const venta = rows[0];
+  if (venta.resultado_afip !== "INDETERMINADO") {
+    throw new Error("La venta no se encuentra en estado INDETERMINADO.");
+  }
+
+  const config = await obtenerConfiguracionFiscal(comercioId);
+  const arcaInfo = await instanciarArca(comercioId, config);
+  const arca = arcaInfo.arca;
+
+  const ptoVta = Number(venta.punto_venta) || Number(config.punto_venta) || 1;
+  const cbteTipo = obtenerCbteTipoPorNombre(venta.tipo_comprobante);
+  const nroCmp = Number(venta.numero_comprobante);
+
+  if (!nroCmp) {
+    throw new Error("La venta no posee un número de comprobante registrado para conciliar.");
+  }
+
+  try {
+    const timeout8s = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("TimeoutAFIP (8s)")), 8000)
+    );
+
+    const voucher = await Promise.race([
+      arca.electronicBillingService.getVoucherInfo(nroCmp, ptoVta, cbteTipo),
+      timeout8s
+    ]);
+
+    if (
+      voucher &&
+      voucher.codAutorizacion &&
+      voucher.resultado === "A" &&
+      Math.abs(Number(voucher.impTotal) - Number(venta.total)) < 0.05
+    ) {
+      const cae = voucher.codAutorizacion;
+      const vtoCae = voucher.fchVto;
+      const qrFecha = (voucher.cbteFch || "").toString();
+
+      let docTipo = 99;
+      let docNro = 0;
+      if (venta.cliente_cuit || venta.cliente_doc) {
+        const rawDoc = String(venta.cliente_cuit || venta.cliente_doc).replace(/\D/g, "");
+        if (rawDoc.length === 11) {
+          docTipo = 80;
+          docNro = Number(rawDoc);
+        } else if (rawDoc.length >= 7 && rawDoc.length <= 8) {
+          docTipo = 96;
+          docNro = Number(rawDoc);
+        }
+      }
+
+      const { qrUrl, qrDataUrl } = await generarQrAfip({
+        fecha: qrFecha,
+        cuit: config.cuit,
+        ptoVta,
+        tipoCmp: cbteTipo,
+        nroCmp,
+        importe: Number(venta.total),
+        tipoDocRec: docTipo,
+        nroDocRec: docNro,
+        codAut: cae
+      });
+
+      await pool.query(
+        `UPDATE ventas 
+         SET cae = $1, vto_cae = $2, resultado_afip = 'A', codigo_qr_afip = $3, qr_data_url = $4, observaciones_afip = 'Conciliado exitosamente con AFIP.'
+         WHERE id = $5 AND comercio_id = $6`,
+        [cae, vtoCae, qrUrl, qrDataUrl, ventaId, comercioId]
+      );
+
+      return {
+        ok: true,
+        conciliado: true,
+        emitido: true,
+        cae,
+        vto_cae: vtoCae,
+        numero_comprobante: nroCmp,
+        punto_venta: ptoVta,
+        tipo_comprobante: venta.tipo_comprobante,
+        qr_data_url: qrDataUrl,
+        mensaje: `AFIP confirmó la emisión de la factura con CAE ${cae}. Registro actualizado exitosamente.`
+      };
+    } else {
+      await pool.query(
+        `UPDATE ventas 
+         SET resultado_afip = 'NO_EMITIDO', observaciones_afip = 'Verificado con AFIP: Comprobante no emitido.'
+         WHERE id = $1 AND comercio_id = $2`,
+        [ventaId, comercioId]
+      );
+
+      return {
+        ok: true,
+        conciliado: true,
+        emitido: false,
+        mensaje: "AFIP confirmó que el comprobante NO fue emitido. La venta quedó registrada como no fiscal."
+      };
+    }
+  } catch (err) {
+    console.error("[CONCILIAR] Error consultando voucher en AFIP:", err);
+    throw new Error(`Error de comunicación con AFIP al conciliar: ${err.message}`);
   }
 }

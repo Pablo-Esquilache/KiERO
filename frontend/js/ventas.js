@@ -57,7 +57,7 @@ window.verDetalleDevolucion = async (devolucionId) => {
       ticketContent.innerHTML = `
           <div style="margin-bottom: 5px;"><strong>ID Devolución:</strong> ${devolucion.id}</div>
           <div style="margin-bottom: 5px;"><strong>Fecha:</strong> ${fechaFormat}</div>
-          <div style="margin-bottom: 5px;"><strong>Cliente:</strong> ${clienteName}</div>
+          <div style="margin-bottom: 5px;"><strong>Cliente:</strong> ${escapeHtml(clienteName)}</div>
           <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
           ${itemsHtml}
           <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
@@ -1193,18 +1193,43 @@ if (formVenta) {
       facturar_afip: chkFacturarAfip ? chkFacturarAfip.checked : false,
     };
 
+    const abortCtrl = new AbortController();
+    const abortTimeout = setTimeout(() => {
+      abortCtrl.abort("El servidor demoró más de 45 segundos en responder. Por favor verifique el estado fiscal antes de reintentar.");
+    }, 45000);
+
     try {
       let ventaResultado = null;
       if (ventaEnEdicionId) {
-        ventaResultado = await VentasAPI.update(ventaEnEdicionId, payload);
+        ventaResultado = await VentasAPI.update(ventaEnEdicionId, payload, { signal: abortCtrl.signal });
       } else {
         if (chkFacturarAfip && chkFacturarAfip.checked && submitBtn) {
           submitBtn.textContent = "Autorizando en AFIP...";
         }
-        ventaResultado = await VentasAPI.create(payload);
+        ventaResultado = await VentasAPI.create(payload, { signal: abortCtrl.signal });
       }
+      clearTimeout(abortTimeout);
       
       const isFiscal = !!(ventaResultado?.cae);
+      const isWarningContingencia = !!(ventaResultado?.warning);
+      const isIndeterminado = ventaResultado?.resultado_afip === "INDETERMINADO";
+
+      if (isWarningContingencia) {
+        alert(
+          "⚠️ ATENCIÓN CRÍTICA - CONTINGENCIA FISCAL:\n\n" +
+          `La factura fue AUTORIZADA por AFIP/ARCA con CAE: ${ventaResultado.cae}.\n` +
+          `Sin embargo, ocurrió un error al registrar el stock local en la base de datos (${ventaResultado.error || "Error local"}).\n\n` +
+          "✅ El comprobante fiscal es VÁLIDO y se procederá a imprimirlo.\n" +
+          "📋 La venta quedó en CONTINGENCIA. Diríjase a Ajustes > Contingencia Fiscal para asentar la venta y el stock definitivamente."
+        );
+      } else if (isIndeterminado) {
+        alert(
+          "⚠️ ATENCIÓN - ESTADO FISCAL INDETERMINADO:\n\n" +
+          "Hubo un tiempo de espera con AFIP/ARCA y no se pudo confirmar si el comprobante fue emitido o rechazado.\n\n" +
+          "🛑 NO entregue este ticket al cliente como factura electrónica.\n" +
+          "🔄 En el listado de ventas presione 'Conciliar AFIP' para verificar si ARCA emitió la factura."
+        );
+      }
 
       // Show ticket
       const modalTicketExito = document.getElementById("modalTicketExito");
@@ -1233,6 +1258,21 @@ if (formVenta) {
               </div>
             ` : "";
 
+            const cartelContingencia = isWarningContingencia ? `
+              <div style="background: #fffbeb; border: 1.5px solid #f59e0b; padding: 6px; margin-bottom: 8px; border-radius: 4px; font-size: 10px; color: #b45309; text-align: center;">
+                <strong>⚠️ COMPROBANTE EN CONTINGENCIA LOCAL</strong><br>
+                CAE oficial emitido por AFIP. Venta pendiente de asentar en Ajustes.
+              </div>
+            ` : "";
+
+            const cartelIndeterminado = isIndeterminado ? `
+              <div style="background: #fee2e2; border: 1.5px solid #ef4444; padding: 6px; margin-bottom: 8px; border-radius: 4px; font-size: 10px; color: #991b1b; text-align: center;">
+                <strong>⚠️ ESTADO FISCAL INDETERMINADO</strong><br>
+                AFIP no confirmó emisión. NO válido como factura.<br>
+                Concilie la venta desde el historial.
+              </div>
+            ` : "";
+
             const nombreFantasia = escapeHtml(configFiscalComercio?.razon_social || configFiscalComercio?.nombre_fantasia || "KiERO POS");
             const domComercial = configFiscalComercio?.domicilio_comercial ? `<div style="font-size: 11px; color: #475569;">${escapeHtml(configFiscalComercio.domicilio_comercial)}</div>` : "";
             const iibbTxt = configFiscalComercio?.iibb ? `<div style="font-size: 11px; color: #475569;">IIBB: ${escapeHtml(configFiscalComercio.iibb)}</div>` : "";
@@ -1244,6 +1284,8 @@ if (formVenta) {
             ` : "";
 
             ticketContent.innerHTML = `
+                ${cartelContingencia}
+                ${cartelIndeterminado}
                 ${cartelHomologacion}
                 <div style="text-align: center; margin-bottom: 8px;">
                   <div style="font-weight: bold; font-size: 15px;">${nombreFantasia}</div>
@@ -1327,7 +1369,12 @@ if (formVenta) {
         modalTicketExito.style.display = "flex";
       }
     } catch (err) {
-        toastError(err.message || "Error guardando venta");
+        clearTimeout(abortTimeout);
+        if (err.name === "AbortError" || err.message?.includes("45 segundos")) {
+          alert("⚠️ ATENCIÓN: La operación demoró más de 45 segundos y se canceló la espera.\n\nEs posible que AFIP haya autorizado el comprobante o continúe procesándolo. Por favor verifique el historial de ventas o utilice 'Conciliar AFIP' antes de volver a emitir.");
+        } else {
+          toastError(err.message || "Error guardando venta");
+        }
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.textContent = "COBRAR VENTA";
@@ -1387,11 +1434,25 @@ const renderVentasPrincipalLazy = (append = false) => {
   for (let i = startIndex; i < limit; i++) {
     const v = currentFilteredVentas[i];
     const fila = document.createElement("tr");
+
+    let badgeFiscal = "";
+    if (v.cae) {
+      badgeFiscal = `<br/><span style="color: #10b981; font-size: 0.8em; font-weight: bold;">CAE: ${v.cae}</span>`;
+    } else if (v.resultado_afip === 'INDETERMINADO') {
+      badgeFiscal = `<br/><span style="color: #d97706; font-size: 0.8em; font-weight: bold; background: #fef3c7; padding: 1px 5px; border-radius: 4px;">⚠️ INDETERMINADO</span>`;
+    }
+
+    const btnConciliar = (v.resultado_afip === 'INDETERMINADO') ? `
+      <button class="btn-conciliar-fiscal app-btn-secondary" data-id="${v.id}" style="padding: 3px 7px; font-size: 0.75em; margin-left: 4px; color: #b45309; border-color: #f59e0b;" title="Consultar en AFIP si el comprobante fue emitido">
+        🔄 Conciliar
+      </button>
+    ` : "";
+
     fila.innerHTML = `
       <td>${formatearFecha(v.fecha)}</td>
       <td>
         <strong>${escapeHtml(v.tipo_comprobante || "Ticket")}</strong>
-        ${v.cae ? `<br/><span style="color: #10b981; font-size: 0.8em; font-weight: bold;">CAE: ${v.cae}</span>` : ""}
+        ${badgeFiscal}
       </td>
       <td>${escapeHtml(v.cliente_nombre) || "-"}</td>
       <td>${Number(v.total_bruto).toFixed(2)}</td>
@@ -1400,6 +1461,7 @@ const renderVentasPrincipalLazy = (append = false) => {
       <td>${v.metodo_pago || "-"}</td>
       <td>
         <button class="btn-ver-ticket" data-id="${v.id}">Ver Ticket</button>
+        ${btnConciliar}
       </td>
     `;
     tablaVentasBody.appendChild(fila);
@@ -1408,6 +1470,7 @@ const renderVentasPrincipalLazy = (append = false) => {
   activarBotonesEliminar();
   activarBotonesVerTicket();
   activarBotonesEditar();
+  activarBotonesConciliar();
 };
 
 function renderVentasPrincipal(lista) {
@@ -1461,19 +1524,35 @@ function renderVentasModal(lista) {
 
   lista.forEach((v) => {
     const fila = document.createElement("tr");
+
+    let badgeFiscal = "";
+    if (v.cae) {
+      badgeFiscal = `<br/><span style="color: #10b981; font-size: 0.75em; font-weight: bold;">CAE: ${v.cae}</span>`;
+    } else if (v.resultado_afip === 'INDETERMINADO') {
+      badgeFiscal = `<br/><span style="color: #d97706; font-size: 0.75em; font-weight: bold; background: #fef3c7; padding: 1px 5px; border-radius: 4px;">⚠️ INDETERMINADO</span>`;
+    }
+
+    const btnConciliar = (v.resultado_afip === 'INDETERMINADO') ? `
+      <button class="btn-conciliar-fiscal app-btn-secondary" data-id="${v.id}" style="padding: 2px 6px; font-size: 0.75em; margin-left: 4px; color: #b45309; border-color: #f59e0b;" title="Consultar en AFIP si el comprobante fue emitido">
+        🔄 Conciliar
+      </button>
+    ` : "";
+
     fila.innerHTML = `
       <td>${formatearFecha(v.fecha)}</td>
-      <td>${v.cliente_nombre || "—"}</td>
-      <td>$${Number(v.total).toFixed(2)}</td>
+      <td>${v.cliente_nombre || "—"}${badgeFiscal}</td>
+      <td>${Number(v.total).toFixed(2)}</td>
       <td>${v.metodo_pago || "—"}</td>
       <td>
         <button class="btn-ver-ticket" data-id="${v.id}">Ver</button>
+        ${btnConciliar}
       </td>
     `;
     tablaVerVentasBody.appendChild(fila);
   });
 
   activarBotonesVerTicket();
+  activarBotonesConciliar();
 }
 
 // ==============================
@@ -1530,6 +1609,51 @@ function activarBotonesEliminar() {
         cargarVentas();
       } catch (err) {
         toastError("Error eliminando venta");
+      }
+    });
+  });
+}
+
+function activarBotonesConciliar() {
+  document.querySelectorAll(".btn-conciliar-fiscal").forEach((btn) => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      if (!id) return;
+
+      btn.disabled = true;
+      btn.textContent = "Consultando...";
+
+      try {
+        const res = await VentasAPI.conciliarFiscal(id);
+        if (res.conciliado && res.cae) {
+          alert(
+            "✅ COMPROBANTE CONCILIADO CON ÉXITO:\n\n" +
+            "AFIP confirmó que la factura había sido AUTORIZADA.\n\n" +
+            `• Tipo: ${res.tipo_comprobante || "Factura"}\n` +
+            `• Punto de Venta: ${res.punto_venta}\n` +
+            `• Número: ${res.numero_comprobante}\n` +
+            `• CAE: ${res.cae}\n` +
+            `• Vencimiento CAE: ${res.vto_cae || "N/D"}\n\n` +
+            "La venta y el comprobante fiscal local han sido actualizados correctamente."
+          );
+        } else if (res.no_emitido) {
+          alert(
+            "ℹ️ CONCILIACIÓN CONCLUIDA:\n\n" +
+            "AFIP confirmó que este comprobante NO fue emitido en sus servidores.\n\n" +
+            "El estado de la venta se actualizó a 'NO_FISCAL' para evitar inconsistencias."
+          );
+        } else {
+          alert(
+            `Estado fiscal AFIP: ${res.resultado_afip || "INDETERMINADO"}\n\n` +
+            `${res.observaciones || res.error || "No se pudo obtener información concluyente de AFIP."}`
+          );
+        }
+        await cargarVentas();
+      } catch (err) {
+        alert(`❌ Error al conciliar con AFIP: ${err.message}`);
+        btn.disabled = false;
+        btn.textContent = "🔄 Conciliar";
       }
     });
   });
@@ -1619,6 +1743,14 @@ function activarBotonesVerTicket() {
             </div>
           ` : "";
 
+          const cartelIndeterminadoModal = venta.resultado_afip === 'INDETERMINADO' ? `
+            <div style="background: #fee2e2; border: 1.5px solid #ef4444; padding: 6px; margin-bottom: 8px; border-radius: 4px; font-size: 10px; color: #991b1b; text-align: center;">
+              <strong>⚠️ ESTADO FISCAL INDETERMINADO</strong><br>
+              AFIP no confirmó emisión. NO tiene validez fiscal.<br>
+              Utilice el botón "Conciliar" en la tabla para verificar con AFIP.
+            </div>
+          ` : "";
+
           const nombreFantasia = escapeHtml(configFiscalComercio?.razon_social || configFiscalComercio?.nombre_fantasia || "KiERO POS");
           const domComercial = configFiscalComercio?.domicilio_comercial ? `<div style="font-size: 11px; color: #475569;">${escapeHtml(configFiscalComercio.domicilio_comercial)}</div>` : "";
           const iibbTxt = configFiscalComercio?.iibb ? `<div style="font-size: 11px; color: #475569;">IIBB: ${escapeHtml(configFiscalComercio.iibb)}</div>` : "";
@@ -1630,6 +1762,7 @@ function activarBotonesVerTicket() {
           ` : "";
 
           const ticketHTML = `
+            ${cartelIndeterminadoModal}
             ${cartelHomologacion}
             <div style="text-align: center; margin-bottom: 8px;">
               <div style="font-weight: bold; font-size: 15px;">${nombreFantasia}</div>

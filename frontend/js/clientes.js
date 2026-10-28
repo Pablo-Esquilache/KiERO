@@ -759,6 +759,9 @@ async function ejecutarConsultaPadron(silent = false) {
 
   try {
     const res = await ClientesAPI.consultarPadron(check.clean);
+    // Descartar respuestas viejas si el usuario cambió el CUIT mientras se consultaba
+    const currentClean = (campoCuit.value || "").replace(/\D/g, "");
+    if (currentClean !== check.clean) return;
     if (res.ok && res.datos) {
       campoCuit.dataset.lastQueriedCuit = check.clean;
       const d = res.datos;
@@ -783,7 +786,12 @@ async function ejecutarConsultaPadron(silent = false) {
     } else {
       const msg = res.message || res.error || "No se obtuvieron datos de AFIP.";
       if (cuitStatusMsg) {
-        cuitStatusMsg.innerHTML = `<span style="color: #eab308;" title="${msg}">⚠ ${msg.length > 50 ? msg.slice(0, 47) + '...' : msg}</span>`;
+        cuitStatusMsg.innerHTML = "";
+        const span = document.createElement("span");
+        span.style.color = "#eab308";
+        span.title = msg;
+        span.textContent = "⚠️ " + (msg.length > 50 ? msg.slice(0, 47) + "..." : msg);
+        cuitStatusMsg.appendChild(span);
       }
       if (!silent) {
         alert(`Consulta AFIP/ARCA:\n${msg}\n\nPuede ingresar los datos del cliente manualmente.`);
@@ -791,7 +799,11 @@ async function ejecutarConsultaPadron(silent = false) {
     }
   } catch (err) {
     if (cuitStatusMsg) {
-      cuitStatusMsg.innerHTML = `<span style="color: #ef4444;">⚠ Error: ${err.message}</span>`;
+      cuitStatusMsg.innerHTML = "";
+      const span = document.createElement("span");
+      span.style.color = "#ef4444";
+      span.textContent = "⚠️ Error: " + err.message;
+      cuitStatusMsg.appendChild(span);
     }
     if (!silent) {
       alert(`No se pudo conectar con el servidor para consultar AFIP: ${err.message}. Puede completar los datos manualmente.`);
