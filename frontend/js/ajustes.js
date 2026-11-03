@@ -27,6 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const cid = session.comercio_id || 1;
+  function getComercioId() { return session.comercio_id || 1; }
 // authFetch declared at module level
 
 //   // ===== ECOMMERCE SYNC =====

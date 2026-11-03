@@ -1236,7 +1236,17 @@ if (formVenta) {
       if (modalTicketExito) {
         const ticketContent = document.getElementById("ticketExitoContenido");
         if (ticketContent) {
-            const clienteName = escapeHtml(document.getElementById("clienteVentaNombre")?.value || "Consumidor Final");
+            const clienteIdVal = document.getElementById("clienteVenta")?.value;
+            const clienteObj = (typeof allClientes !== "undefined" && allClientes)
+              ? allClientes.find(c => c.id == clienteIdVal)
+              : null;
+
+            const clienteName = escapeHtml(
+              ventaResultado?.cliente_nombre || clienteObj?.nombre || document.getElementById("clienteVentaNombre")?.value || "Consumidor Final"
+            );
+            const clienteCuit = escapeHtml(ventaResultado?.cliente_cuit || clienteObj?.cuit || "");
+            const clienteCondIva = escapeHtml(ventaResultado?.cliente_condicion_iva || clienteObj?.condicion_iva || "");
+            const clienteDomFiscal = escapeHtml(ventaResultado?.cliente_domicilio_fiscal || clienteObj?.domicilio_fiscal || "");
             let itemsHtml = "";
             for(let i of carrito) {
                 itemsHtml += `<div style="display:flex; justify-content:space-between;"><span>${i.cantidad}x ${escapeHtml(i.nombre)}</span><span>${Number(i.subtotal).toFixed(2)}</span></div>`;
@@ -1299,7 +1309,10 @@ if (formVenta) {
                   <div style="font-size: 12px; color: #334155;">P.V.: ${ptoVta} - N°: ${nroCmp}</div>
                 </div>
 
-                <div style="margin-bottom: 5px;"><strong>Cliente:</strong> ${clienteName}</div>
+                <div style="margin-bottom: 4px;"><strong>Cliente:</strong> ${clienteName}</div>
+                ${clienteCuit ? `<div style="margin-bottom: 4px;"><strong>CUIT/DNI:</strong> ${clienteCuit}</div>` : (isFiscal ? `<div style="margin-bottom: 4px;"><strong>Doc:</strong> Sin identificar (Consumidor Final)</div>` : "")}
+                ${clienteCondIva ? `<div style="margin-bottom: 4px;"><strong>Condición IVA:</strong> ${clienteCondIva}</div>` : ""}
+                ${clienteDomFiscal ? `<div style="margin-bottom: 4px;"><strong>Domicilio:</strong> ${clienteDomFiscal}</div>` : ""}
                 <div style="margin-bottom: 5px;"><strong>Método de pago:</strong> ${pago}</div>
                 <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
                 ${itemsHtml}
@@ -1779,8 +1792,9 @@ function activarBotonesVerTicket() {
             <div style="margin-bottom: 5px;"><strong>ID Venta:</strong> ${venta.id}</div>
             <div style="margin-bottom: 5px;"><strong>Fecha:</strong> ${formatearFecha(venta.fecha)}</div>
             <div style="margin-bottom: 5px;"><strong>Cliente:</strong> ${escapeHtml(venta.cliente_nombre || "Consumidor Final")}</div>
-            ${venta.cliente_cuit ? `<div style="margin-bottom: 5px;"><strong>CUIT/DNI:</strong> ${escapeHtml(venta.cliente_cuit)}</div>` : ""}
+            ${venta.cliente_cuit ? `<div style="margin-bottom: 5px;"><strong>CUIT/DNI:</strong> ${escapeHtml(venta.cliente_cuit)}</div>` : (isFiscal ? `<div style="margin-bottom: 5px;"><strong>Doc:</strong> Sin identificar (Consumidor Final)</div>` : "")}
             ${venta.cliente_condicion_iva ? `<div style="margin-bottom: 5px;"><strong>Cond. IVA:</strong> ${escapeHtml(venta.cliente_condicion_iva)}</div>` : ""}
+            ${venta.cliente_domicilio_fiscal ? `<div style="margin-bottom: 5px;"><strong>Domicilio:</strong> ${escapeHtml(venta.cliente_domicilio_fiscal)}</div>` : ""}
             <div style="margin-bottom: 5px;"><strong>Método de pago:</strong> ${escapeHtml(venta.metodo_pago || "Efectivo")}</div>
             <div style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
             ${itemsHtml}

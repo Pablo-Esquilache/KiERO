@@ -14,7 +14,7 @@ export const getVentas = async (req, res) => {
   try {
     const { rows } = await db.query(
       `
-      SELECT v.*, c.nombre AS cliente_nombre
+      SELECT v.*, c.nombre AS cliente_nombre, c.cuit AS cliente_cuit, c.condicion_iva AS cliente_condicion_iva, c.domicilio_fiscal AS cliente_domicilio_fiscal
       FROM ventas v
       LEFT JOIN clientes c ON v.cliente_id = c.id
       WHERE v.comercio_id = $1
@@ -119,8 +119,8 @@ export const createVenta = async (req, res) => {
     if (!item.cantidad || isNaN(item.cantidad) || Number(item.cantidad) <= 0 || !Number.isInteger(Number(item.cantidad))) {
       return res.status(400).json({ error: "Cantidad inválida. Debe ser un entero positivo." });
     }
-    if (item.esPrecioAbierto && (isNaN(item.precio_unitario) || Number(item.precio_unitario) < 0)) {
-      return res.status(400).json({ error: "Precio abierto inválido. No puede ser negativo." });
+    if (item.esPrecioAbierto && (!Number.isFinite(Number(item.precio_unitario)) || Number(item.precio_unitario) === 0)) {
+      return res.status(400).json({ error: "Precio abierto inválido. Debe ser un número distinto de cero." });
     }
     const { rows } = await db.query(
       `SELECT stock, precio, precio_abierto, nombre, alicuota_iva FROM productos 
@@ -133,7 +133,7 @@ export const createVenta = async (req, res) => {
     item.alicuota_iva = rows[0].alicuota_iva !== undefined ? rows[0].alicuota_iva : 21.0;
     if (rows[0].precio_abierto) {
       const precioCliente = Number(item.precio_unitario);
-      if (!Number.isFinite(precioCliente) || precioCliente <= 0) {
+      if (!Number.isFinite(precioCliente) || precioCliente === 0) {
         return res.status(400).json({ error: `Precio inválido para "${rows[0].nombre}"` });
       }
       item.precio_unitario = precioCliente;
@@ -154,6 +154,13 @@ export const createVenta = async (req, res) => {
   }
   const descuento_monto = total_bruto * (descuento / 100);
   const total = Math.round((total_bruto - descuento_monto) * 100) / 100;
+
+  if (total < 0) {
+    return res.status(400).json({ error: "El total del ticket no puede ser negativo." });
+  }
+  if (facturar_afip && total <= 0) {
+    return res.status(400).json({ error: "Para emitir factura en AFIP/ARCA el total debe ser mayor a cero." });
+  }
 
   // 3️⃣ Si se solicitó Factura Electrónica, llamar a AFIP AFUERA de la transacción SQLite
   let fiscalData = null;
@@ -266,6 +273,23 @@ export const createVenta = async (req, res) => {
     // Adjuntar QR data URL en memoria para impresión inmediata
     if (fiscalData && fiscalData.qr_data_url) {
       venta.qr_data_url = fiscalData.qr_data_url;
+    }
+
+    if (cliente_id) {
+      try {
+        const { rows: cliRows } = await db.query(
+          `SELECT nombre, cuit, condicion_iva, domicilio_fiscal FROM clientes WHERE id = $1`,
+          [cliente_id]
+        );
+        if (cliRows[0]) {
+          venta.cliente_nombre = cliRows[0].nombre;
+          venta.cliente_cuit = cliRows[0].cuit;
+          venta.cliente_condicion_iva = cliRows[0].condicion_iva;
+          venta.cliente_domicilio_fiscal = cliRows[0].domicilio_fiscal;
+        }
+      } catch (cErr) {
+        console.warn("No se pudieron cargar datos del cliente para la venta:", cErr.message);
+      }
     }
 
     res.status(201).json(venta);
