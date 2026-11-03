@@ -271,12 +271,20 @@ function renderTablaClientes() {
   tablaClientesBody.innerHTML = "";
 
   filtrados.forEach((c) => {
+    const tieneSaldo = Math.abs(Number(c.saldo || 0)) > 0.01;
+    const dotTitle = tieneSaldo
+      ? (Number(c.saldo) > 0
+          ? `Deuda pendiente: $${Number(c.saldo).toFixed(2)}`
+          : `Saldo a favor: $${Math.abs(Number(c.saldo)).toFixed(2)}`)
+      : "";
+
     tablaClientesBody.innerHTML += `
       <tr>
         <td class="cliente-nombre-cell">
           <button class="btn-nombre-cliente" onclick="verHistorialCliente(${c.id}, '${escapeQuote(c.nombre)}')">
             ${escapeHtml(c.nombre)}
           </button>
+          ${tieneSaldo ? `<span class="cc-dot" title="${dotTitle}"></span>` : ""}
         </td>
         <td>
           <div style="font-family: monospace; font-size: 0.9em; font-weight: 500;">${escapeHtml(c.cuit) || "-"}</div>
@@ -294,7 +302,6 @@ function renderTablaClientes() {
             <button class="app-btn-historial only-admin" data-id="${c.id}">
               Historial
             </button>
-            ${Math.abs(Number(c.saldo || 0)) > 0.01 ? '<span class="cc-dot"></span>' : ""}
           </div>
         </td>
       </tr>
@@ -363,6 +370,8 @@ function editarCliente(id) {
 // ===========================================================
 // HISTORIAL CLIENTE
 // ===========================================================
+
+window.verHistorialCliente = (id) => verHistorial(id);
 
 async function verHistorial(clienteId) {
   const role = session?.role;
