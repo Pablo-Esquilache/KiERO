@@ -165,6 +165,22 @@ export const createVenta = async (req, res) => {
   // 3️⃣ Si se solicitó Factura Electrónica, llamar a AFIP AFUERA de la transacción SQLite
   let fiscalData = null;
   if (facturar_afip) {
+    // Bloquear nuevas facturas fiscales si existe alguna venta en estado INDETERMINADO
+    const { rows: indetRows } = await db.query(
+      `SELECT id, numero_comprobante FROM ventas
+       WHERE comercio_id = $1 AND resultado_afip = 'INDETERMINADO'
+       ORDER BY id DESC LIMIT 1`,
+      [comercio_id]
+    );
+
+    if (indetRows.length > 0) {
+      return res.status(400).json({
+        error: `Existe una venta previa con estado fiscal INDETERMINADO (Venta #${indetRows[0].id}). Debe conciliarla o verificarla antes de emitir nuevas facturas en AFIP para preservar la correlatividad de comprobantes. Puede emitir esta venta como ticket común no fiscal.`,
+        bloqueo_indeterminado: true,
+        venta_indeterminada_id: indetRows[0].id
+      });
+    }
+
     try {
       fiscalData = await withFiscalLock(comercio_id, async () => {
         return await emitirComprobanteAfip({

@@ -862,9 +862,11 @@ export async function conciliarComprobanteIndeterminado({ comercioId, ventaId })
     throw new Error("La venta no se encuentra en estado INDETERMINADO.");
   }
 
-  const config = await obtenerConfiguracionFiscal(comercioId);
-  const arcaInfo = await instanciarArca(comercioId, config);
-  const arca = arcaInfo.arca;
+  const arcaInfo = await getArcaClient(comercioId);
+  if (!arcaInfo) {
+    throw new Error("No hay configuración fiscal o certificados cargados para este comercio.");
+  }
+  const { arca, config } = arcaInfo;
 
   const ptoVta = Number(venta.punto_venta) || Number(config.punto_venta) || 1;
   const cbteTipo = obtenerCbteTipoPorNombre(venta.tipo_comprobante);
@@ -879,33 +881,96 @@ export async function conciliarComprobanteIndeterminado({ comercioId, ventaId })
       setTimeout(() => reject(new Error("TimeoutAFIP (8s)")), 8000)
     );
 
-    const voucher = await Promise.race([
-      arca.electronicBillingService.getVoucherInfo(nroCmp, ptoVta, cbteTipo),
+    // 1️⃣ Consultar el último comprobante autorizado en AFIP/ARCA
+    const lastVoucher = await Promise.race([
+      arca.electronicBillingService.getLastVoucher(ptoVta, cbteTipo),
       timeout8s
     ]);
 
+    const ultimoNumeroAfip = Number(lastVoucher);
+
+    // Si el último número en AFIP es estrictamente menor al número que intentamos emitir,
+    // significa con absoluta certeza que AFIP jamás llegó a emitir este comprobante.
+    if (ultimoNumeroAfip < nroCmp) {
+      await pool.query(
+        `UPDATE ventas 
+         SET resultado_afip = 'NO_EMITIDO', observaciones_afip = 'Verificado con AFIP: Comprobante no emitido (último número en AFIP: #${ultimoNumeroAfip}).'
+         WHERE id = $1 AND comercio_id = $2`,
+        [ventaId, comercioId]
+      );
+
+      return {
+        ok: true,
+        conciliado: true,
+        emitido: false,
+        no_emitido: true,
+        mensaje: `AFIP confirmó que el comprobante NO fue emitido (el último comprobante autorizado en AFIP es el #${ultimoNumeroAfip}, menor al intento #${nroCmp}). La venta quedó registrada como venta interna no fiscal.`
+      };
+    }
+
+    // 2️⃣ Si el número intentado es <= ultimoNumeroAfip, consultar el detalle del comprobante
+    let voucher = null;
+    try {
+      voucher = await Promise.race([
+        arca.electronicBillingService.getVoucherInfo(nroCmp, ptoVta, cbteTipo),
+        timeout8s
+      ]);
+    } catch (vErr) {
+      console.warn("[CONCILIAR] Error consultando voucherInfo:", vErr.message);
+    }
+
+    // Calcular datos esperados de la venta local
+    let docTipo = 99;
+    let docNro = 0;
+    if (venta.cliente_cuit || venta.cliente_doc) {
+      const rawDoc = String(venta.cliente_cuit || venta.cliente_doc).replace(/\D/g, "");
+      if (rawDoc.length === 11) {
+        docTipo = 80;
+        docNro = Number(rawDoc);
+      } else if (rawDoc.length >= 7 && rawDoc.length <= 8) {
+        docTipo = 96;
+        docNro = Number(rawDoc);
+      }
+    }
+
+    // Fecha esperada en formato YYYYMMDD
+    let fechaEsperada = "";
+    if (venta.fecha) {
+      const fObj = new Date(venta.fecha);
+      if (!isNaN(fObj.getTime())) {
+        const y = fObj.getFullYear();
+        const m = String(fObj.getMonth() + 1).padStart(2, "0");
+        const d = String(fObj.getDate()).padStart(2, "0");
+        fechaEsperada = `${y}${m}${d}`;
+      }
+    }
+
+    const voucherCbteFch = voucher?.cbteFch ? String(voucher.cbteFch).replace(/\D/g, "") : "";
+    const coincideTotal = voucher && Math.abs(Number(voucher.impTotal) - Number(venta.total)) < 0.05;
+    const coincideDoc = voucher && Number(voucher.docNro || 0) === Number(docNro);
+    const coincideFecha = !fechaEsperada || !voucherCbteFch || voucherCbteFch === fechaEsperada;
+
+    // Verificar que ninguna OTRA venta local tenga ya registrado este comprobante con CAE
+    const { rows: conflictoRows } = await pool.query(
+      `SELECT id FROM ventas 
+       WHERE comercio_id = $1 AND punto_venta = $2 AND tipo_comprobante = $3 AND numero_comprobante = $4 AND cae IS NOT NULL AND id != $5`,
+      [comercioId, ptoVta, venta.tipo_comprobante, nroCmp, ventaId]
+    );
+    const hayConflictoLocal = conflictoRows.length > 0;
+
+    // Si coincide en total, doc, fecha y no hay colisión local -> Conciliado
     if (
       voucher &&
       voucher.codAutorizacion &&
       voucher.resultado === "A" &&
-      Math.abs(Number(voucher.impTotal) - Number(venta.total)) < 0.05
+      coincideTotal &&
+      coincideDoc &&
+      coincideFecha &&
+      !hayConflictoLocal
     ) {
       const cae = voucher.codAutorizacion;
       const vtoCae = voucher.fchVto;
       const qrFecha = (voucher.cbteFch || "").toString();
-
-      let docTipo = 99;
-      let docNro = 0;
-      if (venta.cliente_cuit || venta.cliente_doc) {
-        const rawDoc = String(venta.cliente_cuit || venta.cliente_doc).replace(/\D/g, "");
-        if (rawDoc.length === 11) {
-          docTipo = 80;
-          docNro = Number(rawDoc);
-        } else if (rawDoc.length >= 7 && rawDoc.length <= 8) {
-          docTipo = 96;
-          docNro = Number(rawDoc);
-        }
-      }
 
       const { qrUrl, qrDataUrl } = await generarQrAfip({
         fecha: qrFecha,
@@ -936,25 +1001,29 @@ export async function conciliarComprobanteIndeterminado({ comercioId, ventaId })
         punto_venta: ptoVta,
         tipo_comprobante: venta.tipo_comprobante,
         qr_data_url: qrDataUrl,
-        mensaje: `AFIP confirmó la emisión de la factura con CAE ${cae}. Registro actualizado exitosamente.`
+        mensaje: `AFIP confirmó la emisión de la factura #${nroCmp} con CAE ${cae}. Registro fiscal actualizado exitosamente.`
       };
     } else {
-      await pool.query(
-        `UPDATE ventas 
-         SET resultado_afip = 'NO_EMITIDO', observaciones_afip = 'Verificado con AFIP: Comprobante no emitido.'
-         WHERE id = $1 AND comercio_id = $2`,
-        [ventaId, comercioId]
-      );
+      // Si no coincide con certeza, NO asumir no emitido. Dejar en INDETERMINADO para revisión manual.
+      let motivo = "Los datos del comprobante en AFIP no coinciden exactamente con esta venta local.";
+      if (hayConflictoLocal) {
+        motivo = `El comprobante fiscal #${nroCmp} ya fue registrado en la venta local #${conflictoRows[0].id}.`;
+      } else if (voucher && !coincideTotal) {
+        motivo = `El comprobante #${nroCmp} en AFIP tiene un importe de $${voucher.impTotal}, distinto a la venta local ($${venta.total}).`;
+      } else if (voucher && !coincideDoc) {
+        motivo = `El comprobante #${nroCmp} en AFIP fue emitido al doc ${voucher.docNro}, distinto al cliente local (${docNro}).`;
+      }
 
       return {
-        ok: true,
-        conciliado: true,
-        emitido: false,
-        mensaje: "AFIP confirmó que el comprobante NO fue emitido. La venta quedó registrada como no fiscal."
+        ok: false,
+        conciliado: false,
+        indeterminado: true,
+        requiere_revision_manual: true,
+        mensaje: `No se pudo conciliar automáticamente: ${motivo} Se mantiene en estado INDETERMINADO para revisión manual en el portal 'Mis Comprobantes' de AFIP.`
       };
     }
   } catch (err) {
-    console.error("[CONCILIAR] Error consultando voucher en AFIP:", err);
+    console.error("[CONCILIAR] Error consultando comprobante en AFIP:", err);
     throw new Error(`Error de comunicación con AFIP al conciliar: ${err.message}`);
   }
 }

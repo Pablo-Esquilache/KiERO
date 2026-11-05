@@ -707,10 +707,12 @@ router.post("/fiscal/contingencia/:id/resolver", requireAdmin, async (req, res) 
          descuento_monto, descuento_porcentaje, total, comercio_id,
          tipo_comprobante, punto_venta, numero_comprobante, cae, vto_cae,
          resultado_afip, observaciones_afip, codigo_qr_afip, qr_data_url)
-      VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'A', $13, $14, $15)
+      VALUES (COALESCE($1, NOW()), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'A', $14, $15, $16)
       RETURNING *
     `;
+    const fechaOriginal = contingencia.created_at || null;
     const { rows: vRows } = await client.query(qVenta, [
+      fechaOriginal,
       contingencia.cliente_id || null,
       metodo_pago,
       total_bruto,

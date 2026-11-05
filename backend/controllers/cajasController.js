@@ -71,6 +71,34 @@ export const cerrarCaja = async (req, res) => {
       
       const caja = cajaRows[0];
       const startTime = caja.hora_apertura;
+
+      // 🛡️ Red de seguridad: Verificar si hay contingencias no resueltas o ventas INDETERMINADO
+      if (!req.body?.forzar_cierre) {
+        const { rows: pendCont } = await client.query(
+          `SELECT COUNT(*) as cant FROM ventas_fiscales_contingencia WHERE comercio_id = $1 AND resuelto = 0`,
+          [comercio_id]
+        );
+        const { rows: pendIndet } = await client.query(
+          `SELECT COUNT(*) as cant FROM ventas WHERE comercio_id = $1 AND resultado_afip = 'INDETERMINADO'`,
+          [comercio_id]
+        );
+        const cantCont = Number(pendCont[0]?.cant || 0);
+        const cantIndet = Number(pendIndet[0]?.cant || 0);
+
+        if (cantCont > 0 || cantIndet > 0) {
+          await client.query("ROLLBACK");
+          const detalles = [];
+          if (cantCont > 0) detalles.push(`${cantCont} venta(s) fiscal(es) en contingencia (en Ajustes)`);
+          if (cantIndet > 0) detalles.push(`${cantIndet} venta(s) en estado INDETERMINADO (en Ventas)`);
+          return res.status(400).json({
+            error: `No se puede cerrar la caja: hay pendientes fiscales sin resolver (${detalles.join(" y ")}). Resuélvalos o concílielos antes de cerrar para que los totales de caja sean exactos.`,
+            pendientes_fiscales: {
+              contingencias: cantCont,
+              indeterminados: cantIndet
+            }
+          });
+        }
+      }
       
       // Totales
       const { rows: [{ t_efectivo }] } = await client.query(

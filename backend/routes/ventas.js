@@ -1,4 +1,5 @@
 import express from "express";
+import { requireAdmin } from "../middleware/auth.js";
 import {
   getVentas,
   getVentaById,
@@ -17,6 +18,6 @@ router.get("/:id/detalle", getVentaDetalle);
 router.post("/", createVenta);
 router.put("/:id", updateVenta);
 router.delete("/:id", deleteVenta);
-router.post("/:id/conciliar-fiscal", conciliarVentaFiscal);
+router.post("/:id/conciliar-fiscal", requireAdmin, conciliarVentaFiscal);
 
 export default router;

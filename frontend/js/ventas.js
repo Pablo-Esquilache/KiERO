@@ -1455,7 +1455,7 @@ const renderVentasPrincipalLazy = (append = false) => {
       badgeFiscal = `<br/><span style="color: #d97706; font-size: 0.8em; font-weight: bold; background: #fef3c7; padding: 1px 5px; border-radius: 4px;">⚠️ INDETERMINADO</span>`;
     }
 
-    const btnConciliar = (v.resultado_afip === 'INDETERMINADO') ? `
+    const btnConciliar = (v.resultado_afip === 'INDETERMINADO' && session?.role === 'admin') ? `
       <button class="btn-conciliar-fiscal app-btn-secondary" data-id="${v.id}" style="padding: 3px 7px; font-size: 0.75em; margin-left: 4px; color: #b45309; border-color: #f59e0b;" title="Consultar en AFIP si el comprobante fue emitido">
         🔄 Conciliar
       </button>
@@ -1545,7 +1545,7 @@ function renderVentasModal(lista) {
       badgeFiscal = `<br/><span style="color: #d97706; font-size: 0.75em; font-weight: bold; background: #fef3c7; padding: 1px 5px; border-radius: 4px;">⚠️ INDETERMINADO</span>`;
     }
 
-    const btnConciliar = (v.resultado_afip === 'INDETERMINADO') ? `
+    const btnConciliar = (v.resultado_afip === 'INDETERMINADO' && session?.role === 'admin') ? `
       <button class="btn-conciliar-fiscal app-btn-secondary" data-id="${v.id}" style="padding: 2px 6px; font-size: 0.75em; margin-left: 4px; color: #b45309; border-color: #f59e0b;" title="Consultar en AFIP si el comprobante fue emitido">
         🔄 Conciliar
       </button>
@@ -1642,7 +1642,7 @@ function activarBotonesConciliar() {
         if (res.conciliado && res.cae) {
           alert(
             "✅ COMPROBANTE CONCILIADO CON ÉXITO:\n\n" +
-            "AFIP confirmó que la factura había sido AUTORIZADA.\n\n" +
+            "AFIP confirmó que la factura fue AUTORIZADA.\n\n" +
             `• Tipo: ${res.tipo_comprobante || "Factura"}\n` +
             `• Punto de Venta: ${res.punto_venta}\n` +
             `• Número: ${res.numero_comprobante}\n` +
@@ -1650,7 +1650,7 @@ function activarBotonesConciliar() {
             `• Vencimiento CAE: ${res.vto_cae || "N/D"}\n\n` +
             "La venta y el comprobante fiscal local han sido actualizados correctamente."
           );
-        } else if (res.no_emitido) {
+        } else if (res.no_emitido || (res.conciliado && !res.emitido)) {
           alert(
             "ℹ️ CONCILIACIÓN CONCLUIDA:\n\n" +
             "AFIP confirmó que este comprobante NO fue emitido en sus servidores.\n\n" +

@@ -132,6 +132,15 @@ function runMigrations(database, dataDir, databaseFilePath) {
           created_at TEXT DEFAULT (datetime('now','localtime'))
         );
       `
+    },
+    {
+      v: 8,
+      name: "Indice unico comprobantes fiscales autorizados con CAE",
+      sql: `
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_ventas_fiscal_unico
+        ON ventas (comercio_id, punto_venta, tipo_comprobante, numero_comprobante)
+        WHERE cae IS NOT NULL;
+      `
     }
   ];
 

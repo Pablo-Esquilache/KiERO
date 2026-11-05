@@ -243,8 +243,33 @@ btnCerrarCaja?.addEventListener("click", async () => {
       total_cuenta_corriente: totalCuentaCorriente
     });
   } catch (err) {
-    alert("Error al cerrar la caja");
-    return;
+    if (err.message && err.message.includes("pendientes fiscales")) {
+      const forzar = confirm(
+        "⚠️ ADVERTENCIA FISCAL ANTES DE CERRAR CAJA:\n\n" +
+        err.message + "\n\n" +
+        "¿Desea forzar el cierre de la caja de todos modos bajo su responsabilidad?"
+      );
+      if (forzar) {
+        try {
+          await CajasAPI.cerrar(cajaActual.id, {
+            total_ventas: totalVentasLimpias,
+            total_gastos: window.tempGastos || 0,
+            total_devoluciones: window.tempDevoluciones || 0,
+            total_resultado: resultado,
+            total_cuenta_corriente: totalCuentaCorriente,
+            forzar_cierre: true
+          });
+        } catch (fErr) {
+          alert("Error al forzar cierre de caja: " + fErr.message);
+          return;
+        }
+      } else {
+        return;
+      }
+    } else {
+      alert(err.message || "Error al cerrar la caja");
+      return;
+    }
   }
 
   alert("Caja cerrada exitosamente.");

@@ -180,3 +180,5 @@ INSERT OR IGNORE INTO descuentos_config (comercio_id, porcentaje) VALUES (1, 0),
 
 
 CREATE UNIQUE INDEX IF NOT EXISTS unica_caja_abierta_por_comercio ON cajas (comercio_id) WHERE estado = 'abierta';
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ventas_fiscal_unico ON ventas (comercio_id, punto_venta, tipo_comprobante, numero_comprobante) WHERE cae IS NOT NULL;
