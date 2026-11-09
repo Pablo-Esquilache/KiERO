@@ -3127,78 +3127,166 @@ if (pInputFocus) {
   });
 }
 
+let ventaIdManualFiscal = null;
+
+function inicializarModalManualFiscal() {
+  const modal = document.getElementById("modalResolverManualFiscal");
+  const cerrarBtn = document.getElementById("cerrarModalManualFiscal");
+  const cancelarBtn = document.getElementById("btnCancelarManualFiscal");
+  const form = document.getElementById("formManualFiscal");
+  const radios = document.querySelectorAll('input[name="accionManualFiscal"]');
+  const secNoEmitido = document.getElementById("seccionManualNoEmitido");
+  const secCargarCae = document.getElementById("seccionManualCargarCae");
+
+  if (!modal || modal.dataset.init === "true") return;
+  modal.dataset.init = "true";
+
+  const cerrar = () => {
+    modal.style.display = "none";
+    if (form) form.reset();
+    ventaIdManualFiscal = null;
+  };
+
+  cerrarBtn?.addEventListener("click", cerrar);
+  cancelarBtn?.addEventListener("click", cerrar);
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) cerrar();
+  });
+
+  radios.forEach((r) => {
+    r.addEventListener("change", () => {
+      if (r.value === "cargar_cae") {
+        if (secNoEmitido) secNoEmitido.style.display = "none";
+        if (secCargarCae) secCargarCae.style.display = "block";
+      } else {
+        if (secNoEmitido) secNoEmitido.style.display = "block";
+        if (secCargarCae) secCargarCae.style.display = "none";
+      }
+    });
+  });
+
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!ventaIdManualFiscal) return;
+
+    const accion = document.querySelector('input[name="accionManualFiscal"]:checked')?.value || "marcar_no_emitido";
+    const btnGuardar = document.getElementById("btnGuardarManualFiscal");
+
+    if (accion === "marcar_no_emitido") {
+      const motivo = document.getElementById("manualFiscalMotivo")?.value?.trim() || "";
+      const conf = confirm(
+        "⚠️ ATENCIÓN:\n\n" +
+        "¿Confirma que verificó en AFIP que este comprobante NO fue emitido?\n\n" +
+        "La venta pasará a estado NO_EMITIDO y se liberará el bloqueo para emitir y cerrar caja."
+      );
+      if (!conf) return;
+
+      if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = "Guardando..."; }
+      try {
+        const res = await VentasAPI.resolverManualFiscal(ventaIdManualFiscal, {
+          accion: "marcar_no_emitido",
+          motivo
+        });
+        alert("✅ " + (res.mensaje || "Venta marcada como no emitida exitosamente."));
+        cerrar();
+        await cargarVentas();
+      } catch (err) {
+        alert("❌ Error: " + err.message);
+      } finally {
+        if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = "Aplicar Resolución"; }
+      }
+    } else if (accion === "cargar_cae") {
+      const nroStr = document.getElementById("manualFiscalNroCmp")?.value?.trim() || "";
+      const caeStr = document.getElementById("manualFiscalCae")?.value?.trim() || "";
+      const vtoStr = document.getElementById("manualFiscalVtoCae")?.value?.trim() || "";
+
+      const nro = Number(nroStr);
+      if (!Number.isInteger(nro) || nro <= 0) {
+        alert("El número de comprobante debe ser un entero positivo.");
+        document.getElementById("manualFiscalNroCmp")?.focus();
+        return;
+      }
+
+      if (!/^\d{14}$/.test(caeStr)) {
+        alert("El CAE debe contener exactamente 14 dígitos numéricos.");
+        document.getElementById("manualFiscalCae")?.focus();
+        return;
+      }
+
+      if (!/^\d{8}$/.test(vtoStr)) {
+        alert("La fecha de vencimiento debe tener 8 dígitos con formato YYYYMMDD (ej: 20261120).");
+        document.getElementById("manualFiscalVtoCae")?.focus();
+        return;
+      }
+
+      const y = Number(vtoStr.slice(0, 4));
+      const m = Number(vtoStr.slice(4, 6));
+      const d = Number(vtoStr.slice(6, 8));
+      const checkDate = new Date(y, m - 1, d);
+      if (
+        checkDate.getFullYear() !== y ||
+        checkDate.getMonth() !== m - 1 ||
+        checkDate.getDate() !== d ||
+        y < 2020 || y > 2100
+      ) {
+        alert("La fecha de vencimiento ingresada no representa una fecha válida del calendario.");
+        document.getElementById("manualFiscalVtoCae")?.focus();
+        return;
+      }
+
+      if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = "Guardando..."; }
+      try {
+        const res = await VentasAPI.resolverManualFiscal(ventaIdManualFiscal, {
+          accion: "cargar_cae",
+          cae: caeStr,
+          vto_cae: vtoStr,
+          numero_comprobante: nro
+        });
+        alert("✅ " + (res.mensaje || "CAE asignado exitosamente."));
+        cerrar();
+        await cargarVentas();
+      } catch (err) {
+        alert("❌ Error: " + err.message);
+      } finally {
+        if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = "Aplicar Resolución"; }
+      }
+    }
+  });
+}
+
 function activarBotonesManualFiscal() {
+  inicializarModalManualFiscal();
+
   document.querySelectorAll(".btn-resolver-manual-fiscal").forEach((btn) => {
-    btn.addEventListener("click", async (e) => {
+    btn.addEventListener("click", (e) => {
       e.stopPropagation();
       const id = btn.dataset.id;
       const nroActual = btn.dataset.nro || "";
       if (!id) return;
 
-      const opcion = prompt(
-        "⚙️ RESOLUCIÓN MANUAL FISCAL (Solo Administrador)\n\n" +
-        "Si AFIP no pudo conciliar automáticamente, ingrese una opción tras verificar en 'Mis Comprobantes' de ARCA/AFIP:\n\n" +
-        "1: Marcar como NO EMITIDA (la venta queda como ticket interno no fiscal)\n" +
-        "2: Cargar CAE MANUALMENTE (la venta queda autorizada con su CAE)\n\n" +
-        "Escriba 1 o 2 (o presione Cancelar):"
-      );
+      ventaIdManualFiscal = id;
+      const spanVenta = document.getElementById("manualFiscalVentaId");
+      const spanNro = document.getElementById("manualFiscalNroActual");
+      const inputNro = document.getElementById("manualFiscalNroCmp");
+      const inputCae = document.getElementById("manualFiscalCae");
+      const inputVto = document.getElementById("manualFiscalVtoCae");
+      const inputMotivo = document.getElementById("manualFiscalMotivo");
+      const modal = document.getElementById("modalResolverManualFiscal");
 
-      if (opcion === "1") {
-        const conf = confirm(
-          "⚠️ ¿Confirma que verificó en AFIP que este comprobante NO fue emitido?\n\n" +
-          "La venta pasará a estado NO_FISCAL y se liberará el bloqueo para emitir facturas y cerrar caja."
-        );
-        if (!conf) return;
+      if (spanVenta) spanVenta.textContent = id;
+      if (spanNro) spanNro.textContent = nroActual || "Sin asignar";
+      if (inputNro) inputNro.value = nroActual || "";
+      if (inputCae) inputCae.value = "";
+      if (inputVto) inputVto.value = "";
+      if (inputMotivo) inputMotivo.value = "";
 
-        btn.disabled = true;
-        btn.textContent = "Guardando...";
-        try {
-          const res = await VentasAPI.resolverManualFiscal(id, { accion: "marcar_no_emitido" });
-          alert("✅ " + (res.mensaje || "Venta marcada como no emitida exitosamente."));
-          await cargarVentas();
-        } catch (err) {
-          alert("❌ Error: " + err.message);
-          btn.disabled = false;
-          btn.textContent = "⚙️ Manual";
-        }
-      } else if (opcion === "2") {
-        const cae = prompt("Ingrese los 14 dígitos del CAE otorgado por AFIP:");
-        if (!cae) return;
-        if (cae.trim().length !== 14 || isNaN(Number(cae))) {
-          alert("El CAE debe contener exactamente 14 números.");
-          return;
-        }
-
-        const vto = prompt("Ingrese el vencimiento del CAE (8 dígitos en formato YYYYMMDD, ej: 20261120):");
-        if (!vto) return;
-        if (vto.trim().length !== 8 || isNaN(Number(vto))) {
-          alert("El vencimiento debe tener formato YYYYMMDD (8 dígitos).");
-          return;
-        }
-
-        const nro = prompt("Número de comprobante en AFIP (ej: " + (nroActual || "1") + "):", nroActual);
-        if (!nro || isNaN(Number(nro)) || Number(nro) <= 0) {
-          alert("Número de comprobante inválido.");
-          return;
-        }
-
-        btn.disabled = true;
-        btn.textContent = "Guardando...";
-        try {
-          const res = await VentasAPI.resolverManualFiscal(id, {
-            accion: "cargar_cae",
-            cae: cae.trim(),
-            vto_cae: vto.trim(),
-            numero_comprobante: Number(nro)
-          });
-          alert("✅ " + (res.mensaje || "CAE asignado exitosamente."));
-          await cargarVentas();
-        } catch (err) {
-          alert("❌ Error: " + err.message);
-          btn.disabled = false;
-          btn.textContent = "⚙️ Manual";
-        }
+      const rDefault = document.querySelector('input[name="accionManualFiscal"][value="marcar_no_emitido"]');
+      if (rDefault) {
+        rDefault.checked = true;
+        rDefault.dispatchEvent(new Event("change"));
       }
+
+      if (modal) modal.style.display = "flex";
     });
   });
 }

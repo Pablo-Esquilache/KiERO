@@ -637,6 +637,74 @@
         </div>
       </div>
     </div>
+    <!-- ============================================== -->
+    <!-- MODAL RESOLUCIÓN MANUAL FISCAL (SOLO ADMIN)   -->
+    <!-- ============================================== -->
+    <div id="modalResolverManualFiscal" class="app-modal" style="z-index: 13000;">
+      <div class="app-modal-content" style="max-width: 520px; padding: 24px;">
+        <div class="app-modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">
+          <h2 class="app-subtitle" style="margin: 0; color: #1e293b; font-size: 1.25rem;">⚙️ Resolución Manual Fiscal</h2>
+          <button type="button" class="app-close" id="cerrarModalManualFiscal" style="font-size: 1.5rem; background: none; border: none; cursor: pointer;">&times;</button>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px; margin-bottom: 16px; font-size: 0.9em; color: #475569;">
+          <strong style="color: #0f172a;">Venta seleccionada:</strong> #<span id="manualFiscalVentaId">-</span> &nbsp;|&nbsp; 
+          <strong>Comprobante intentado:</strong> #<span id="manualFiscalNroActual">-</span>
+          <div style="margin-top: 6px; font-size: 0.85em; color: #64748b;">
+            Use esta opción si AFIP no pudo conciliar automáticamente y ya verificó el estado real de la factura en el portal <em>Mis Comprobantes</em> de AFIP/ARCA.
+          </div>
+        </div>
+
+        <form id="formManualFiscal">
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #334155;">Seleccione la acción a realizar:</label>
+            <div style="display: flex; gap: 12px;">
+              <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; background: #fff;" id="lblAccionNoEmitido">
+                <input type="radio" name="accionManualFiscal" value="marcar_no_emitido" checked>
+                <span><strong>No fue emitida</strong><br><small style="color: #64748b;">Dejar como venta interna no fiscal</small></span>
+              </label>
+              <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; background: #fff;" id="lblAccionCargarCae">
+                <input type="radio" name="accionManualFiscal" value="cargar_cae">
+                <span><strong>Cargar CAE</strong><br><small style="color: #64748b;">Asignar CAE autorizado en AFIP</small></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Campos para Marcar como No Emitida -->
+          <div id="seccionManualNoEmitido" style="margin-bottom: 16px;">
+            <label style="display: block; font-weight: 500; font-size: 0.9em; margin-bottom: 4px; color: #475569;">Motivo u observación:</label>
+            <input type="text" id="manualFiscalMotivo" class="app-input" placeholder="Ej: Verificado en Mis Comprobantes, no figura autorizada" style="width: 100%; box-sizing: border-box; padding: 8px;">
+            <small style="display: block; margin-top: 4px; color: #e11d48; font-size: 0.8em;">
+              ⚠️ La venta pasará a estado NO_EMITIDO. Se liberará el bloqueo para emitir nuevas facturas y cerrar la caja.
+            </small>
+          </div>
+
+          <!-- Campos para Cargar CAE Manualmente -->
+          <div id="seccionManualCargarCae" style="display: none; margin-bottom: 16px;">
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; font-weight: 500; font-size: 0.9em; margin-bottom: 4px; color: #475569;">Número de Comprobante en AFIP:</label>
+              <input type="number" id="manualFiscalNroCmp" class="app-input" min="1" step="1" style="width: 100%; box-sizing: border-box; padding: 8px;" placeholder="Ej: 14">
+            </div>
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; font-weight: 500; font-size: 0.9em; margin-bottom: 4px; color: #475569;">Código CAE (14 dígitos numéricos):</label>
+              <input type="text" id="manualFiscalCae" class="app-input" maxlength="14" placeholder="74483920192834" style="width: 100%; box-sizing: border-box; padding: 8px; font-family: monospace;">
+            </div>
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; font-weight: 500; font-size: 0.9em; margin-bottom: 4px; color: #475569;">Vencimiento CAE (8 dígitos YYYYMMDD):</label>
+              <input type="text" id="manualFiscalVtoCae" class="app-input" maxlength="8" placeholder="20261120" style="width: 100%; box-sizing: border-box; padding: 8px; font-family: monospace;">
+            </div>
+            <small style="display: block; margin-top: 4px; color: #16a34a; font-size: 0.8em;">
+              ✅ La venta pasará a estado AUTORIZADA y se generará su código QR oficial de AFIP/ARCA.
+            </small>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 14px;">
+            <button type="button" id="btnCancelarManualFiscal" class="app-btn-secondary" style="padding: 8px 16px;">Cancelar</button>
+            <button type="submit" id="btnGuardarManualFiscal" class="app-btn-primary" style="padding: 8px 20px;">Aplicar Resolución</button>
+          </div>
+        </form>
+      </div>
+    </div>
     </div>
 
   </body>
