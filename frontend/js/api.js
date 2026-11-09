@@ -103,6 +103,12 @@ export const VentasAPI = {
   conciliarFiscal: async (id) => {
     return await apiFetch(`/ventas/${id}/conciliar-fiscal`, { method: "POST" });
   },
+  resolverManualFiscal: async (id, data) => {
+    return await apiFetch(`/ventas/${id}/resolver-manual-fiscal`, {
+      method: "POST",
+      body: JSON.stringify(data)
+    });
+  },
   delete: async (id, comercioId) => {
     const res = await apiFetch(`/ventas/${id}?comercio_id=${comercioId}`, { method: "DELETE" });
     localStorage.removeItem(`productos_cache_${comercioId}`);

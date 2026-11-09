@@ -8,6 +8,7 @@ import {
   updateVenta,
   deleteVenta,
   conciliarVentaFiscal,
+  resolverManualFiscal,
 } from "../controllers/ventasController.js";
 
 const router = express.Router();
@@ -19,5 +20,6 @@ router.post("/", createVenta);
 router.put("/:id", updateVenta);
 router.delete("/:id", deleteVenta);
 router.post("/:id/conciliar-fiscal", requireAdmin, conciliarVentaFiscal);
+router.post("/:id/resolver-manual-fiscal", requireAdmin, resolverManualFiscal);
 
 export default router;

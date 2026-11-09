@@ -1227,7 +1227,7 @@ if (formVenta) {
           "⚠️ ATENCIÓN - ESTADO FISCAL INDETERMINADO:\n\n" +
           "Hubo un tiempo de espera con AFIP/ARCA y no se pudo confirmar si el comprobante fue emitido o rechazado.\n\n" +
           "🛑 NO entregue este ticket al cliente como factura electrónica.\n" +
-          "🔄 En el listado de ventas presione 'Conciliar AFIP' para verificar si ARCA emitió la factura."
+          "🔄 Avise de inmediato al administrador para que concilie o revise la venta desde el historial."
         );
       }
 
@@ -1456,9 +1456,14 @@ const renderVentasPrincipalLazy = (append = false) => {
     }
 
     const btnConciliar = (v.resultado_afip === 'INDETERMINADO' && session?.role === 'admin') ? `
-      <button class="btn-conciliar-fiscal app-btn-secondary" data-id="${v.id}" style="padding: 3px 7px; font-size: 0.75em; margin-left: 4px; color: #b45309; border-color: #f59e0b;" title="Consultar en AFIP si el comprobante fue emitido">
-        🔄 Conciliar
-      </button>
+      <div style="display:inline-flex; gap:3px; align-items:center; margin-left:4px;">
+        <button class="btn-conciliar-fiscal app-btn-secondary" data-id="${v.id}" style="padding: 2px 6px; font-size: 0.75em; color: #b45309; border-color: #f59e0b;" title="Consultar automáticamente en AFIP">
+          🔄 Conciliar
+        </button>
+        <button class="btn-resolver-manual-fiscal app-btn-secondary" data-id="${v.id}" data-nro="${v.numero_comprobante || ''}" style="padding: 2px 6px; font-size: 0.75em; color: #334155; border-color: #94a3b8;" title="Resolución manual (Solo Administrador)">
+          ⚙️ Manual
+        </button>
+      </div>
     ` : "";
 
     fila.innerHTML = `
@@ -1484,6 +1489,7 @@ const renderVentasPrincipalLazy = (append = false) => {
   activarBotonesVerTicket();
   activarBotonesEditar();
   activarBotonesConciliar();
+  activarBotonesManualFiscal();
 };
 
 function renderVentasPrincipal(lista) {
@@ -1546,9 +1552,14 @@ function renderVentasModal(lista) {
     }
 
     const btnConciliar = (v.resultado_afip === 'INDETERMINADO' && session?.role === 'admin') ? `
-      <button class="btn-conciliar-fiscal app-btn-secondary" data-id="${v.id}" style="padding: 2px 6px; font-size: 0.75em; margin-left: 4px; color: #b45309; border-color: #f59e0b;" title="Consultar en AFIP si el comprobante fue emitido">
-        🔄 Conciliar
-      </button>
+      <div style="display:inline-flex; gap:3px; align-items:center; margin-left:4px;">
+        <button class="btn-conciliar-fiscal app-btn-secondary" data-id="${v.id}" style="padding: 2px 6px; font-size: 0.75em; color: #b45309; border-color: #f59e0b;" title="Consultar automáticamente en AFIP">
+          🔄 Conciliar
+        </button>
+        <button class="btn-resolver-manual-fiscal app-btn-secondary" data-id="${v.id}" data-nro="${v.numero_comprobante || ''}" style="padding: 2px 6px; font-size: 0.75em; color: #334155; border-color: #94a3b8;" title="Resolución manual (Solo Administrador)">
+          ⚙️ Manual
+        </button>
+      </div>
     ` : "";
 
     fila.innerHTML = `
@@ -3113,5 +3124,81 @@ const pInputFocus = document.getElementById("productoVentaNombre");
 if (pInputFocus) {
   pInputFocus.addEventListener("input", () => {
     currentFocus = -1;
+  });
+}
+
+function activarBotonesManualFiscal() {
+  document.querySelectorAll(".btn-resolver-manual-fiscal").forEach((btn) => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      const nroActual = btn.dataset.nro || "";
+      if (!id) return;
+
+      const opcion = prompt(
+        "⚙️ RESOLUCIÓN MANUAL FISCAL (Solo Administrador)\n\n" +
+        "Si AFIP no pudo conciliar automáticamente, ingrese una opción tras verificar en 'Mis Comprobantes' de ARCA/AFIP:\n\n" +
+        "1: Marcar como NO EMITIDA (la venta queda como ticket interno no fiscal)\n" +
+        "2: Cargar CAE MANUALMENTE (la venta queda autorizada con su CAE)\n\n" +
+        "Escriba 1 o 2 (o presione Cancelar):"
+      );
+
+      if (opcion === "1") {
+        const conf = confirm(
+          "⚠️ ¿Confirma que verificó en AFIP que este comprobante NO fue emitido?\n\n" +
+          "La venta pasará a estado NO_FISCAL y se liberará el bloqueo para emitir facturas y cerrar caja."
+        );
+        if (!conf) return;
+
+        btn.disabled = true;
+        btn.textContent = "Guardando...";
+        try {
+          const res = await VentasAPI.resolverManualFiscal(id, { accion: "marcar_no_emitido" });
+          alert("✅ " + (res.mensaje || "Venta marcada como no emitida exitosamente."));
+          await cargarVentas();
+        } catch (err) {
+          alert("❌ Error: " + err.message);
+          btn.disabled = false;
+          btn.textContent = "⚙️ Manual";
+        }
+      } else if (opcion === "2") {
+        const cae = prompt("Ingrese los 14 dígitos del CAE otorgado por AFIP:");
+        if (!cae) return;
+        if (cae.trim().length !== 14 || isNaN(Number(cae))) {
+          alert("El CAE debe contener exactamente 14 números.");
+          return;
+        }
+
+        const vto = prompt("Ingrese el vencimiento del CAE (8 dígitos en formato YYYYMMDD, ej: 20261120):");
+        if (!vto) return;
+        if (vto.trim().length !== 8 || isNaN(Number(vto))) {
+          alert("El vencimiento debe tener formato YYYYMMDD (8 dígitos).");
+          return;
+        }
+
+        const nro = prompt("Número de comprobante en AFIP (ej: " + (nroActual || "1") + "):", nroActual);
+        if (!nro || isNaN(Number(nro)) || Number(nro) <= 0) {
+          alert("Número de comprobante inválido.");
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = "Guardando...";
+        try {
+          const res = await VentasAPI.resolverManualFiscal(id, {
+            accion: "cargar_cae",
+            cae: cae.trim(),
+            vto_cae: vto.trim(),
+            numero_comprobante: Number(nro)
+          });
+          alert("✅ " + (res.mensaje || "CAE asignado exitosamente."));
+          await cargarVentas();
+        } catch (err) {
+          alert("❌ Error: " + err.message);
+          btn.disabled = false;
+          btn.textContent = "⚙️ Manual";
+        }
+      }
+    });
   });
 }

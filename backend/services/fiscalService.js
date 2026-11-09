@@ -887,7 +887,10 @@ export async function conciliarComprobanteIndeterminado({ comercioId, ventaId })
       timeout8s
     ]);
 
-    const ultimoNumeroAfip = Number(lastVoucher);
+    const ultimoNumeroAfip = Number(lastVoucher?.cbteNro);
+    if (!Number.isFinite(ultimoNumeroAfip)) {
+      throw new Error("ARCA no devolvió el último comprobante autorizado válido.");
+    }
 
     // Si el último número en AFIP es estrictamente menor al número que intentamos emitir,
     // significa con absoluta certeza que AFIP jamás llegó a emitir este comprobante.
@@ -1026,4 +1029,135 @@ export async function conciliarComprobanteIndeterminado({ comercioId, ventaId })
     console.error("[CONCILIAR] Error consultando comprobante en AFIP:", err);
     throw new Error(`Error de comunicación con AFIP al conciliar: ${err.message}`);
   }
+}
+
+/* =========================================================================
+   RESOLUCIÓN MANUAL DE VENTAS EN ESTADO INDETERMINADO (SOLO ADMIN)
+========================================================================= */
+
+export async function marcarVentaNoEmitidaManual({ comercioId, ventaId, motivo }) {
+  const { rows } = await pool.query(
+    `SELECT * FROM ventas WHERE id = $1 AND comercio_id = $2`,
+    [ventaId, comercioId]
+  );
+  if (!rows.length) throw new Error("Venta no encontrada.");
+  const venta = rows[0];
+  if (venta.resultado_afip !== "INDETERMINADO") {
+    throw new Error("Solo se pueden resolver manualmente ventas en estado INDETERMINADO.");
+  }
+
+  const obs = motivo
+    ? `Marcado como NO_EMITIDO por admin: ${motivo}`
+    : "Marcado manualmente como NO EMITIDO por el administrador tras verificación en Mis Comprobantes de AFIP/ARCA.";
+
+  await pool.query(
+    `UPDATE ventas
+     SET resultado_afip = 'NO_EMITIDO', observaciones_afip = $1
+     WHERE id = $2 AND comercio_id = $3`,
+    [obs, ventaId, comercioId]
+  );
+
+  return {
+    ok: true,
+    mensaje: "La venta fue marcada manualmente como NO EMITIDA. Ya no bloquea la facturación ni el cierre de caja."
+  };
+}
+
+export async function cargarCaeManual({ comercioId, ventaId, cae, vtoCae, numeroComprobante }) {
+  const caeLimpio = String(cae || "").trim();
+  const vtoLimpio = String(vtoCae || "").trim();
+
+  if (caeLimpio.length !== 14 || isNaN(Number(caeLimpio))) {
+    throw new Error("El CAE debe tener exactamente 14 dígitos numéricos.");
+  }
+  if (vtoLimpio.length !== 8 || isNaN(Number(vtoLimpio))) {
+    throw new Error("La fecha de vencimiento del CAE debe tener exactamente 8 dígitos (formato YYYYMMDD).");
+  }
+
+  const { rows } = await pool.query(
+    `SELECT v.*, c.cuit as cliente_cuit, c.documento as cliente_doc
+     FROM ventas v
+     LEFT JOIN clientes c ON c.id = v.cliente_id
+     WHERE v.id = $1 AND v.comercio_id = $2`,
+    [ventaId, comercioId]
+  );
+  if (!rows.length) throw new Error("Venta no encontrada.");
+  const venta = rows[0];
+  if (venta.resultado_afip !== "INDETERMINADO") {
+    throw new Error("Solo se pueden resolver manualmente ventas en estado INDETERMINADO.");
+  }
+
+  const arcaInfo = await getArcaClient(comercioId);
+  const config = arcaInfo?.config || {};
+  const ptoVta = Number(venta.punto_venta) || Number(config.punto_venta) || 1;
+  const nroCmp = Number(numeroComprobante) || Number(venta.numero_comprobante);
+
+  if (!nroCmp) {
+    throw new Error("Debe indicar el número de comprobante emitido por AFIP.");
+  }
+
+  const cbteTipo = obtenerCbteTipoPorNombre(venta.tipo_comprobante);
+
+  // Verificar que ninguna OTRA venta tenga ese número y CAE
+  const { rows: conflicto } = await pool.query(
+    `SELECT id FROM ventas
+     WHERE comercio_id = $1 AND punto_venta = $2 AND tipo_comprobante = $3 AND numero_comprobante = $4 AND cae IS NOT NULL AND id != $5`,
+    [comercioId, ptoVta, venta.tipo_comprobante, nroCmp, ventaId]
+  );
+  if (conflicto.length > 0) {
+    throw new Error(`El comprobante fiscal #${nroCmp} ya fue registrado en la venta local #${conflicto[0].id}.`);
+  }
+
+  // Generar QR
+  let docTipo = 99;
+  let docNro = 0;
+  if (venta.cliente_cuit || venta.cliente_doc) {
+    const rawDoc = String(venta.cliente_cuit || venta.cliente_doc).replace(/\D/g, "");
+    if (rawDoc.length === 11) {
+      docTipo = 80;
+      docNro = Number(rawDoc);
+    } else if (rawDoc.length >= 7 && rawDoc.length <= 8) {
+      docTipo = 96;
+      docNro = Number(rawDoc);
+    }
+  }
+
+  let qrFecha = "";
+  if (venta.fecha) {
+    const fObj = new Date(venta.fecha);
+    if (!isNaN(fObj.getTime())) {
+      const y = fObj.getFullYear();
+      const m = String(fObj.getMonth() + 1).padStart(2, "0");
+      const d = String(fObj.getDate()).padStart(2, "0");
+      qrFecha = `${y}${m}${d}`;
+    }
+  }
+
+  const { qrUrl, qrDataUrl } = await generarQrAfip({
+    fecha: qrFecha,
+    cuit: config.cuit || 0,
+    ptoVta,
+    tipoCmp: cbteTipo,
+    nroCmp,
+    importe: Number(venta.total),
+    tipoDocRec: docTipo,
+    nroDocRec: docNro,
+    codAut: caeLimpio
+  });
+
+  await pool.query(
+    `UPDATE ventas
+     SET cae = $1, vto_cae = $2, numero_comprobante = $3, resultado_afip = 'A',
+         codigo_qr_afip = $4, qr_data_url = $5,
+         observaciones_afip = 'CAE cargado manualmente por el administrador tras verificación en AFIP/ARCA.'
+     WHERE id = $6 AND comercio_id = $7`,
+    [caeLimpio, vtoLimpio, nroCmp, qrUrl, qrDataUrl, ventaId, comercioId]
+  );
+
+  return {
+    ok: true,
+    cae: caeLimpio,
+    numero_comprobante: nroCmp,
+    mensaje: `CAE ${caeLimpio} cargado exitosamente en la venta #${nroCmp}. Registro fiscal actualizado.`
+  };
 }

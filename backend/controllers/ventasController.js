@@ -654,3 +654,38 @@ export const conciliarVentaFiscal = async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 };
+
+/* =====================================================
+   POST resolver manual venta fiscal indeterminada (Admin)
+===================================================== */
+export const resolverManualFiscal = async (req, res) => {
+  const { id } = req.params;
+  const comercio_id = req.user.comercio_id;
+  const { accion, motivo, cae, vto_cae, numero_comprobante } = req.body;
+
+  try {
+    const { marcarVentaNoEmitidaManual, cargarCaeManual } = await import("../services/fiscalService.js");
+    if (accion === "marcar_no_emitido") {
+      const resultado = await marcarVentaNoEmitidaManual({
+        comercioId: comercio_id,
+        ventaId: id,
+        motivo
+      });
+      return res.json(resultado);
+    } else if (accion === "cargar_cae") {
+      const resultado = await cargarCaeManual({
+        comercioId: comercio_id,
+        ventaId: id,
+        cae,
+        vtoCae: vto_cae,
+        numeroComprobante: numero_comprobante
+      });
+      return res.json(resultado);
+    } else {
+      return res.status(400).json({ error: "Acción manual no válida. Debe ser 'marcar_no_emitido' o 'cargar_cae'." });
+    }
+  } catch (err) {
+    console.error("Error en resolverManualFiscal:", err);
+    res.status(400).json({ error: err.message });
+  }
+};
