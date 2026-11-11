@@ -1035,7 +1035,7 @@ export async function conciliarComprobanteIndeterminado({ comercioId, ventaId })
    RESOLUCIÓN MANUAL DE VENTAS EN ESTADO INDETERMINADO (SOLO ADMIN)
 ========================================================================= */
 
-export async function marcarVentaNoEmitidaManual({ comercioId, ventaId, motivo }) {
+export async function marcarVentaNoEmitidaManual({ comercioId, ventaId, motivo, forzar = false }) {
   const { rows } = await pool.query(
     `SELECT * FROM ventas WHERE id = $1 AND comercio_id = $2`,
     [ventaId, comercioId]
@@ -1059,16 +1059,25 @@ export async function marcarVentaNoEmitidaManual({ comercioId, ventaId, motivo }
       ]);
       const ultimoNro = Number(lastV?.cbteNro);
       if (Number.isFinite(ultimoNro) && venta.numero_comprobante && ultimoNro >= Number(venta.numero_comprobante)) {
-        avisoAdvertencia = ` [Advertencia: El último número en AFIP es #${ultimoNro}, mayor o igual al intentado #${venta.numero_comprobante}]`;
+        avisoAdvertencia = `El último número autorizado en AFIP es el #${ultimoNro}, igual o superior al intentado (#${venta.numero_comprobante}). Es muy probable que esta factura SÍ exista en AFIP.`;
+        if (!forzar) {
+          return {
+            ok: false,
+            requiereConfirmacion: true,
+            ultimoNumeroAfip: ultimoNro,
+            mensaje: avisoAdvertencia
+          };
+        }
       }
     }
   } catch (_) {
     // Si no hay conexión o certificado, continuar de forma segura con la resolución de emergencia
   }
 
+  const notaAdvertencia = avisoAdvertencia ? ` [Confirmado por admin a pesar de aviso: ${avisoAdvertencia}]` : "";
   const obs = motivo
-    ? `Marcado como NO_EMITIDO por admin: ${motivo}${avisoAdvertencia}`
-    : `Marcado manualmente como NO EMITIDO por el administrador tras verificación en Mis Comprobantes de AFIP/ARCA.${avisoAdvertencia}`;
+    ? `Marcado como NO_EMITIDO por admin: ${motivo}${notaAdvertencia}`
+    : `Marcado manualmente como NO EMITIDO por el administrador tras verificación en Mis Comprobantes de AFIP/ARCA.${notaAdvertencia}`;
 
   await pool.query(
     `UPDATE ventas
@@ -1126,8 +1135,14 @@ export async function cargarCaeManual({ comercioId, ventaId, cae, vtoCae, numero
     [comercioId]
   );
   const config = cfgRows[0] || {};
+  if (!config.cuit) {
+    throw new Error("Falta el CUIT en Configuración Fiscal.");
+  }
+
   const ptoVta = Number(venta.punto_venta) || Number(config.punto_venta) || 1;
-  const nroCmp = Number(numeroComprobante) || Number(venta.numero_comprobante);
+  const nroCmp = (numeroComprobante !== undefined && numeroComprobante !== null && String(numeroComprobante).trim() !== "")
+    ? Number(numeroComprobante)
+    : Number(venta.numero_comprobante);
 
   if (!Number.isInteger(nroCmp) || nroCmp <= 0) {
     throw new Error("El número de comprobante debe ser un entero positivo.");
@@ -1135,7 +1150,7 @@ export async function cargarCaeManual({ comercioId, ventaId, cae, vtoCae, numero
 
   const cbteTipo = obtenerCbteTipoPorNombre(venta.tipo_comprobante);
 
-  // Verificar que ninguna OTRA venta tenga ese número y CAE
+  // Verificar que ninguna OTRA venta tenga ese número de comprobante con CAE
   const { rows: conflicto } = await pool.query(
     `SELECT id FROM ventas
      WHERE comercio_id = $1 AND punto_venta = $2 AND tipo_comprobante = $3 AND numero_comprobante = $4 AND cae IS NOT NULL AND id != $5`,
@@ -1143,6 +1158,15 @@ export async function cargarCaeManual({ comercioId, ventaId, cae, vtoCae, numero
   );
   if (conflicto.length > 0) {
     throw new Error(`El comprobante fiscal #${nroCmp} ya fue registrado en la venta local #${conflicto[0].id}.`);
+  }
+
+  // Verificar que este CAE no haya sido asignado ya a otra venta diferente
+  const { rows: caeRepetido } = await pool.query(
+    `SELECT id, numero_comprobante FROM ventas WHERE cae = $1 AND id != $2`,
+    [caeLimpio, ventaId]
+  );
+  if (caeRepetido.length > 0) {
+    throw new Error(`El CAE ${caeLimpio} ya se encuentra asignado a la venta #${caeRepetido[0].id} (comprobante #${caeRepetido[0].numero_comprobante}).`);
   }
 
   // Generar QR oficial AFIP
@@ -1172,7 +1196,7 @@ export async function cargarCaeManual({ comercioId, ventaId, cae, vtoCae, numero
 
   const { qrUrl, qrDataUrl } = await generarQrAfip({
     fecha: qrFecha,
-    cuit: config.cuit || 0,
+    cuit: config.cuit,
     ptoVta,
     tipoCmp: cbteTipo,
     nroCmp,
@@ -1195,6 +1219,6 @@ export async function cargarCaeManual({ comercioId, ventaId, cae, vtoCae, numero
     ok: true,
     cae: caeLimpio,
     numero_comprobante: nroCmp,
-    mensaje: `CAE ${caeLimpio} cargado exitosamente en la venta #${nroCmp}. Registro fiscal actualizado.`
+    mensaje: `CAE ${caeLimpio} cargado exitosamente en la venta #${ventaId} (comprobante #${nroCmp}). Registro fiscal actualizado.`
   };
 }

@@ -661,7 +661,7 @@ export const conciliarVentaFiscal = async (req, res) => {
 export const resolverManualFiscal = async (req, res) => {
   const { id } = req.params;
   const comercio_id = req.user.comercio_id;
-  const { accion, motivo, cae, vto_cae, numero_comprobante } = req.body;
+  const { accion, motivo, cae, vto_cae, numero_comprobante, forzar } = req.body;
 
   try {
     const { marcarVentaNoEmitidaManual, cargarCaeManual } = await import("../services/fiscalService.js");
@@ -669,8 +669,16 @@ export const resolverManualFiscal = async (req, res) => {
       const resultado = await marcarVentaNoEmitidaManual({
         comercioId: comercio_id,
         ventaId: id,
-        motivo
+        motivo,
+        forzar: Boolean(forzar)
       });
+      if (resultado.requiereConfirmacion) {
+        return res.status(409).json({
+          error: resultado.mensaje,
+          requiereConfirmacion: true,
+          ultimoNumeroAfip: resultado.ultimoNumeroAfip
+        });
+      }
       return res.json(resultado);
     } else if (accion === "cargar_cae") {
       const resultado = await cargarCaeManual({

@@ -3191,7 +3191,30 @@ function inicializarModalManualFiscal() {
         cerrar();
         await cargarVentas();
       } catch (err) {
-        alert("❌ Error: " + err.message);
+        if (err.status === 409 && err.data?.requiereConfirmacion) {
+          const confirmarForzar = confirm(
+            "🚨 ADVERTENCIA CRÍTICA DE AFIP:\n\n" +
+            err.message + "\n\n" +
+            "Si esta factura sí fue emitida en AFIP y la marca como no emitida, quedará un desfasaje tributario.\n\n" +
+            "¿Está COMPLETAMENTE SEGURO de que desea marcarla como NO EMITIDA de todos modos?"
+          );
+          if (confirmarForzar) {
+            try {
+              const resForzado = await VentasAPI.resolverManualFiscal(ventaIdManualFiscal, {
+                accion: "marcar_no_emitido",
+                motivo,
+                forzar: true
+              });
+              alert("✅ " + (resForzado.mensaje || "Venta marcada como no emitida exitosamente."));
+              cerrar();
+              await cargarVentas();
+            } catch (fErr) {
+              alert("❌ Error: " + fErr.message);
+            }
+          }
+        } else {
+          alert("❌ Error: " + err.message);
+        }
       } finally {
         if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = "Aplicar Resolución"; }
       }
