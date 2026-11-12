@@ -1052,10 +1052,10 @@ export async function marcarVentaNoEmitidaManual({ comercioId, ventaId, motivo, 
     if (arcaInfo && arcaInfo.arca) {
       const ptoVta = Number(venta.punto_venta) || Number(arcaInfo.config?.punto_venta) || 1;
       const cbteTipo = obtenerCbteTipoPorNombre(venta.tipo_comprobante);
-      const timeout3s = new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 3000));
+      const timeout8s = new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 8000));
       const lastV = await Promise.race([
         arcaInfo.arca.electronicBillingService.getLastVoucher(ptoVta, cbteTipo),
-        timeout3s
+        timeout8s
       ]);
       const ultimoNro = Number(lastV?.cbteNro);
       if (Number.isFinite(ultimoNro) && venta.numero_comprobante && ultimoNro >= Number(venta.numero_comprobante)) {
